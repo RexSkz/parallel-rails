@@ -15,6 +15,8 @@ export default class SceneBase {
      * @constructor
      */
     constructor() {
+        // each scene has a stage
+        this.stage = new PIXI.Container();
         asyncTask(next => this.onInitialize(next))
             .then(next => this.startLoop(next))
             .then(next => this.onTerminate(next));
@@ -30,7 +32,6 @@ export default class SceneBase {
     /**
      * Mainloop for current scene
      * @param {function} next - Provided by then.js
-     * @override
      */
     startLoop(next) {
         const mainLoop = () => {
@@ -40,7 +41,7 @@ export default class SceneBase {
                 return;
             }
             this.update();
-            G.renderer
+            G.renderer.render(this.stage);
             requestAnimationFrame(mainLoop);
         };
         mainLoop();

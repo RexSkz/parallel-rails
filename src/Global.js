@@ -6,17 +6,22 @@
 
 import Input from './Input';
 import DataConstants from './data/DataConstants';
-import DataResources from './data/DataResources';
 
+// prevent repeat assignment for window._G
 if (!window._G) {
     window._G = {
         // data structure objects
-        dataConstants: new DataConstants(),
-        dataResources: new DataResources(),
+        dataConstants: new DataConstants,
         // input state
-        Input: new Input(),
+        Input: new Input,
+        // graphics cache
+        cache: {},
         // other variables
-        loading: 0,
+        loader: {
+            url: '',
+            progress: 0,
+            finished: false,
+        },
         scene: null,
         renderer: null,
     };

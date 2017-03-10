@@ -4,7 +4,10 @@
  */
 
 import G from './Global';
-import SceneTitle from './scene/SceneTitle';
+import SceneLoading from './scene/SceneLoading';
+
+// define graphics path for further use
+const GRAPHICS_PATH = 'graphics/sprites.json';
 
 /**
  * Game main class
@@ -23,13 +26,14 @@ class ParallelRails {
         }
         // setup the renderer
         this.setupRender(opt.el);
-        // load resources and then set scene
-        // once scene is set, we enter the main loop
-        // PIXI.loader.add(G.DataResources).load(() => {
-        //     G.scene = G.SceneTitle;
-        // });
-        G.scene = new SceneTitle;
-        return this;
+        // load resources
+        PIXI.loader
+            .add(GRAPHICS_PATH)
+            .on('progress', this.updateLoaderData)
+            .on('error', this.setLoaderErrorMsg)
+            .load(this.setLoaderFinished);
+        // loading scene don't need resources to be loaded
+        G.scene = new SceneLoading;
     }
     /**
      * Setup the renderer
@@ -52,6 +56,22 @@ class ParallelRails {
         G.renderer.resize(window.innerWidth, window.innerHeight);
         // append the canvas of renverer's view to page
         target.appendChild(G.renderer.view);
+    }
+    /**
+     * Update loader data
+     * @param {object} progress - Current loading progress
+     * @param {object} url - Current loading url
+     */
+    updateLoaderData(progress, url) {
+        G.loader.progress = progress.progress;
+        G.loader.url = url.url || '';
+    }
+    /**
+     * Set loader finished
+     */
+    setLoaderFinished() {
+        G.loader.finished = true;
+        G.cache = PIXI.loader.resources[GRAPHICS_PATH].textures;
     }
 }
 
