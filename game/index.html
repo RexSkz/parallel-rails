@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <title>Parallel Rails | Powered by skywalker_z</title>
+    <style>body { margin: 0; padding: 0; }</style>
+</head>
+<body>
+    <div id="game-area"></div>
+    <script src="../dist/pixi.min.js"></script>
+    <script src="../dist/parallel-rails.min.js"></script>
+    <script>
+        var rails = new ParallelRails({
+            el: document.getElementById('game-area')
+        });
+    </script>
+</body>
+</html>

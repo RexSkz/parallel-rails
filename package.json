@@ -11,8 +11,25 @@
     "url": "git@git.coding.net:rexskz/parallel-rails.git"
   },
   "author": "Rex Zeng",
-  "license": "MIT",
+  "license": "SATA",
   "dependencies": {
-    "pixi.js": "^4.4.1"
+    "pixi.js": "^4.4.1",
+    "thenjs": "^2.0.5"
+  },
+  "devDependencies": {
+    "autoprefixer": "^6.4.0",
+    "babel-core": "^6.22.1",
+    "babel-loader": "^6.2.10",
+    "babel-preset-es2015": "^6.2.0",
+    "css-loader": "^0.25.0",
+    "exports-loader": "^0.6.3",
+    "file-loader": "^0.10.0",
+    "node-sass": "^4.4.0",
+    "postcss-loader": "^1.0.0",
+    "sass-loader": "^4.0.0",
+    "style-loader": "^0.13.1",
+    "url-loader": "^0.5.7",
+    "webpack": "^1.13.1",
+    "webpack-dev-server": "^1.14.1"
   }
 }
