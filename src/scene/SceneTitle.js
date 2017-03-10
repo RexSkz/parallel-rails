@@ -17,7 +17,7 @@ export default class SceneTitle extends SceneBase {
      */
     constructor() {
         super();
-        this.x = 0;
+        console.log('title');
     }
     /**
      * Do calculations only, DO NOT do any paint in this function
@@ -25,8 +25,8 @@ export default class SceneTitle extends SceneBase {
      */
     update() {
         super.update();
-        this.x++;
-        if (this.x >= 120) {
+        // press ENTER to enter music select
+        if (G.Input.isPressed(G.Input.ENTER)) {
             G.scene = new SceneMusicSelect;
         }
     }

@@ -5,7 +5,6 @@
 
 import G from './Global';
 import SceneTitle from './scene/SceneTitle';
-import SceneMusicSelect from './scene/SceneMusicSelect';
 
 /**
  * Game main class
@@ -24,14 +23,12 @@ class ParallelRails {
         }
         // setup the renderer
         this.setupRender(opt.el);
-        // make the stage
-        G.stage = new PIXI.Container();
         // load resources and then set scene
         // once scene is set, we enter the main loop
         // PIXI.loader.add(G.DataResources).load(() => {
         //     G.scene = G.SceneTitle;
         // });
-        G.scene = new SceneMusicSelect;
+        G.scene = new SceneTitle;
         return this;
     }
     /**

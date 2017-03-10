@@ -40,6 +40,7 @@ export default class SceneBase {
                 return;
             }
             this.update();
+            G.renderer
             requestAnimationFrame(mainLoop);
         };
         mainLoop();
