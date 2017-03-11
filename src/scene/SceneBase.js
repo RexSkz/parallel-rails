@@ -64,12 +64,12 @@ export default class SceneBase {
         shadow.alpha = 1;
         this.stage.addChild(shadow);
         const fadeInLoop = () => {
-            if (timer == 0) {
-                this.stage.removeChild(shadow);
-                next();
-                return;
-            }
             if (!G.switchingScene) {
+                if (timer == 0) {
+                    this.stage.removeChild(shadow);
+                    next();
+                    return;
+                }
                 this.stage.visible = true;
                 timer--;
                 shadow.alpha = timer / this.fadeInTime;

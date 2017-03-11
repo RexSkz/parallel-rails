@@ -14,7 +14,8 @@
   "license": "SATA",
   "dependencies": {
     "pixi.js": "^4.4.1",
-    "thenjs": "^2.0.5"
+    "thenjs": "^2.0.5",
+    "whatwg-fetch": "^2.0.3"
   },
   "devDependencies": {
     "autoprefixer": "^6.4.0",

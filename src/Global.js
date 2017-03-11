@@ -33,6 +33,7 @@ if (!window._G) {
     };
 }
 
+// when window is resized, recalculate the position of elements in paint list
 window.addEventListener('resize', () => {
     for (const id in window._G.windowResizePaintList) {
         const item = window._G.windowResizePaintList[id];
