@@ -28,16 +28,26 @@ export default class SceneLoading extends SceneBase {
      * @override
      */
     onInitialize(next) {
-        this.messageSprite = new PIXI.Text(`Loading 0%`, {
+        this.loadingTextSprite = new PIXI.Text(`Loading 0%`, {
             fontFamily: 'Courier New',
             fontSize: 32,
             fill: '#FFF',
         });
-        setPosition(this.messageSprite, () => ({
-            x: 0.5 * window.innerWidth - this.messageSprite.width / 2,
-            y: 0.5 * window.innerHeight - this.messageSprite.height / 2,
+        setPosition(this.loadingTextSprite, () => ({
+            x: 0.5 * window.innerWidth - this.loadingTextSprite.width / 2,
+            y: 0.5 * window.innerHeight - this.loadingTextSprite.height / 2 - 24,
         }));
-        this.stage.addChild(this.messageSprite);
+        this.stage.addChild(this.loadingTextSprite);
+        this.urlTextSprite = new PIXI.Text(`[...]`, {
+            fontFamily: 'Courier New',
+            fontSize: 12,
+            fill: '#FFF',
+        });
+        setPosition(this.urlTextSprite, () => ({
+            x: 0.5 * window.innerWidth - this.urlTextSprite.width / 2,
+            y: 0.5 * window.innerHeight - this.urlTextSprite.height / 2 + 10,
+        }));
+        this.stage.addChild(this.urlTextSprite);
         next();
     }
     /**
@@ -57,6 +67,9 @@ export default class SceneLoading extends SceneBase {
      * @param {number} progress - Current loading progress
      */
     updateLoaderText(progress, url) {
-        this.messageSprite.text = `Loading ${progress}%`;
+        this.loadingTextSprite.text = `Loading ${progress}%`;
+        this.loadingTextSprite.position.set(0.5 * window.innerWidth - this.loadingTextSprite.width / 2, 0.5 * window.innerHeight - this.loadingTextSprite.height / 2 - 24);
+        this.urlTextSprite.text = `[${url}]`;
+        this.urlTextSprite.position.set(0.5 * window.innerWidth - this.urlTextSprite.width / 2, 0.5 * window.innerHeight - this.urlTextSprite.height / 2 + 10);
     }
 }

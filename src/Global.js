@@ -21,6 +21,8 @@ if (!window._G) {
         // for window resizing
         windowResized: false,
         windowResizePaintList: {},
+        // loader lock
+        loaderLock: false,
         // other variables
         loader: {
             url: '',

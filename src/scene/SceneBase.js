@@ -4,6 +4,7 @@
  */
 
 import G from '../Global';
+import Resource from '../Resource';
 import asyncTask from 'thenjs';
 
 /**
@@ -94,6 +95,7 @@ export default class SceneBase {
                 next();
                 return;
             }
+            Resource.load();
             this.update();
             G.renderer.render(G.stageContainer);
             G.windowResized = false;

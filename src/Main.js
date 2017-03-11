@@ -4,6 +4,7 @@
  */
 
 import G from './Global';
+import Resource from './Resource';
 import SceneLoading from './scene/SceneLoading';
 
 // define graphics path for further use
@@ -27,11 +28,7 @@ class ParallelRails {
         // setup the renderer
         this.setupRender(opt.el);
         // load resources
-        PIXI.loader
-            .add(GRAPHICS_PATH)
-            .on('progress', this.updateLoaderData)
-            .on('error', this.setLoaderErrorMsg)
-            .load(this.setLoaderFinished);
+        Resource.add(GRAPHICS_PATH);
         // loading scene don't need resources to be loaded
         G.scene = new SceneLoading;
         G.switchingScene = false;
@@ -61,22 +58,6 @@ class ParallelRails {
         });
         // append the canvas of renverer's view to page
         target.appendChild(G.renderer.view);
-    }
-    /**
-     * Update loader data
-     * @param {object} progress - Current loading progress
-     * @param {object} url - Current loading url
-     */
-    updateLoaderData(progress, url) {
-        G.loader.progress = progress.progress;
-        G.loader.url = url.url || '';
-    }
-    /**
-     * Set loader finished
-     */
-    setLoaderFinished() {
-        G.loader.finished = true;
-        G.cache = PIXI.loader.resources[GRAPHICS_PATH].textures;
     }
 }
 

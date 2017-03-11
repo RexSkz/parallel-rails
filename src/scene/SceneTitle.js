@@ -54,6 +54,7 @@ export default class SceneTitle extends SceneBase {
             y: 0.5 * window.innerHeight - this.startMessageSprite.height / 2 + 15,
         }));
         this.stage.addChild(this.startMessageSprite);
+        console.log(PIXI.loader.resources);
         next();
     }
     /**
