@@ -18,8 +18,10 @@ if (!window._G) {
         cache: {},
         // root stage
         stageContainer: new PIXI.Container,
-        // other variables
+        // for window resizing
         windowResized: false,
+        windowResizePaintList: {},
+        // other variables
         loader: {
             url: '',
             progress: 0,
@@ -30,5 +32,21 @@ if (!window._G) {
         renderer: null,
     };
 }
+
+window.addEventListener('resize', () => {
+    for (const id in window._G.windowResizePaintList) {
+        const item = window._G.windowResizePaintList[id];
+        // don't recalculate the invisible item
+        if (!item.sprite.visible) {
+            continue;
+        }
+        // remove items that is not belongs to current scene
+        if (item.sceneName != window._G.scene.name) {
+            delete window._G.windowResizePaintList[id];
+            continue;
+        }
+        item();
+    }
+});
 
 export default window._G;

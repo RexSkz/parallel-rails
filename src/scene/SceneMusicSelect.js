@@ -4,6 +4,9 @@
  */
 
 import G from '../Global';
+import {
+    setPosition,
+} from '../Functions';
 import SceneBase from './SceneBase';
 import SceneTitle from './SceneTitle';
 
@@ -17,7 +20,7 @@ export default class SceneMusicSelect extends SceneBase {
      */
     constructor() {
         super();
-        console.log('music select');
+        this.name = 'music select';
     }
     /**
      * Do calculations only, DO NOT do any paint in this function

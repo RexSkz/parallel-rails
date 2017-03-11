@@ -17,7 +17,7 @@ export default class SceneBase {
     constructor() {
         G.switchingScene = true;
         // each scene has a stage
-        this.stage = new PIXI.Container();
+        this.stage = new PIXI.Container;
         this.stage.visible = false;
         G.stageContainer.addChild(this.stage);
         // set some variables
@@ -46,13 +46,16 @@ export default class SceneBase {
      * @override
      */
     fadeIn(next) {
+        if (!this.name) {
+            console.error('This scene has no name! It will affect the GC process.');
+        }
         if (!this.isFadeIn) {
             this.stage.visible = true;
             next();
             return;
         }
         let timer = this.fadeInTime;
-        const shadow = new PIXI.Graphics();
+        const shadow = new PIXI.Graphics;
         shadow.x = 0;
         shadow.y = 0;
         shadow.beginFill(0x000000);
@@ -110,7 +113,7 @@ export default class SceneBase {
             return;
         }
         let timer = 0;
-        const shadow = new PIXI.Graphics();
+        const shadow = new PIXI.Graphics;
         shadow.x = 0;
         shadow.y = 0;
         shadow.beginFill(0x000000);
@@ -144,6 +147,7 @@ export default class SceneBase {
      * @override
      */
     onTerminate(next) {
+        this.repaintListGC();
         next();
     }
     /**
@@ -151,4 +155,18 @@ export default class SceneBase {
      * @override
      */
     update() {}
+    /**
+     * Garbage collect for window resize repaint list
+     */
+    repaintListGC() {
+        for (const id in G.windowResizePaintList) {
+            const item = G.windowResizePaintList[id];
+            // remove items that is not belongs to current scene
+            if (item.sceneName != G.scene.name) {
+                delete G.windowResizePaintList[id];
+                continue;
+            }
+        }
+    }
+
 }

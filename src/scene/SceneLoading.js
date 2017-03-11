@@ -4,7 +4,9 @@
  */
 
 import G from '../Global';
-import Position from '../Position';
+import {
+    setPosition,
+} from '../Functions';
 import SceneBase from './SceneBase';
 import SceneTitle from './SceneTitle';
 
@@ -18,6 +20,7 @@ export default class SceneLoading extends SceneBase {
      */
     constructor() {
         super();
+        this.name = 'loading';
     }
     /**
      * Trigger when scene is initialized
@@ -30,7 +33,10 @@ export default class SceneLoading extends SceneBase {
             fontSize: 32,
             fill: '#FFF',
         });
-        this.messageSprite.position.set(0.5 * window.innerWidth - this.messageSprite.width / 2, 0.5 * window.innerHeight - this.messageSprite.height / 2);
+        setPosition(this.messageSprite, () => ({
+            x: 0.5 * window.innerWidth - this.messageSprite.width / 2,
+            y: 0.5 * window.innerHeight - this.messageSprite.height / 2,
+        }));
         this.stage.addChild(this.messageSprite);
         next();
     }
@@ -52,8 +58,5 @@ export default class SceneLoading extends SceneBase {
      */
     updateLoaderText(progress, url) {
         this.messageSprite.text = `Loading ${progress}%`;
-        if (G.windowResized) {
-            this.messageSprite.position.set(0.5 * window.innerWidth - this.messageSprite.width / 2, 0.5 * window.innerHeight - this.messageSprite.height / 2);
-        }
     }
 }

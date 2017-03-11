@@ -4,7 +4,9 @@
  */
 
 import G from '../Global';
-import Position from '../Position';
+import {
+    setPosition,
+} from '../Functions';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 
@@ -18,6 +20,7 @@ export default class SceneTitle extends SceneBase {
      */
     constructor() {
         super();
+        this.name = 'title';
         this.titleTextTimer = 0;
         this.str = 'Parallel Rails';
         this.pos = -1;
@@ -35,7 +38,10 @@ export default class SceneTitle extends SceneBase {
             fontSize: 48,
             fill: '#FFF',
         });
-        this.titleMessageSprite.position.set(0.5 * window.innerWidth - this.titleMessageSprite.width / 2, 0.5 * window.innerHeight - this.titleMessageSprite.height / 2 - 32);
+        setPosition(this.titleMessageSprite,  () => ({
+            x: 0.5 * window.innerWidth - this.titleMessageSprite.width / 2,
+            y: 0.5 * window.innerHeight - this.titleMessageSprite.height / 2 - 32,
+        }));
         this.stage.addChild(this.titleMessageSprite);
         // start message
         this.startMessageSprite = new PIXI.Text('Made by Rex Zeng using Pixi.js', {
@@ -43,7 +49,10 @@ export default class SceneTitle extends SceneBase {
             fontSize: 18,
             fill: '#FFF',
         });
-        this.startMessageSprite.position.set(0.5 * window.innerWidth - this.startMessageSprite.width / 2, 0.5 * window.innerHeight - this.startMessageSprite.height / 2 + 15);
+        setPosition(this.startMessageSprite, () => ({
+            x: 0.5 * window.innerWidth - this.startMessageSprite.width / 2,
+            y: 0.5 * window.innerHeight - this.startMessageSprite.height / 2 + 15,
+        }));
         this.stage.addChild(this.startMessageSprite);
         next();
     }
@@ -87,10 +96,6 @@ export default class SceneTitle extends SceneBase {
             this.chrBak = '';
         } else if (this.titleTextTimer >= 120) {
             this.titleTextTimer = 0;
-        }
-        if (G.windowResized) {
-            this.titleMessageSprite.position.set(0.5 * window.innerWidth - this.titleMessageSprite.width / 2, 0.5 * window.innerHeight - this.titleMessageSprite.height / 2 - 20);
-            this.startMessageSprite.position.set(0.5 * window.innerWidth - this.startMessageSprite.width / 2, 0.5 * window.innerHeight - this.startMessageSprite.height / 2 + 15);
         }
     }
 }
