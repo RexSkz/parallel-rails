@@ -4,6 +4,7 @@
  */
 
 import G from '../Global';
+import Position from '../Position';
 import SceneBase from './SceneBase';
 import SceneTitle from './SceneTitle';
 
@@ -17,7 +18,6 @@ export default class SceneLoading extends SceneBase {
      */
     constructor() {
         super();
-        console.log('loading');
     }
     /**
      * Trigger when scene is initialized
@@ -25,13 +25,13 @@ export default class SceneLoading extends SceneBase {
      * @override
      */
     onInitialize(next) {
-        this.message = new PIXI.Text(`Loading 0%\nFile: [...]`, {
-            fontFamily: "Arial",
+        this.messageSprite = new PIXI.Text(`Loading 0%`, {
+            fontFamily: 'Courier New',
             fontSize: 32,
             fill: '#FFF',
         });
-        this.message.position.set(54, 96);
-        this.stage.addChild(this.message);
+        this.messageSprite.position.set(0.5 * window.innerWidth - this.messageSprite.width / 2, 0.5 * window.innerHeight - this.messageSprite.height / 2);
+        this.stage.addChild(this.messageSprite);
         next();
     }
     /**
@@ -51,6 +51,9 @@ export default class SceneLoading extends SceneBase {
      * @param {number} progress - Current loading progress
      */
     updateLoaderText(progress, url) {
-        this.message.text = `Loading ${progress}%\nFile: [${url}]`;
+        this.messageSprite.text = `Loading ${progress}%`;
+        if (G.windowResized) {
+            this.messageSprite.position.set(0.5 * window.innerWidth - this.messageSprite.width / 2, 0.5 * window.innerHeight - this.messageSprite.height / 2);
+        }
     }
 }

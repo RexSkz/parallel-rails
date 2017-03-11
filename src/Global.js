@@ -16,13 +16,17 @@ if (!window._G) {
         Input: new Input,
         // graphics cache
         cache: {},
+        // root stage
+        stageContainer: new PIXI.Container,
         // other variables
+        windowResized: false,
         loader: {
             url: '',
             progress: 0,
             finished: false,
         },
         scene: null,
+        switchingScene: false,
         renderer: null,
     };
 }

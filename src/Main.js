@@ -34,6 +34,7 @@ class ParallelRails {
             .load(this.setLoaderFinished);
         // loading scene don't need resources to be loaded
         G.scene = new SceneLoading;
+        G.switchingScene = false;
     }
     /**
      * Setup the renderer
@@ -54,6 +55,10 @@ class ParallelRails {
         G.renderer.view.style.bottom = 0;
         G.renderer.autoResize = true;
         G.renderer.resize(window.innerWidth, window.innerHeight);
+        window.addEventListener('resize', () => {
+            G.windowResized = true;
+            G.renderer.resize(window.innerWidth, window.innerHeight);
+        });
         // append the canvas of renverer's view to page
         target.appendChild(G.renderer.view);
     }

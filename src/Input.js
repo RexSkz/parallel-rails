@@ -94,6 +94,9 @@ class Input {
         window.addEventListener('keydown', e => {
             e.preventDefault();
             const key = this.keyState[e.keyCode];
+            if (!key) {
+                return;
+            }
             // special deal with isPressed
             // isPressed is true only if it was not at down state before
             if (!key.isRepeated) {
@@ -105,6 +108,9 @@ class Input {
         window.addEventListener('keyup', e => {
             e.preventDefault();
             const key = this.keyState[e.keyCode];
+            if (!key) {
+                return;
+            }
             // special deal with isPressed
             // isReleased is true only if it was at down state before
             if (key.isRepeated) {
