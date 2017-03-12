@@ -39,8 +39,8 @@ export default class SceneTitle extends SceneBase {
             fill: '#FFF',
         });
         setPosition(this.titleMessageSprite,  () => ({
-            x: 0.5 * window.innerWidth - this.titleMessageSprite.width / 2,
-            y: 0.5 * window.innerHeight - this.titleMessageSprite.height / 2 - 32,
+            x: 0.5 * (window.innerWidth - this.titleMessageSprite.width),
+            y: 0.5 * (window.innerHeight - this.titleMessageSprite.height) - 32,
         }));
         this.stage.addChild(this.titleMessageSprite);
         // start message
@@ -50,11 +50,10 @@ export default class SceneTitle extends SceneBase {
             fill: '#FFF',
         });
         setPosition(this.startMessageSprite, () => ({
-            x: 0.5 * window.innerWidth - this.startMessageSprite.width / 2,
-            y: 0.5 * window.innerHeight - this.startMessageSprite.height / 2 + 15,
+            x: 0.5 * (window.innerWidth - this.startMessageSprite.width),
+            y: 0.5 * (window.innerHeight - this.startMessageSprite.height) + 15,
         }));
         this.stage.addChild(this.startMessageSprite);
-        console.log(PIXI.loader.resources);
         next();
     }
     /**
@@ -65,7 +64,7 @@ export default class SceneTitle extends SceneBase {
         super.update();
         this.updateTitleTextContent();
         // press ENTER to enter music select
-        if (G.Input.isPressed(G.Input.ENTER)) {
+        if (G.input.isPressed(G.input.ENTER)) {
             G.scene = new SceneMusicSelect;
         }
     }

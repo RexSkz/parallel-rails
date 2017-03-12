@@ -93,52 +93,70 @@ class Input {
     addEventListeners() {
         window.addEventListener('keydown', e => {
             e.preventDefault();
-            const key = this.keyState[e.keyCode];
-            if (!key) {
-                return;
-            }
-            // special deal with isPressed
-            // isPressed is true only if it was not at down state before
-            if (!key.isRepeated) {
-                key.isPressed = true;
-            }
-            key.isReleased = false;
-            key.isRepeated = true;
+            this.pressedKey = e.keyCode;
         });
         window.addEventListener('keyup', e => {
             e.preventDefault();
-            const key = this.keyState[e.keyCode];
-            if (!key) {
-                return;
-            }
-            // special deal with isPressed
-            // isReleased is true only if it was at down state before
-            if (key.isRepeated) {
-                key.isReleased = true;
-            }
-            key.isPressed = false;
-            key.isRepeated = false;
+            this.releasedKey = e.keyCode;
         });
+    }
+    /**
+     * Update input signal
+     */
+    update() {
+        if (this.pressedKey != 0) {
+            const key = this.keyState[this.pressedKey];
+            if (key) {
+                key.isPressed = !key.isRepeated;
+                key.isReleased = false;
+                key.isRepeated = true;
+                if (!key.isPressed) {
+                    this.pressedKey = 0;
+                }
+            }
+            return;
+        }
+        if (this.releasedKey != 0) {
+            const key = this.keyState[this.releasedKey];
+            if (key) {
+                key.isReleased = key.isRepeated;
+                key.isPressed = false;
+                key.isRepeated = false;
+                if (!key.isReleased) {
+                    this.releasedKey = 0;
+                }
+            }
+            return;
+        }
     }
     /**
      * Judge if the key is just pressed down
      * @param {number} keyCode - The code of the key to judge
      */
     isPressed(keyCode) {
+        if (!this.keyState[keyCode]) {
+            console.error('Key code error!');
+        }
         return this.keyState[keyCode].isPressed;
     }
     /**
      * Judge if the key is just released up
      * @param {number} keyCode - The code of the key to judge
      */
-    isPressed(keyCode) {
+    isReleased(keyCode) {
+        if (!this.keyState[keyCode]) {
+            console.error('Key code error!');
+        }
         return this.keyState[keyCode].isReleased;
     }
     /**
      * Judge if the key is continuously pressed down
      * @param {number} keyCode - The code of the key to judge
      */
-    isPressed(keyCode) {
+    isRepeated(keyCode) {
+        if (!this.keyState[keyCode]) {
+            console.error('Key code error!');
+        }
         return this.keyState[keyCode].isRepeated;
     }
 }

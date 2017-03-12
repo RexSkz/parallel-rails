@@ -4,34 +4,41 @@
  * @author Rex Zeng
  */
 
+import Animation from './Animation';
+import Audio from './Audio';
 import Input from './Input';
+import Resource from './Resource';
 import DataConstants from './data/DataConstants';
 
 // prevent repeat assignment for window._G
 if (!window._G) {
     window._G = {
         // data structure objects
-        dataConstants: new DataConstants,
+        constant: new DataConstants,
+        // animation controller
+        animation: new Animation,
         // input state
-        Input: new Input,
-        // graphics cache
-        cache: {},
+        input: new Input,
+        // audio
+        audio: new Audio,
         // root stage
         stageContainer: new PIXI.Container,
+        // resource loader
+        resource: new Resource,
         // for window resizing
         windowResized: false,
         windowResizePaintList: {},
-        // loader lock
-        loaderLock: false,
-        // other variables
-        loader: {
-            url: '',
-            progress: 0,
-            finished: false,
+        // locks
+        lock: {
+            loader: false,
+            sceneSwitch: false,
         },
+        // current scene
         scene: null,
-        switchingScene: false,
+        // global renderer
         renderer: null,
+        // music list
+        musics: null,
     };
 }
 

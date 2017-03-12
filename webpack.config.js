@@ -8,7 +8,7 @@ var BUILD_PATH = path.resolve(ROOT_PATH, 'dist');
 
 module.exports = {
     devtool: 'source-map',
-    entry: ['whatwg-fetch', 'pixi.js', './src/Main.js'],
+    entry: ['whatwg-fetch', './src/Main.js'],
     output: {
         path: BUILD_PATH,
         filename: 'parallel-rails.min.js',

@@ -4,7 +4,9 @@
  */
 
 import G from './Global';
-import Resource from './Resource';
+import {
+    updateMusicList,
+} from './Functions';
 import SceneLoading from './scene/SceneLoading';
 
 // define graphics path for further use
@@ -28,10 +30,18 @@ class ParallelRails {
         // setup the renderer
         this.setupRender(opt.el);
         // load resources
-        Resource.add(GRAPHICS_PATH);
-        // loading scene don't need resources to be loaded
-        G.scene = new SceneLoading;
-        G.switchingScene = false;
+        G.resource.add(GRAPHICS_PATH);
+        // load music list
+        if (!G.musics) {
+            updateMusicList();
+        }
+        try {
+            // loading scene don't need resources to be loaded
+            G.scene = new SceneLoading;
+            G.lock.sceneSwitch = false;
+        } catch (e) {
+            console.error(e);
+        }
     }
     /**
      * Setup the renderer

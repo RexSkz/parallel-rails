@@ -34,8 +34,8 @@ export default class SceneLoading extends SceneBase {
             fill: '#FFF',
         });
         setPosition(this.loadingTextSprite, () => ({
-            x: 0.5 * window.innerWidth - this.loadingTextSprite.width / 2,
-            y: 0.5 * window.innerHeight - this.loadingTextSprite.height / 2 - 24,
+            x: 0.5 * (window.innerWidth - this.loadingTextSprite.width),
+            y: 0.5 * (window.innerHeight - this.loadingTextSprite.height) - 24,
         }));
         this.stage.addChild(this.loadingTextSprite);
         this.urlTextSprite = new PIXI.Text(`[...]`, {
@@ -44,8 +44,8 @@ export default class SceneLoading extends SceneBase {
             fill: '#FFF',
         });
         setPosition(this.urlTextSprite, () => ({
-            x: 0.5 * window.innerWidth - this.urlTextSprite.width / 2,
-            y: 0.5 * window.innerHeight - this.urlTextSprite.height / 2 + 10,
+            x: 0.5 * (window.innerWidth - this.urlTextSprite.width),
+            y: 0.5 * (window.innerHeight - this.urlTextSprite.height) + 10,
         }));
         this.stage.addChild(this.urlTextSprite);
         next();
@@ -56,20 +56,19 @@ export default class SceneLoading extends SceneBase {
      */
     update() {
         super.update();
-        this.updateLoaderText(G.loader.progress, G.loader.url);
-        if (G.loader.finished) {
+        this.updateLoaderText(G.resource);
+        if (!G.lock.loader) {
             G.scene = new SceneTitle;
         }
     }
     /**
      * Update loader text sprite
-     * @param {string} url - Current loading url
-     * @param {number} progress - Current loading progress
+     * @param {Resource} resource - Resource loader
      */
-    updateLoaderText(progress, url) {
-        this.loadingTextSprite.text = `Loading ${progress}%`;
-        this.loadingTextSprite.position.set(0.5 * window.innerWidth - this.loadingTextSprite.width / 2, 0.5 * window.innerHeight - this.loadingTextSprite.height / 2 - 24);
-        this.urlTextSprite.text = `[${url}]`;
-        this.urlTextSprite.position.set(0.5 * window.innerWidth - this.urlTextSprite.width / 2, 0.5 * window.innerHeight - this.urlTextSprite.height / 2 + 10);
+    updateLoaderText(resource) {
+        this.loadingTextSprite.text = `Loading ${resource.progress}%`;
+        this.loadingTextSprite.position.set(0.5 * (window.innerWidth - this.loadingTextSprite.width), 0.5 * (window.innerHeight - this.loadingTextSprite.height) - 24);
+        this.urlTextSprite.text = `[${resource.url}]`;
+        this.urlTextSprite.position.set(0.5 * (window.innerWidth - this.urlTextSprite.width), 0.5 * (window.innerHeight - this.urlTextSprite.height) + 10);
     }
 }

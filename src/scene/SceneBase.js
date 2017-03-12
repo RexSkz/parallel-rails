@@ -4,7 +4,6 @@
  */
 
 import G from '../Global';
-import Resource from '../Resource';
 import asyncTask from 'thenjs';
 
 /**
@@ -16,7 +15,7 @@ export default class SceneBase {
      * @constructor
      */
     constructor() {
-        G.switchingScene = true;
+        G.lock.sceneSwitch = true;
         // each scene has a stage
         this.stage = new PIXI.Container;
         this.stage.visible = false;
@@ -32,6 +31,8 @@ export default class SceneBase {
             .then(next => this.startLoop(next))
             .then(next => this.fadeOut(next))
             .then(next => this.onTerminate(next));
+        // need audio update when starting a new scene
+        G.audio.update();
     }
     /**
      * Trigger when scene is initialized
@@ -65,7 +66,7 @@ export default class SceneBase {
         shadow.alpha = 1;
         this.stage.addChild(shadow);
         const fadeInLoop = () => {
-            if (!G.switchingScene) {
+            if (!G.lock.sceneSwitch) {
                 if (timer == 0) {
                     this.stage.removeChild(shadow);
                     next();
@@ -95,7 +96,10 @@ export default class SceneBase {
                 next();
                 return;
             }
-            Resource.load();
+            G.resource.load();
+            G.input.update();
+            G.audio.update();
+            G.animation.update();
             this.update();
             G.renderer.render(G.stageContainer);
             G.windowResized = false;
@@ -127,7 +131,7 @@ export default class SceneBase {
             if (timer == this.fadeOutTime) {
                 this.stage.removeChild(shadow);
                 this.stage.visible = false;
-                G.switchingScene = false;
+                G.lock.sceneSwitch = false;
                 G.stageContainer.removeChild(this.stage);
                 next();
                 return;
