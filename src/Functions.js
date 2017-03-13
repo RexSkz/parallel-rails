@@ -54,7 +54,7 @@ export function updateMusicList() {
                 G.musics = data;
             });
         } else {
-            console.error(`Get music info failed, code ${res.status}`);
+            console.error(`Get music info failed, code ${res.status}`); // eslint-disable-line no-console
         }
     });
 }

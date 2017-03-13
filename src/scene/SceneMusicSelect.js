@@ -71,11 +71,11 @@ export default class SceneMusicSelect extends SceneBase {
             y: 0,
         }));
         this.stage.addChild(this.musicListSprite);
-        G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
         this.loadBackground(G.musics[0].bg);
         if (G.lastSelectMusic != -1) {
             this.selected = G.lastSelectMusic;
         }
+        G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
         next();
     }
     /**
@@ -104,14 +104,14 @@ export default class SceneMusicSelect extends SceneBase {
         } else if (G.input.isPressed(G.input.UP)) {
             // press UP to select music above
             this.selected = (this.selected - 1 + G.musics.length) % G.musics.length;
-            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
             this.loadBackground(G.musics[this.selected].bg);
+            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
             this.animateMusicSprites();
         } else if (G.input.isPressed(G.input.DOWN)) {
             // press DOWN to select music below
             this.selected = (this.selected + 1) % G.musics.length;
-            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
             this.loadBackground(G.musics[this.selected].bg);
+            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
             this.animateMusicSprites();
         }
     }

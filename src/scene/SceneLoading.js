@@ -28,7 +28,7 @@ export default class SceneLoading extends SceneBase {
      * @override
      */
     onInitialize(next) {
-        this.loadingTextSprite = new PIXI.Text(`Loading 0%`, {
+        this.loadingTextSprite = new PIXI.Text('Loading 0%', {
             fontFamily: 'Courier',
             fontSize: 32,
             fill: '#FFF',
@@ -38,7 +38,7 @@ export default class SceneLoading extends SceneBase {
             y: 0.5 * (window.innerHeight - this.loadingTextSprite.height) - 24,
         }));
         this.stage.addChild(this.loadingTextSprite);
-        this.urlTextSprite = new PIXI.Text(`[...]`, {
+        this.urlTextSprite = new PIXI.Text('[...]', {
             fontFamily: 'Courier',
             fontSize: 12,
             fill: '#FFF',

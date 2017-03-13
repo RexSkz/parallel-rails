@@ -3,13 +3,11 @@
  * @author Rex Zeng
  */
 
-import G from './Global';
-
 /**
  * Input class
  * @class
  */
-class Input {
+export default class Input {
     /**
      * @constructor
      */
@@ -135,7 +133,7 @@ class Input {
      */
     isPressed(keyCode) {
         if (!this.keyState[keyCode]) {
-            console.error('Key code error!');
+            console.error('Key code error!'); // eslint-disable-line no-console
         }
         return this.keyState[keyCode].isPressed;
     }
@@ -145,7 +143,7 @@ class Input {
      */
     isReleased(keyCode) {
         if (!this.keyState[keyCode]) {
-            console.error('Key code error!');
+            console.error('Key code error!'); // eslint-disable-line no-console
         }
         return this.keyState[keyCode].isReleased;
     }
@@ -155,10 +153,8 @@ class Input {
      */
     isRepeated(keyCode) {
         if (!this.keyState[keyCode]) {
-            console.error('Key code error!');
+            console.error('Key code error!'); // eslint-disable-line no-console
         }
         return this.keyState[keyCode].isRepeated;
     }
 }
-
-module.exports = Input;

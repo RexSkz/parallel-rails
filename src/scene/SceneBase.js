@@ -49,7 +49,7 @@ export default class SceneBase {
      */
     fadeIn(next) {
         if (!this.name) {
-            console.error('This scene has no name! It will affect the GC process.');
+            console.error('This scene has no name! It will affect the GC process.'); // eslint-disable-line no-console
         }
         if (!this.isFadeIn) {
             this.stage.visible = true;

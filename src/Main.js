@@ -24,7 +24,7 @@ class ParallelRails {
     constructor(opt) {
         // check if parameter is valid
         if (!(opt.el && opt.el.nodeName)) {
-            console.error('Parameter el must be an html element');
+            console.error('Parameter el must be an html element'); // eslint-disable-line no-console
             return false;
         }
         // setup the renderer
@@ -40,7 +40,7 @@ class ParallelRails {
             G.scene = new SceneLoading;
             G.lock.sceneSwitch = false;
         } catch (e) {
-            console.error(e);
+            console.error(e); // eslint-disable-line no-console
         }
     }
     /**

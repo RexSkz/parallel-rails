@@ -79,7 +79,7 @@ export default class Resource {
      * @param {string} msg - Error message
      */
     setLoaderErrorMsg(msg) {
-        console.error(msg);
+        console.error(msg); // eslint-disable-line no-console
     }
     /**
      * Get resource by name

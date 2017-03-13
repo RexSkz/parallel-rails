@@ -66,27 +66,26 @@ export default class Audio {
             if (sounds[this.bgmSrc] && sounds[this.bgmSrc].buffer) {
                 this.bgmObject = sounds[this.bgmSrc];
                 switch (this.bgmNeedStatus) {
-                    case 'update':
-                        debugger;
-                        this.bgmObject.loop = true;
-                        if (this.bgmFadeIn > 0) {
-                            this.bgmObject.fadeIn(this.bgmFadeIn);
-                            this.bgmFadeIn = 0;
-                        } else {
-                            this.bgmObject.playFrom(this.bgmStartTime);
-                        }
-                        this.bgmStatus = 'play';
-                        this.bgmNeedStatus = 'play';
-                        break;
-                    case 'pause':
-                        if (this.bgmFadeOut > 0) {
-                            this.fadeOutBGM(this.bgmFadeOut);
-                            this.bgmFadeOut = 0;
-                        } else {
-                            this.bgmObject.pause();
-                        }
-                        this.bgmStatus = 'pause';
-                        break;
+                case 'update':
+                    this.bgmObject.loop = true;
+                    if (this.bgmFadeIn > 0) {
+                        this.bgmObject.fadeIn(this.bgmFadeIn);
+                        this.bgmFadeIn = 0;
+                    } else {
+                        this.bgmObject.playFrom(this.bgmStartTime);
+                    }
+                    this.bgmStatus = 'play';
+                    this.bgmNeedStatus = 'play';
+                    break;
+                case 'pause':
+                    if (this.bgmFadeOut > 0) {
+                        this.fadeOutBGM(this.bgmFadeOut);
+                        this.bgmFadeOut = 0;
+                    } else {
+                        this.bgmObject.pause();
+                    }
+                    this.bgmStatus = 'pause';
+                    break;
                 }
             }
         }
