@@ -10,6 +10,8 @@ import {
 } from '../Functions';
 import SceneBase from './SceneBase';
 import SceneTitle from './SceneTitle';
+import SceneEditor from './SceneEditor';
+import SceneGaming from './SceneGaming';
 
 const {
     MUSIC_LIST_ITEM_HEIGHT,
@@ -41,18 +43,32 @@ export default class SceneMusicSelect extends SceneBase {
      * @override
      */
     onInitialize(next) {
-        // add texts
-        this.loadingTextSprite = new PIXI.Text('Loading...', {
-            fontFamily: 'Courier',
+        let modeText = '';
+        switch (G.mode) {
+        case 'play':
+            modeText = 'Choose a song to play!';
+            break;
+        case 'edit':
+            modeText = 'Use your imagination!';
+            break;
+        default:
+            modeText = '...';
+            break;
+        }
+        // loading text
+        this.loadingTextSprite = new PIXI.Text('Loading music list...', {
+            fontFamily: G.constant.MAIN_FONT,
             fontSize: 24,
             fill: '#FFF',
         });
+        this.loadingTextSprite.anchor.x = 0.5;
+        this.loadingTextSprite.anchor.y = 0.5;
         setPosition(this.loadingTextSprite, () => ({
-            x: 0.6 * window.innerWidth,
-            y: 0.5 * (window.innerHeight - this.loadingTextSprite.height),
+            x: 0.5 * window.innerWidth,
+            y: 0.5 * window.innerHeight,
         }));
         this.stage.addChild(this.loadingTextSprite);
-        // add background
+        // background
         this.backgroundSprite = new PIXI.Sprite;
         // set anchor to image center
         this.backgroundSprite.anchor.x = 0.5;
@@ -63,14 +79,27 @@ export default class SceneMusicSelect extends SceneBase {
         this.darkenShadow.beginFill(0x000000);
         this.darkenShadow.drawRect(0, 0, 10000, 10000);
         this.darkenShadow.endFill();
-        this.darkenShadow.alpha = 0.3;
+        this.darkenShadow.alpha = 0.5;
         this.stage.addChild(this.darkenShadow);
+        // mode text
+        this.modeTextSprite = new PIXI.Text(`Mode: ${G.mode}\n\n${modeText}`, {
+            fontFamily: G.constant.MAIN_FONT,
+            fontSize: 20,
+            fill: '#FFF',
+        });
+        setPosition(this.modeTextSprite, () => ({
+            x: 20,
+            y: 20,
+        }));
+        this.stage.addChild(this.modeTextSprite);
+        // music list sprite
         this.musicListSprite = new PIXI.Container;
         setPosition(this.musicListSprite, () => ({
-            x: 0.6 * window.innerWidth,
+            x: 0.55 * window.innerWidth,
             y: 0,
         }));
         this.stage.addChild(this.musicListSprite);
+        // load background and music
         this.loadBackground(G.musics[0].bg);
         if (G.lastSelectMusic != -1) {
             this.selected = G.lastSelectMusic;
@@ -113,6 +142,20 @@ export default class SceneMusicSelect extends SceneBase {
             this.loadBackground(G.musics[this.selected].bg);
             G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
             this.animateMusicSprites();
+        } else if (G.input.isPressed(G.input.ENTER)) {
+            // press ENTER to enter playfield or editor
+            switch (G.mode) {
+            case 'play':
+                G.scene = new SceneGaming(this.selected);
+                break;
+            case 'edit':
+                G.scene = new SceneEditor(this.selected);
+                break;
+            default:
+                break;
+            }
+            G.audio.pauseBGM();
+            G.lastSelectMusic = this.selected;
         }
     }
     /**
@@ -133,14 +176,14 @@ export default class SceneMusicSelect extends SceneBase {
             sprite.addChild(itemBackground);
             // draw inner text
             const musicName = new PIXI.Text(`${music.artist} - ${music.name}`, {
-                fontFamily: 'Courier',
+                fontFamily: G.constant.MAIN_FONT,
                 fontSize: MUSIC_LIST_ITEM_TITLE_SIZE,
                 fill: '#FFF',
             });
             musicName.position.set(MUSIC_LIST_ITEM_PADDING, MUSIC_LIST_ITEM_PADDING);
             sprite.addChild(musicName);
             const musicCreator = new PIXI.Text(`Created by ${music.creator}`, {
-                fontFamily: 'Courier',
+                fontFamily: G.constant.MAIN_FONT,
                 fontSize: MUSIC_LIST_ITEM_CREATOR_SIZE,
                 fill: '#FFF',
             });
@@ -169,8 +212,8 @@ export default class SceneMusicSelect extends SceneBase {
                     const size = G.resource.getSize(`songs/${url}`);
                     const rate = fitSize(size.width, size.height, window.innerWidth, window.innerHeight);
                     return {
-                        x: window.innerWidth / 2,
-                        y: window.innerHeight / 2,
+                        x: 0.5 * window.innerWidth,
+                        y: 0.5 * window.innerHeight,
                         width: size.width * rate,
                         height: size.height * rate,
                     };

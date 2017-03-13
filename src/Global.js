@@ -40,8 +40,12 @@ if (!window._G) {
         renderer: null,
         // music list
         musics: null,
+        // current pr data
+        currentPr: null,
         // last selected music
         lastSelectMusic: -1,
+        // game mode
+        mode: 'play',
     };
 }
 

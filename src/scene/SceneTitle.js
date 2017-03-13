@@ -34,7 +34,7 @@ export default class SceneTitle extends SceneBase {
     onInitialize(next) {
         // title message
         this.titleMessageSprite = new PIXI.Text(this.str, {
-            fontFamily: 'Courier',
+            fontFamily: G.constant.MAIN_FONT,
             fontSize: 48,
             fill: '#FFF',
         });
@@ -45,7 +45,7 @@ export default class SceneTitle extends SceneBase {
         this.stage.addChild(this.titleMessageSprite);
         // start message
         this.startMessageSprite = new PIXI.Text('Made by Rex Zeng using Pixi.js', {
-            fontFamily: 'Courier',
+            fontFamily: G.constant.MAIN_FONT,
             fontSize: 18,
             fill: '#FFF',
         });
@@ -54,6 +54,17 @@ export default class SceneTitle extends SceneBase {
             y: 0.5 * (window.innerHeight - this.startMessageSprite.height) + 15,
         }));
         this.stage.addChild(this.startMessageSprite);
+        // press button message
+        this.pressMessageSprite = new PIXI.Text('[P] play beatmap\n\n[E] edit beatmap', {
+            fontFamily: G.constant.MAIN_FONT,
+            fontSize: 20,
+            fill: '#FFF',
+        });
+        setPosition(this.pressMessageSprite, () => ({
+            x: 0.5 * (window.innerWidth - this.pressMessageSprite.width),
+            y: 0.5 * (window.innerHeight - this.pressMessageSprite.height) + 80,
+        }));
+        this.stage.addChild(this.pressMessageSprite);
         next();
     }
     /**
@@ -63,8 +74,12 @@ export default class SceneTitle extends SceneBase {
     update() {
         super.update();
         this.updateTitleTextContent();
-        // press ENTER to enter music select
-        if (G.input.isPressed(G.input.ENTER)) {
+        if (G.input.isPressed(G.input.P)) {
+            // press P to enter music select
+            G.mode = 'play';
+            G.scene = new SceneMusicSelect;
+        } else if (G.input.isPressed(G.input.E)) {
+            G.mode = 'edit';
             G.scene = new SceneMusicSelect;
         }
     }

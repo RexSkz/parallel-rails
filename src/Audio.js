@@ -32,7 +32,7 @@ export default class Audio {
      */
     playBGM(src, previewTime = 0, fadeIn = 0, fadeOut = 0) {
         // bgm only played once
-        if (src == this.bgmSrc) {
+        if (src == this.bgmSrc && this.bgmObject && this.bgmObject.playing) {
             return;
         }
         if (this.bgmObject) {
@@ -51,42 +51,25 @@ export default class Audio {
     pauseBGM() {
         this.bgmNeedStatus = 'pause';
     }
-    fadeOutBGM(sec) {
-        this.bgmObject.fadeOut(sec);
-        setTimeout(() => {
-            this.bgmObject.pause();
-            this.bgmObject.volume = 1;
-        }, sec * 1000);
-    }
     /**
      * Update all audio status
      */
     update() {
-        if (this.bgmStatus != this.bgmNeedStatus) {
-            if (sounds[this.bgmSrc] && sounds[this.bgmSrc].buffer) {
-                this.bgmObject = sounds[this.bgmSrc];
-                switch (this.bgmNeedStatus) {
-                case 'update':
-                    this.bgmObject.loop = true;
-                    if (this.bgmFadeIn > 0) {
-                        this.bgmObject.fadeIn(this.bgmFadeIn);
-                        this.bgmFadeIn = 0;
-                    } else {
-                        this.bgmObject.playFrom(this.bgmStartTime);
-                    }
-                    this.bgmStatus = 'play';
-                    this.bgmNeedStatus = 'play';
-                    break;
-                case 'pause':
-                    if (this.bgmFadeOut > 0) {
-                        this.fadeOutBGM(this.bgmFadeOut);
-                        this.bgmFadeOut = 0;
-                    } else {
-                        this.bgmObject.pause();
-                    }
-                    this.bgmStatus = 'pause';
-                    break;
-                }
+        if (this.bgmStatus != this.bgmNeedStatus && sounds[this.bgmSrc] && sounds[this.bgmSrc].buffer) {
+            this.bgmObject = sounds[this.bgmSrc];
+            switch (this.bgmNeedStatus) {
+            case 'update':
+                this.bgmObject.loop = true;
+                this.bgmObject.playFrom(this.bgmStartTime);
+                this.bgmStatus = 'play';
+                this.bgmNeedStatus = 'play';
+                break;
+            case 'pause':
+                this.bgmObject.pause();
+                this.bgmStatus = 'pause';
+                break;
+            default:
+                break;
             }
         }
     }

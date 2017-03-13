@@ -20,7 +20,7 @@ export function setPosition(sprite, func, forceUpdate = false) {
     if (!sprite.queueId) {
         sprite.queueId = new Date().valueOf() + '-' + Math.random();
     }
-    let painter = () => {
+    const painter = () => {
         const result = func();
         for (const key in result) {
             sprite[key] = result[key];
@@ -55,6 +55,22 @@ export function updateMusicList() {
             });
         } else {
             console.error(`Get music info failed, code ${res.status}`); // eslint-disable-line no-console
+        }
+    });
+}
+
+/**
+ * Get music pr data
+ * @param {string} url - Url of the `.pr` file
+ */
+export function getPr(url) {
+    fetch(url).then(res => {
+        if (res.ok) {
+            res.json().then(data => {
+                G.currentPr = data;
+            });
+        } else {
+            console.error(`Get pr failed, code ${res.status}`); // eslint-disable-line no-console
         }
     });
 }

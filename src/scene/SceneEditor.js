@@ -1,5 +1,5 @@
 /**
- * Gaming scene
+ * Editor scene
  * @author Rex Zeng
  */
 
@@ -12,10 +12,10 @@ import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 
 /**
- * Define gaming scene
+ * Define editor scene
  * @class
  */
-export default class SceneGaming extends SceneBase {
+export default class SceneEditor extends SceneBase {
     /**
      * @constructor
      */

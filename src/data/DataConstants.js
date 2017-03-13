@@ -6,8 +6,10 @@
 export default class DataConstants {
     constructor() {
         return {
+            // main font
+            MAIN_FONT: 'Consolas',
             // music list
-            MUSIC_LIST_ITEM_HEIGHT: 80,
+            MUSIC_LIST_ITEM_HEIGHT: 75,
             MUSIC_LIST_ITEM_PADDING: 15,
             MUSIC_LIST_ITEM_TITLE_SIZE: 20,
             MUSIC_LIST_ITEM_TITLE_MARGIN_BOTTOM: 10,

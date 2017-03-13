@@ -29,7 +29,7 @@ export default class SceneLoading extends SceneBase {
      */
     onInitialize(next) {
         this.loadingTextSprite = new PIXI.Text('Loading 0%', {
-            fontFamily: 'Courier',
+            fontFamily: G.constant.MAIN_FONT,
             fontSize: 32,
             fill: '#FFF',
         });
@@ -39,7 +39,7 @@ export default class SceneLoading extends SceneBase {
         }));
         this.stage.addChild(this.loadingTextSprite);
         this.urlTextSprite = new PIXI.Text('[...]', {
-            fontFamily: 'Courier',
+            fontFamily: G.constant.MAIN_FONT,
             fontSize: 12,
             fill: '#FFF',
         });
