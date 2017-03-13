@@ -22,10 +22,9 @@ export function setPosition(sprite, func, forceUpdate = false) {
     }
     let painter = () => {
         const result = func();
-        if (result.x) sprite.x = result.x;
-        if (result.y) sprite.y = result.y;
-        if (result.width) sprite.width = result.width;
-        if (result.height) sprite.height = result.height;
+        for (const key in result) {
+            sprite[key] = result[key];
+        }
     };
     painter.sprite = sprite;
     painter.sceneName = G.scene.name;
@@ -42,8 +41,7 @@ export function setPosition(sprite, func, forceUpdate = false) {
  * @return {object} Include width and height
  */
 export function fitSize(width, height, outerWidth, outerHeight) {
-    const result = Math.max(outerWidth / width, outerHeight / height);
-    return result;
+    return Math.max(outerWidth / width, outerHeight / height);
 }
 
 /**

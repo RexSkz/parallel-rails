@@ -57,7 +57,6 @@ export default class SceneLoading extends SceneBase {
     update() {
         super.update();
         this.updateLoaderText(G.resource);
-        console.log(G.resource.url);
         if (!G.lock.loader) {
             G.scene = new SceneTitle;
         }

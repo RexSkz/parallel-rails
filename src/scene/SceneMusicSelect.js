@@ -57,10 +57,6 @@ export default class SceneMusicSelect extends SceneBase {
         // set anchor to image center
         this.backgroundSprite.anchor.x = 0.5;
         this.backgroundSprite.anchor.y = 0.5;
-        setPosition(this.backgroundSprite, () => ({
-            x: window.innerWidth / 2,
-            y: window.innerHeight / 2,
-        }));
         this.stage.addChild(this.backgroundSprite);
         // add darken shadow
         this.darkenShadow = new PIXI.Graphics;
@@ -75,11 +71,11 @@ export default class SceneMusicSelect extends SceneBase {
             y: 0,
         }));
         this.stage.addChild(this.musicListSprite);
+        G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
         this.loadBackground(G.musics[0].bg);
         if (G.lastSelectMusic != -1) {
             this.selected = G.lastSelectMusic;
         }
-        G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
         next();
     }
     /**
@@ -108,15 +104,15 @@ export default class SceneMusicSelect extends SceneBase {
         } else if (G.input.isPressed(G.input.UP)) {
             // press UP to select music above
             this.selected = (this.selected - 1 + G.musics.length) % G.musics.length;
+            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
             this.loadBackground(G.musics[this.selected].bg);
             this.animateMusicSprites();
-            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
         } else if (G.input.isPressed(G.input.DOWN)) {
             // press DOWN to select music below
             this.selected = (this.selected + 1) % G.musics.length;
+            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
             this.loadBackground(G.musics[this.selected].bg);
             this.animateMusicSprites();
-            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
         }
     }
     /**
@@ -169,10 +165,16 @@ export default class SceneMusicSelect extends SceneBase {
             const texture = G.resource.get(`songs/${url}`);
             if (texture) {
                 this.backgroundSprite.texture = texture;
-                setPosition(this.backgroundSprite, () => ({
-                    x: window.innerWidth / 2,
-                    y: window.innerHeight / 2,
-                }))
+                setPosition(this.backgroundSprite, () => {
+                    const size = G.resource.getSize(`songs/${url}`);
+                    const rate = fitSize(size.width, size.height, window.innerWidth, window.innerHeight);
+                    return {
+                        x: window.innerWidth / 2,
+                        y: window.innerHeight / 2,
+                        width: size.width * rate,
+                        height: size.height * rate,
+                    };
+                }, true);
                 this.backgroundLoaded = true;
             }
         }

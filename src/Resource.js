@@ -89,4 +89,15 @@ export default class Resource {
         const res = PIXI.loader.resources[resourceName];
         return res ? res.texture : null;
     }
+    /**
+     * Get resource size by name
+     * @param {string} resourceName - Resource name
+     */
+    getSize(resourceName) {
+        const res = PIXI.loader.resources[resourceName];
+        return res ? {
+            width: res.data.width,
+            height: res.data.height,
+        } : null;
+    }
 }
