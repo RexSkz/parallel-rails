@@ -14,57 +14,80 @@ export default class Audio {
      * @constructor
      */
     constructor() {
-        this.bgm = '';
+        this.bgmSrc = '';
         this.bgmObject = null;
-        this.bgmPlayed = false;
-        this.bgmJump = 0;
+        this.bgmStatus = '';
+        this.bgmNeedStatus = '';
+        this.bgmStartTime = 0;
+        this.bgmFadeIn = 0;
+        this.bgmFadeOut = 0;
         this.se = {};
     }
     /**
      * Play BGM
      * @param {string} src - BGM source
+     * @param {number} previewTime - Start position
+     * @param {number} fadeIn - Fade in time
+     * @param {number} fadeOut - Fade out time
      */
-    playBGM(src, startPos = 0) {
+    playBGM(src, previewTime = 0, fadeIn = 0, fadeOut = 0) {
         // bgm only played once
-        if (src == this.bgm) {
+        if (src == this.bgmSrc) {
             return;
         }
         if (this.bgmObject) {
-            this.bgmObject.stop();
-            this.bgmObject.remove();
+            this.bgmObject.pause();
         }
         G.resource.addAudio(src);
-        this.bgm = src;
-        this.bgmPlayed = false;
-        this.jumpTo(startPos);
+        this.bgmSrc = src;
+        this.bgmNeedStatus = 'update';
+        this.bgmStartTime = previewTime;
+        this.bgmFadeIn = fadeIn;
+        this.bgmFadeOut = fadeOut;
     }
     /**
-     * Jump to given audio position
-     * @param {number} pos - Audio position
+     * Pause bgm
      */
-    jumpTo(pos) {
-        this.bgmJump = pos;
+    pauseBGM() {
+        this.bgmNeedStatus = 'pause';
+    }
+    fadeOutBGM(sec) {
+        this.bgmObject.fadeOut(sec);
+        setTimeout(() => {
+            this.bgmObject.pause();
+            this.bgmObject.volume = 1;
+        }, sec * 1000);
     }
     /**
      * Update all audio status
      */
     update() {
-        if (!this.bgmPlayed) {
-            this.bgmObject = G.resource.getAudio(this.bgm);
-            if (this.bgmObject) {
-                this.bgmObject.loop = true;
-                this.bgmObject.play();
-                this.bgmPlayed = true;
-            }
-        }
-        if (this.bgmJump != 0) {
-            if (this.bgmObject) {
-                if (this.bgmObject.audio.context) {
-                    this.bgmObject.audio.context.currentTime = this.bgmJump;
-                } else {
-                    this.bgmObject.audio.currentTime = this.bgmJump;
+        if (this.bgmStatus != this.bgmNeedStatus) {
+            if (sounds[this.bgmSrc] && sounds[this.bgmSrc].buffer) {
+                this.bgmObject = sounds[this.bgmSrc];
+                switch (this.bgmNeedStatus) {
+                    case 'update':
+                        debugger;
+                        this.bgmObject.loop = true;
+                        if (this.bgmFadeIn > 0) {
+                            this.bgmObject.fadeIn(this.bgmFadeIn);
+                            this.bgmFadeIn = 0;
+                        } else {
+                            this.bgmObject.playFrom(this.bgmStartTime);
+                        }
+                        this.bgmStatus = 'play';
+                        this.bgmNeedStatus = 'play';
+                        break;
+                    case 'pause':
+                        if (this.bgmFadeOut > 0) {
+                            this.fadeOutBGM(this.bgmFadeOut);
+                            this.bgmFadeOut = 0;
+                        } else {
+                            this.bgmObject.pause();
+                        }
+                        this.bgmStatus = 'pause';
+                        break;
                 }
-                this.bgmJump = 0;
             }
         }
     }

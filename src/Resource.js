@@ -15,9 +15,9 @@ export default class Resource {
      */
     constructor() {
         this.added = {};
-        this.audioAdded = {};
+        this.soundAdded = {};
         this.queue = [];
-        this.audioQueue = [];
+        this.soundQueue = [];
         this.url = '';
         this.progress = 0;
         PIXI.loader
@@ -39,34 +39,30 @@ export default class Resource {
      * @param {string or array} url - Resource url
      */
     addAudio(url) {
-        if (!this.audioAdded[url]) {
-            this.audioQueue.push(url);
-            this.audioAdded[url] = true;
+        if (!this.soundAdded[url]) {
+            this.soundQueue.push(url);
+            this.soundAdded[url] = true;
         }
     }
     /**
      * Load resources when queue not empty and Pixi.loader not locked
      */
     load() {
-        if (!G.lock.loader && this.queue.length > 0) {
-            this.loadAudio();
-            this.loadNormal();
-            G.lock.loader = true;
-            PIXI.loader.load(this.unlockLoader);
+        if (!G.lock.soundLoader && this.soundQueue.length > 0) {
+            while (this.soundQueue.length > 0) {
+                const q = this.soundQueue;
+                this.soundQueue = [];
+                G.lock.soundLoader = true;
+                sounds.load(q);
+                sounds.whenLoaded = () => G.lock.soundLoader = false;
+            }
         }
-    }
-    loadNormal() {
-        while (this.queue.length > 0) {
-            PIXI.loader.add(this.queue.shift());
-        }
-    }
-    loadAudio() {
-        while (this.audioQueue.length > 0) {
-            const t = this.audioQueue.shift();
-            PIXI.loader.add([{
-                name: t,
-                url: t,
-            }]);
+        if (!G.lock.pixiLoader && this.queue.length > 0) {
+            while (this.queue.length > 0) {
+                PIXI.loader.add(this.queue.shift());
+            }
+            G.lock.pixiLoader = true;
+            PIXI.loader.load(() => G.lock.pixiLoader = false);
         }
     }
     /**
@@ -77,12 +73,6 @@ export default class Resource {
     updateLoaderData(progress, url) {
         this.progress = progress.progress;
         this.url = url.url || '';
-    }
-    /**
-     * Set loader finished
-     */
-    unlockLoader() {
-        G.lock.loader = false;
     }
     /**
      * Set error message when load failed
@@ -98,13 +88,5 @@ export default class Resource {
     get(resourceName) {
         const res = PIXI.loader.resources[resourceName];
         return res ? res.texture : null;
-    }
-    /**
-     * Get audio resource by name
-     * @param {string} resourceName - Resource name
-     */
-    getAudio(resourceName) {
-        const audio = PIXI.audioManager.getAudio(resourceName);
-        return audio.data ? audio : null;
     }
 }

@@ -6,9 +6,20 @@
 import G from '../Global';
 import {
     setPosition,
+    fitSize,
 } from '../Functions';
 import SceneBase from './SceneBase';
 import SceneTitle from './SceneTitle';
+
+const {
+    MUSIC_LIST_ITEM_HEIGHT,
+    MUSIC_LIST_ITEM_PADDING,
+    MUSIC_LIST_ITEM_TITLE_SIZE,
+    MUSIC_LIST_ITEM_TITLE_MARGIN_BOTTOM,
+    MUSIC_LIST_ITEM_CREATOR_SIZE,
+    MUSIC_LIST_ITEM_DELTA,
+    MUSIC_LIST_SWITCH_TIME,
+} = G.constant;
 
 /**
  * Define music select scene
@@ -32,7 +43,7 @@ export default class SceneMusicSelect extends SceneBase {
     onInitialize(next) {
         // add texts
         this.loadingTextSprite = new PIXI.Text('Loading...', {
-            fontFamily: 'Courier New',
+            fontFamily: 'Courier',
             fontSize: 24,
             fill: '#FFF',
         });
@@ -46,6 +57,10 @@ export default class SceneMusicSelect extends SceneBase {
         // set anchor to image center
         this.backgroundSprite.anchor.x = 0.5;
         this.backgroundSprite.anchor.y = 0.5;
+        setPosition(this.backgroundSprite, () => ({
+            x: window.innerWidth / 2,
+            y: window.innerHeight / 2,
+        }));
         this.stage.addChild(this.backgroundSprite);
         // add darken shadow
         this.darkenShadow = new PIXI.Graphics;
@@ -61,6 +76,9 @@ export default class SceneMusicSelect extends SceneBase {
         }));
         this.stage.addChild(this.musicListSprite);
         this.loadBackground(G.musics[0].bg);
+        if (G.lastSelectMusic != -1) {
+            this.selected = G.lastSelectMusic;
+        }
         G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
         next();
     }
@@ -86,6 +104,7 @@ export default class SceneMusicSelect extends SceneBase {
         if (G.input.isPressed(G.input.ESC)) {
             // press ESC to back to title
             G.scene = new SceneTitle;
+            G.lastSelectMusic = this.selected;
         } else if (G.input.isPressed(G.input.UP)) {
             // press UP to select music above
             this.selected = (this.selected - 1 + G.musics.length) % G.musics.length;
@@ -105,14 +124,32 @@ export default class SceneMusicSelect extends SceneBase {
      */
     buildMusicSprites() {
         for (let i = 0; i < G.musics.length; i++) {
+            const music = G.musics[i];
             const sprite = new PIXI.Container;
             this.animateSprite(sprite, i);
+            // draw background
+            const itemBackground = new PIXI.Graphics();
+            itemBackground.beginFill(0x000000);
+            itemBackground.lineStyle(1, 0xFFFFFF, 1);
+            itemBackground.drawRect(0, 0, 1024, MUSIC_LIST_ITEM_HEIGHT);
+            itemBackground.endFill();
+            itemBackground.alpha = 0.5;
+            sprite.addChild(itemBackground);
             // draw inner text
-            const text = new PIXI.Graphics();
-            text.beginFill(0x3498DB);
-            text.drawRect(0, 0, 1024, G.constant.MUSIC_LIST_ITEM_HEIGHT);
-            text.endFill();
-            sprite.addChild(text);
+            const musicName = new PIXI.Text(`${music.artist} - ${music.name}`, {
+                fontFamily: 'Courier',
+                fontSize: MUSIC_LIST_ITEM_TITLE_SIZE,
+                fill: '#FFF',
+            });
+            musicName.position.set(MUSIC_LIST_ITEM_PADDING, MUSIC_LIST_ITEM_PADDING);
+            sprite.addChild(musicName);
+            const musicCreator = new PIXI.Text(`Created by ${music.creator}`, {
+                fontFamily: 'Courier',
+                fontSize: MUSIC_LIST_ITEM_CREATOR_SIZE,
+                fill: '#FFF',
+            });
+            musicCreator.position.set(MUSIC_LIST_ITEM_PADDING, MUSIC_LIST_ITEM_PADDING + MUSIC_LIST_ITEM_TITLE_SIZE + MUSIC_LIST_ITEM_TITLE_MARGIN_BOTTOM);
+            sprite.addChild(musicCreator);
             // setup sprite
             this.musicListSprite.addChild(sprite);
         }
@@ -132,18 +169,10 @@ export default class SceneMusicSelect extends SceneBase {
             const texture = G.resource.get(`songs/${url}`);
             if (texture) {
                 this.backgroundSprite.texture = texture;
-                setPosition(this.backgroundSprite, () => {
-                    const width = this.backgroundSprite.width;
-                    const height = this.backgroundSprite.height;
-                    const newWidth = width;
-                    const newHeight = height;
-                    return {
-                        x: window.innerWidth / 2,
-                        y: window.innerHeight / 2,
-                        width: newWidth,
-                        height: newHeight,
-                    };
-                });
+                setPosition(this.backgroundSprite, () => ({
+                    x: window.innerWidth / 2,
+                    y: window.innerHeight / 2,
+                }))
                 this.backgroundLoaded = true;
             }
         }
@@ -166,11 +195,11 @@ export default class SceneMusicSelect extends SceneBase {
         // order relative to current selected
         const pos = i - this.selected;
         // item per screen
-        const ips = window.innerHeight / G.constant.MUSIC_LIST_ITEM_HEIGHT;
+        const ips = window.innerHeight / MUSIC_LIST_ITEM_HEIGHT;
         // vertical center position
-        const center = 0.5 * (window.innerHeight - G.constant.MUSIC_LIST_ITEM_HEIGHT);
-        const newX = Math.abs(pos) / ips * G.constant.MUSIC_LIST_ITEM_DELTA * window.innerWidth;
-        const newY = center + pos * G.constant.MUSIC_LIST_ITEM_HEIGHT * 0.9;
+        const center = 0.5 * (window.innerHeight - MUSIC_LIST_ITEM_HEIGHT);
+        const newX = Math.abs(pos) / ips * MUSIC_LIST_ITEM_DELTA * window.innerWidth;
+        const newY = center + pos * MUSIC_LIST_ITEM_HEIGHT * 0.9;
         const newAlpha = 0.8 - Math.abs(pos) * 0.2;
         // set animation
         G.animation.set(sprite, {
@@ -181,6 +210,6 @@ export default class SceneMusicSelect extends SceneBase {
             x: newX,
             y: newY,
             alpha: newAlpha,
-        }, G.constant.MUSIC_LIST_SWITCH_TIME, G.animation.EASE_OUT_EXPO);
+        }, MUSIC_LIST_SWITCH_TIME, G.animation.EASE_OUT_EXPO);
     }
 }

@@ -30,7 +30,8 @@ if (!window._G) {
         windowResizePaintList: {},
         // locks
         lock: {
-            loader: false,
+            pixiLoader: false,
+            soundLoader: false,
             sceneSwitch: false,
         },
         // current scene
@@ -39,24 +40,9 @@ if (!window._G) {
         renderer: null,
         // music list
         musics: null,
+        // last selected music
+        lastSelectMusic: -1,
     };
 }
-
-// when window is resized, recalculate the position of elements in paint list
-window.addEventListener('resize', () => {
-    for (const id in window._G.windowResizePaintList) {
-        const item = window._G.windowResizePaintList[id];
-        // don't recalculate the invisible item
-        if (!item.sprite.visible) {
-            continue;
-        }
-        // remove items that is not belongs to current scene
-        if (item.sceneName != window._G.scene.name) {
-            delete window._G.windowResizePaintList[id];
-            continue;
-        }
-        item();
-    }
-});
 
 export default window._G;

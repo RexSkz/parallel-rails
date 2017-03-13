@@ -13,14 +13,8 @@
 </head>
 <body>
     <div id="game-area"></div>
-    <script>
-        // for music game, we must use Audio, not AudioContext
-        // because AudioContext.currentTime is read-only
-        window.AudioContext = null;
-        window.webkitAudioContext = null;
-    </script>
     <script src="pixi.min.js"></script>
-    <script src="pixi-audio.js"></script>
+    <script src="sound.min.js"></script>
     <script src="../dist/parallel-rails.min.js"></script>
     <script>
         var rails = new ParallelRails({

@@ -34,6 +34,19 @@ export function setPosition(sprite, func, forceUpdate = false) {
 }
 
 /**
+ * Calculate the size of current sprite to fit the outer container
+ * @param {number} width - Width of current sprite
+ * @param {number} height - Height of current sprite
+ * @param {number} outerWidth - Width of outer container
+ * @param {number} outerHeight - Height of outer container
+ * @return {object} Include width and height
+ */
+export function fitSize(width, height, outerWidth, outerHeight) {
+    const result = Math.max(outerWidth / width, outerHeight / height);
+    return result;
+}
+
+/**
  * Update music list
  */
 export function updateMusicList() {
@@ -47,3 +60,20 @@ export function updateMusicList() {
         }
     });
 }
+
+// when window is resized, recalculate the position of elements in paint list
+window.addEventListener('resize', () => {
+    for (const id in window._G.windowResizePaintList) {
+        const item = window._G.windowResizePaintList[id];
+        // don't recalculate the invisible item
+        if (!item.sprite.visible) {
+            continue;
+        }
+        // remove items that is not belongs to current scene
+        if (item.sceneName != window._G.scene.name) {
+            delete window._G.windowResizePaintList[id];
+            continue;
+        }
+        item();
+    }
+});

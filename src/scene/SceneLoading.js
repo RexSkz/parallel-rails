@@ -29,7 +29,7 @@ export default class SceneLoading extends SceneBase {
      */
     onInitialize(next) {
         this.loadingTextSprite = new PIXI.Text(`Loading 0%`, {
-            fontFamily: 'Courier New',
+            fontFamily: 'Courier',
             fontSize: 32,
             fill: '#FFF',
         });
@@ -39,7 +39,7 @@ export default class SceneLoading extends SceneBase {
         }));
         this.stage.addChild(this.loadingTextSprite);
         this.urlTextSprite = new PIXI.Text(`[...]`, {
-            fontFamily: 'Courier New',
+            fontFamily: 'Courier',
             fontSize: 12,
             fill: '#FFF',
         });
@@ -57,6 +57,7 @@ export default class SceneLoading extends SceneBase {
     update() {
         super.update();
         this.updateLoaderText(G.resource);
+        console.log(G.resource.url);
         if (!G.lock.loader) {
             G.scene = new SceneTitle;
         }

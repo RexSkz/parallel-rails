@@ -34,7 +34,7 @@ export default class SceneTitle extends SceneBase {
     onInitialize(next) {
         // title message
         this.titleMessageSprite = new PIXI.Text(this.str, {
-            fontFamily: 'Courier New',
+            fontFamily: 'Courier',
             fontSize: 48,
             fill: '#FFF',
         });
@@ -45,7 +45,7 @@ export default class SceneTitle extends SceneBase {
         this.stage.addChild(this.titleMessageSprite);
         // start message
         this.startMessageSprite = new PIXI.Text('Made by Rex Zeng using Pixi.js', {
-            fontFamily: 'Courier New',
+            fontFamily: 'Courier',
             fontSize: 18,
             fill: '#FFF',
         });
