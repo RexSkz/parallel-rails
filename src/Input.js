@@ -71,6 +71,10 @@ export default class Input {
         this.ENTER = 13;
         this.BACKSPACE = 8;
         this.DELETE = 46;
+        this.HOME = 36;
+        this.END = 35;
+        this.PAGEUP = 33;
+        this.PAGEDN = 34;
     }
     /**
      * All keys are not pressed, released and repeated at first

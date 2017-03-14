@@ -23,7 +23,7 @@ export default class SceneGaming extends SceneBase {
         this.name = 'gaming';
         this.musicId = musicId;
         this.music = G.musics[musicId];
-        this.audioUrl = `songs/${this.music.audio}`
+        this.audioUrl = `songs/${this.music.audio}`;
         this.bgUrl = `songs/${this.music.bg}`;
         this.prUrl = `songs/${this.music.pr}`;
     }

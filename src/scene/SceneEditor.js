@@ -7,6 +7,7 @@ import G from '../Global';
 import {
     setPosition,
 } from '../Functions';
+import WindowTiming from '../window/WindowTiming';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 import moment from 'moment';
@@ -24,7 +25,7 @@ export default class SceneEditor extends SceneBase {
         this.name = 'editor';
         this.musicId = musicId;
         this.music = G.musics[musicId];
-        this.audioUrl = `songs/${this.music.audio}`
+        this.audioUrl = `songs/${this.music.audio}`;
         this.bgUrl = `songs/${this.music.bg}`;
         this.prUrl = `songs/${this.music.pr}`;
         this.data = {
@@ -33,6 +34,9 @@ export default class SceneEditor extends SceneBase {
             creator: this.music.creator,
             timingPoints: [],
             hitObjects: [],
+            currentTime: 0,
+            duration: 1,
+            playFromTime: -1,
         };
         this.storageKey = `${this.music.creator}-${this.music.artist}-${this.music.name}-${this.music.version}`;
         this.uncached = false;
@@ -54,7 +58,7 @@ export default class SceneEditor extends SceneBase {
         this.darkenShadow.beginFill(0x000000);
         this.darkenShadow.drawRect(0, 0, 10000, 10000);
         this.darkenShadow.endFill();
-        this.darkenShadow.alpha = 0.7;
+        this.darkenShadow.alpha = 0.5;
         this.stage.addChild(this.darkenShadow);
         // load background
         this.loadBackground(this.bgUrl);
@@ -98,6 +102,31 @@ export default class SceneEditor extends SceneBase {
             if (this.loadingTextSprite) {
                 this.loadingTextSprite.visible = false;
             }
+            if (this.timingWindow) {
+                if (sounds[this.audioUrl].soundNode && sounds[this.audioUrl].playing) {
+                    const sound = sounds[this.audioUrl];
+                    this.data.currentTime = sound.startOffset + sound.soundNode.context.currentTime - sound.startTime;
+                }
+                this.timingWindow.update(this.data.currentTime);
+            } else {
+                if (sounds[this.audioUrl].buffer) {
+                    this.data.duration = sounds[this.audioUrl].buffer.duration;
+                    this.timingWindow = new WindowTiming(this.data.currentTime, this.data.duration);
+                    sounds[this.audioUrl].startOffset = 0;
+                    this.stage.addChild(this.timingWindow.stage);
+                }
+            }
+            if (this.data.playFromTime >= 0) {
+                const wasPlaying = sounds[this.audioUrl].playing;
+                sounds[this.audioUrl].pause();
+                if (wasPlaying && this.currentTime < this.duration) {
+                    sounds[this.audioUrl].playFrom(this.data.playFromTime);
+                    this.data.playFromTime = -1;
+                }
+            }
+            if (this.data.currentTime >= this.data.duration) {
+                sounds[this.audioUrl].pause();
+            }
             this.updateEditor();
         }
         // deal with input
@@ -119,13 +148,49 @@ export default class SceneEditor extends SceneBase {
                 console.log(JSON.stringify(this.data)); // eslint-disable-line no-console
                 alert('Failed to open window! Please allow popup window. Data has logged to console.');
             }
+        } else if (G.input.isPressed(G.input.SPACE)) {
+            // SPACE to toggle play and pause
+            if (sounds[this.audioUrl].soundNode) {
+                if (sounds[this.audioUrl].playing) {
+                    sounds[this.audioUrl].pause();
+                } else if (this.data.currentTime < this.data.duration) {
+                    if (this.data.playFromTime >= 0) {
+                        sounds[this.audioUrl].playFrom(this.data.playFromTime);
+                        this.data.playFromTime = -1;
+                    } else {
+                        sounds[this.audioUrl].play();
+                    }
+                }
+            }
+        } else if (G.input.isRepeated(G.input.LEFT)) {
+            this.setPlayFrom(this.data.currentTime - (G.input.isRepeated(G.input.SHIFT) ? 1 : 0.1));
+        } else if (G.input.isRepeated(G.input.RIGHT)) {
+            this.setPlayFrom(this.data.currentTime + (G.input.isRepeated(G.input.SHIFT) ? 1 : 0.1));
+        } else if (G.input.isPressed(G.input.HOME)) {
+            this.setPlayFrom(0);
+        } else if (G.input.isPressed(G.input.END)) {
+            this.setPlayFrom(this.data.duration - 0.001);
         } else if (G.input.isPressed(G.input.ESC)) {
-            // press ESC to back to title
+            // ESC to back to title
             if (this.uncached && !confirm('Your work has not been cached, quit by force?')) {
                 return;
             }
             G.scene = new SceneMusicSelect;
         }
+    }
+    /**
+     * Set play-from time
+     * @param {number} time - Seconds
+     */
+    setPlayFrom(time) {
+        // avoid side effects
+        if (time < 0) {
+            time = 0;
+        } else if (time > this.data.duration) {
+            time = this.data.duration;
+        }
+        this.data.playFromTime = time;
+        this.data.currentTime = time;
     }
     /**
      * Update all editor elements

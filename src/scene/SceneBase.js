@@ -45,7 +45,7 @@ export default class SceneBase {
      * @override
      */
     onInitialize(next) {
-        next();
+        next && next();
     }
     /**
      * Fade in from black screen
@@ -72,6 +72,7 @@ export default class SceneBase {
         this.stage.addChild(shadow);
         const fadeInLoop = () => {
             if (!G.lock.sceneSwitch) {
+                G.input.update();
                 if (timer == 0) {
                     this.stage.removeChild(shadow);
                     next();
@@ -133,6 +134,7 @@ export default class SceneBase {
         shadow.alpha = 0;
         this.stage.addChild(shadow);
         const fadeOutLoop = () => {
+            G.input.update();
             if (timer == this.fadeOutTime) {
                 this.stage.removeChild(shadow);
                 this.stage.visible = false;
@@ -159,7 +161,7 @@ export default class SceneBase {
      */
     onTerminate(next) {
         this.repaintListGC();
-        next();
+        next && next();
     }
     /**
      * Do calculations only, DO NOT do any paint in this function

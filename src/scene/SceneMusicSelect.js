@@ -13,6 +13,7 @@ import SceneEditor from './SceneEditor';
 import SceneGaming from './SceneGaming';
 
 const {
+    MAIN_FONT,
     MUSIC_LIST_ITEM_HEIGHT,
     MUSIC_LIST_ITEM_PADDING,
     MUSIC_LIST_ITEM_TITLE_SIZE,
@@ -56,7 +57,7 @@ export default class SceneMusicSelect extends SceneBase {
         // loading text
         if (!G.musics) {
             this.loadingTextSprite = new PIXI.Text('Loading music list...', {
-                fontFamily: G.constant.MAIN_FONT,
+                fontFamily: MAIN_FONT,
                 fontSize: 24,
                 fill: '#FFF',
             });
@@ -83,7 +84,7 @@ export default class SceneMusicSelect extends SceneBase {
         this.stage.addChild(this.darkenShadow);
         // mode text
         this.modeTextSprite = new PIXI.Text(`Mode: ${G.mode}\n\n${modeText}`, {
-            fontFamily: G.constant.MAIN_FONT,
+            fontFamily: MAIN_FONT,
             fontSize: 20,
             fill: '#FFF',
         });
@@ -110,6 +111,7 @@ export default class SceneMusicSelect extends SceneBase {
         // load background and music
         this.loadBackground(`songs/${G.musics[this.selected].bg}`);
         G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
+        G.resource.load();
         next();
     }
     /**
@@ -177,14 +179,14 @@ export default class SceneMusicSelect extends SceneBase {
             sprite.addChild(itemBackground);
             // draw inner text
             const musicName = new PIXI.Text(`${music.artist} - ${music.name}`, {
-                fontFamily: G.constant.MAIN_FONT,
+                fontFamily: MAIN_FONT,
                 fontSize: MUSIC_LIST_ITEM_TITLE_SIZE,
                 fill: '#FFF',
             });
             musicName.position.set(MUSIC_LIST_ITEM_PADDING, MUSIC_LIST_ITEM_PADDING);
             sprite.addChild(musicName);
             const musicCreator = new PIXI.Text(`Created by ${music.creator}`, {
-                fontFamily: G.constant.MAIN_FONT,
+                fontFamily: MAIN_FONT,
                 fontSize: MUSIC_LIST_ITEM_CREATOR_SIZE,
                 fill: '#FFF',
             });

@@ -4,6 +4,7 @@
  */
 
 import G from './Global';
+import moment from 'moment';
 
 /**
  * Set sprite position with percent data provided
@@ -73,6 +74,30 @@ export function getPr(url) {
             console.error(`Get pr failed, code ${res.status}`); // eslint-disable-line no-console
         }
     });
+}
+
+/**
+ * Time formatting
+ * @param {number} time - Seconds
+ */
+export function formatTime(time) {
+    let minute = Math.floor(time / 60);
+    if (minute < 10) {
+        minute = '0' + minute;
+    }
+    time %= 60;
+    let second = Math.floor(time);
+    if (second < 10) {
+        second = '0' + second;
+    }
+    time -= second;
+    let millsec = Math.floor(time * 1000);
+    if (millsec < 10) {
+        millsec = '00' + millsec;
+    } else if (millsec < 100) {
+        millsec = '0' + millsec;
+    }
+    return `${minute}:${second}:${millsec}`;
 }
 
 // when window is resized, recalculate the position of elements in paint list
