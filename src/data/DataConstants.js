@@ -15,7 +15,7 @@ export default class DataConstants {
             MUSIC_LIST_ITEM_TITLE_MARGIN_BOTTOM: 10,
             MUSIC_LIST_ITEM_CREATOR_SIZE: 16,
             MUSIC_LIST_ITEM_DELTA: 0.2,
-            MUSIC_LIST_SWITCH_TIME: 120,
+            MUSIC_LIST_SWITCH_TIME: 60,
         };
     }
 }

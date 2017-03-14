@@ -13,6 +13,7 @@
   "author": "Rex Zeng",
   "license": "SATA",
   "dependencies": {
+    "moment": "^2.17.1",
     "pixi.js": "^4.4.1",
     "thenjs": "^2.0.5",
     "whatwg-fetch": "^2.0.3"

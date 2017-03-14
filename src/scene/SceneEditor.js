@@ -9,6 +9,7 @@ import {
 } from '../Functions';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
+import moment from 'moment';
 
 /**
  * Define editor scene
@@ -26,6 +27,15 @@ export default class SceneEditor extends SceneBase {
         this.audioUrl = `songs/${this.music.audio}`
         this.bgUrl = `songs/${this.music.bg}`;
         this.prUrl = `songs/${this.music.pr}`;
+        this.data = {
+            artist: this.music.artist,
+            name: this.music.name,
+            creator: this.music.creator,
+            timingPoints: [],
+            hitObjects: [],
+        };
+        this.storageKey = `${this.music.creator}-${this.music.artist}-${this.music.name}-${this.music.version}`;
+        this.uncached = false;
     }
     /**
      * Trigger when scene is initialized
@@ -63,6 +73,18 @@ export default class SceneEditor extends SceneBase {
             }));
             this.stage.addChild(this.loadingTextSprite);
         }
+        let savedData = localStorage.getItem(this.storageKey);
+        if (savedData) {
+            savedData = JSON.parse(savedData);
+            if (confirm(`Found cached data at ${savedData.time}, would you like to load it?`)) {
+                this.data = savedData.data;
+                localStorage.removeItem(this.storageKey);
+                alert('Data loaded, cache has been erased, you have to press Ctrl+S to cache it again.');
+            } else if (confirm('Would you like to erase this cache?')) {
+                localStorage.removeItem(this.storageKey);
+                alert('Cached data has been erased.');
+            }
+        }
         next();
     }
     /**
@@ -79,8 +101,29 @@ export default class SceneEditor extends SceneBase {
             this.updateEditor();
         }
         // deal with input
-        if (G.input.isPressed(G.input.ESC)) {
+        if (G.input.isRepeated(G.input.CTRL) && G.input.isRepeated(G.input.S)) {
+            // CTRL+S to save to localStorage
+            const dt = moment().format('Y-m-d H:m:s');
+            localStorage.setItem(this.storageKey, JSON.stringify({
+                time: dt,
+                data: this.data,
+            }));
+            this.uncached = false;
+            alert(`Data has been cached in localStorage at ${dt}.`);
+        } else if (G.input.isPressed(G.input.F12)) {
+            // F12 to export data
+            const newWindow = window.open('', this.storageKey, 'height=500,width=500,top=20,left=20,menubar=no,scrollbars=yes,resizable=yes');
+            if (newWindow) {
+                newWindow.document.body.innerText = JSON.stringify(this.data);
+            } else {
+                console.log(JSON.stringify(this.data)); // eslint-disable-line no-console
+                alert('Failed to open window! Please allow popup window. Data has logged to console.');
+            }
+        } else if (G.input.isPressed(G.input.ESC)) {
             // press ESC to back to title
+            if (this.uncached && !confirm('Your work has not been cached, quit by force?')) {
+                return;
+            }
             G.scene = new SceneMusicSelect;
         }
     }
