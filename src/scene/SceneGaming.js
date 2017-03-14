@@ -6,7 +6,6 @@
 import G from '../Global';
 import {
     setPosition,
-    fitSize,
 } from '../Functions';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
@@ -21,10 +20,12 @@ export default class SceneGaming extends SceneBase {
      */
     constructor(musicId) {
         super();
-        this.name = 'editor';
+        this.name = 'gaming';
         this.musicId = musicId;
-        this.prUrl = `songs/${G.musics[musicId].pr}`;
-        this.backgroundLoaded = false;
+        this.music = G.musics[musicId];
+        this.audioUrl = `songs/${this.music.audio}`
+        this.bgUrl = `songs/${this.music.bg}`;
+        this.prUrl = `songs/${this.music.pr}`;
     }
     /**
      * Trigger when scene is initialized
@@ -73,35 +74,6 @@ export default class SceneGaming extends SceneBase {
         if (G.input.isPressed(G.input.ESC)) {
             // press ESC to back to title
             G.scene = new SceneMusicSelect;
-        }
-    }
-    /**
-     * Load current music's bg
-     */
-    loadBackground(url) {
-        G.resource.add(`songs/${url}`);
-        this.backgroundLoaded = false;
-    }
-    /**
-     * Update background image
-     */
-    updateBackground(url) {
-        if (!this.backgroundLoaded) {
-            const texture = G.resource.get(`songs/${url}`);
-            if (texture) {
-                this.backgroundSprite.texture = texture;
-                setPosition(this.backgroundSprite, () => {
-                    const size = G.resource.getSize(`songs/${url}`);
-                    const rate = fitSize(size.width, size.height, window.innerWidth, window.innerHeight);
-                    return {
-                        x: 0.5 * window.innerWidth,
-                        y: 0.5 * window.innerHeight,
-                        width: size.width * rate,
-                        height: size.height * rate,
-                    };
-                }, true);
-                this.backgroundLoaded = true;
-            }
         }
     }
 }

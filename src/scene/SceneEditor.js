@@ -6,7 +6,6 @@
 import G from '../Global';
 import {
     setPosition,
-    fitSize,
 } from '../Functions';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
@@ -23,8 +22,10 @@ export default class SceneEditor extends SceneBase {
         super();
         this.name = 'editor';
         this.musicId = musicId;
-        this.prUrl = `songs/${G.musics[musicId].pr}`;
-        this.backgroundLoaded = false;
+        this.music = G.musics[musicId];
+        this.audioUrl = `songs/${this.music.audio}`
+        this.bgUrl = `songs/${this.music.bg}`;
+        this.prUrl = `songs/${this.music.pr}`;
     }
     /**
      * Trigger when scene is initialized
@@ -32,19 +33,6 @@ export default class SceneEditor extends SceneBase {
      * @override
      */
     onInitialize(next) {
-        // loading text
-        this.loadingTextSprite = new PIXI.Text('Loading music data...', {
-            fontFamily: G.constant.MAIN_FONT,
-            fontSize: 24,
-            fill: '#FFF',
-        });
-        this.loadingTextSprite.anchor.x = 0.5;
-        this.loadingTextSprite.anchor.y = 0.5;
-        setPosition(this.loadingTextSprite, () => ({
-            x: 0.5 * window.innerWidth,
-            y: 0.5 * window.innerHeight,
-        }));
-        this.stage.addChild(this.loadingTextSprite);
         // background
         this.backgroundSprite = new PIXI.Sprite;
         // set anchor to image center
@@ -56,10 +44,25 @@ export default class SceneEditor extends SceneBase {
         this.darkenShadow.beginFill(0x000000);
         this.darkenShadow.drawRect(0, 0, 10000, 10000);
         this.darkenShadow.endFill();
-        this.darkenShadow.alpha = 0.8;
+        this.darkenShadow.alpha = 0.7;
         this.stage.addChild(this.darkenShadow);
-        // load background and music
-        this.loadBackground(G.musics[this.musicId].bg);
+        // load background
+        this.loadBackground(this.bgUrl);
+        // loading text
+        if (!sounds[this.audioUrl]) {
+            this.loadingTextSprite = new PIXI.Text('Music must be preloaded for editor, please wait...', {
+                fontFamily: G.constant.MAIN_FONT,
+                fontSize: 24,
+                fill: '#FFF',
+            });
+            this.loadingTextSprite.anchor.x = 0.5;
+            this.loadingTextSprite.anchor.y = 0.5;
+            setPosition(this.loadingTextSprite, () => ({
+                x: 0.5 * window.innerWidth,
+                y: 0.5 * window.innerHeight,
+            }));
+            this.stage.addChild(this.loadingTextSprite);
+        }
         next();
     }
     /**
@@ -68,7 +71,13 @@ export default class SceneEditor extends SceneBase {
      */
     update() {
         super.update();
-        this.updateBackground(G.musics[this.musicId].bg);
+        this.updateBackground(this.bgUrl);
+        if (sounds[this.audioUrl]) {
+            if (this.loadingTextSprite) {
+                this.loadingTextSprite.visible = false;
+            }
+            this.updateEditor();
+        }
         // deal with input
         if (G.input.isPressed(G.input.ESC)) {
             // press ESC to back to title
@@ -76,32 +85,9 @@ export default class SceneEditor extends SceneBase {
         }
     }
     /**
-     * Load current music's bg
+     * Update all editor elements
      */
-    loadBackground(url) {
-        G.resource.add(`songs/${url}`);
-        this.backgroundLoaded = false;
-    }
-    /**
-     * Update background image
-     */
-    updateBackground(url) {
-        if (!this.backgroundLoaded) {
-            const texture = G.resource.get(`songs/${url}`);
-            if (texture) {
-                this.backgroundSprite.texture = texture;
-                setPosition(this.backgroundSprite, () => {
-                    const size = G.resource.getSize(`songs/${url}`);
-                    const rate = fitSize(size.width, size.height, window.innerWidth, window.innerHeight);
-                    return {
-                        x: 0.5 * window.innerWidth,
-                        y: 0.5 * window.innerHeight,
-                        width: size.width * rate,
-                        height: size.height * rate,
-                    };
-                }, true);
-                this.backgroundLoaded = true;
-            }
-        }
+    updateEditor() {
+
     }
 }

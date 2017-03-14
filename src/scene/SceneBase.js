@@ -4,6 +4,10 @@
  */
 
 import G from '../Global';
+import {
+    setPosition,
+    fitSize,
+} from '../Functions';
 import asyncTask from 'thenjs';
 
 /**
@@ -25,6 +29,7 @@ export default class SceneBase {
         this.fadeInTime = 30;
         this.isFadeOut = true;
         this.fadeOutTime = 30;
+        this.backgroundLoaded = false;
         // do a series work
         asyncTask(next => this.onInitialize(next))
             .then(next => this.fadeIn(next))
@@ -174,5 +179,37 @@ export default class SceneBase {
             }
         }
     }
-
+    /**
+     * Load background image
+     * @param (string) url - Url of the background
+     */
+    loadBackground(url) {
+        G.resource.add(url);
+        this.backgroundLoaded = false;
+        // maybe is loaded, try to update before scene fade in
+        this.updateBackground(url);
+    }
+    /**
+     * Update background image
+     * @param (string) url - Url of the background
+     */
+    updateBackground(url) {
+        if (!this.backgroundLoaded) {
+            const texture = G.resource.get(url);
+            if (texture) {
+                this.backgroundSprite.texture = texture;
+                setPosition(this.backgroundSprite, () => {
+                    const size = G.resource.getSize(url);
+                    const rate = fitSize(size.width, size.height, window.innerWidth, window.innerHeight);
+                    return {
+                        x: 0.5 * window.innerWidth,
+                        y: 0.5 * window.innerHeight,
+                        width: size.width * rate,
+                        height: size.height * rate,
+                    };
+                }, true);
+                this.backgroundLoaded = true;
+            }
+        }
+    }
 }

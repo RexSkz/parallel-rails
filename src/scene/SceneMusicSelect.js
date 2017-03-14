@@ -6,7 +6,6 @@
 import G from '../Global';
 import {
     setPosition,
-    fitSize,
 } from '../Functions';
 import SceneBase from './SceneBase';
 import SceneTitle from './SceneTitle';
@@ -35,7 +34,6 @@ export default class SceneMusicSelect extends SceneBase {
         super();
         this.name = 'music select';
         this.selected = 0;
-        this.backgroundLoaded = false;
     }
     /**
      * Trigger when scene is initialized
@@ -56,18 +54,20 @@ export default class SceneMusicSelect extends SceneBase {
             break;
         }
         // loading text
-        this.loadingTextSprite = new PIXI.Text('Loading music list...', {
-            fontFamily: G.constant.MAIN_FONT,
-            fontSize: 24,
-            fill: '#FFF',
-        });
-        this.loadingTextSprite.anchor.x = 0.5;
-        this.loadingTextSprite.anchor.y = 0.5;
-        setPosition(this.loadingTextSprite, () => ({
-            x: 0.5 * window.innerWidth,
-            y: 0.5 * window.innerHeight,
-        }));
-        this.stage.addChild(this.loadingTextSprite);
+        if (!G.musics) {
+            this.loadingTextSprite = new PIXI.Text('Loading music list...', {
+                fontFamily: G.constant.MAIN_FONT,
+                fontSize: 24,
+                fill: '#FFF',
+            });
+            this.loadingTextSprite.anchor.x = 0.5;
+            this.loadingTextSprite.anchor.y = 0.5;
+            setPosition(this.loadingTextSprite, () => ({
+                x: 0.5 * window.innerWidth,
+                y: 0.5 * window.innerHeight,
+            }));
+            this.stage.addChild(this.loadingTextSprite);
+        }
         // background
         this.backgroundSprite = new PIXI.Sprite;
         // set anchor to image center
@@ -99,11 +99,16 @@ export default class SceneMusicSelect extends SceneBase {
             y: 0,
         }));
         this.stage.addChild(this.musicListSprite);
-        // load background and music
-        this.loadBackground(G.musics[0].bg);
+        // load last select music
         if (G.lastSelectMusic != -1) {
             this.selected = G.lastSelectMusic;
         }
+        if (G.musics) {
+            this.buildMusicSprites();
+            this.animateMusicSprites();
+        }
+        // load background and music
+        this.loadBackground(`songs/${G.musics[this.selected].bg}`);
         G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
         next();
     }
@@ -113,17 +118,11 @@ export default class SceneMusicSelect extends SceneBase {
      */
     update() {
         super.update();
-        this.updateBackground(G.musics[this.selected].bg);
+        this.updateBackground(`songs/${G.musics[this.selected].bg}`);
         // judge if we have music list
-        if (G.musics) {
-            this.loadingTextSprite.visible = false;
-            this.musicListSprite.visible = true;
-            if (this.musicListSprite.children.length == 0) {
-                this.buildMusicSprites();
-            }
-        } else {
-            this.loadingTextSprite.visible = true;
-            this.musicListSprite.visible = false;
+        if (G.musics && this.musicListSprite.children.length == 0) {
+            this.buildMusicSprites();
+            this.animateMusicSprites();
         }
         // deal with input
         if (G.input.isPressed(G.input.ESC)) {
@@ -133,13 +132,13 @@ export default class SceneMusicSelect extends SceneBase {
         } else if (G.input.isPressed(G.input.UP)) {
             // press UP to select music above
             this.selected = (this.selected - 1 + G.musics.length) % G.musics.length;
-            this.loadBackground(G.musics[this.selected].bg);
+            this.loadBackground(`songs/${G.musics[this.selected].bg}`);
             G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
             this.animateMusicSprites();
         } else if (G.input.isPressed(G.input.DOWN)) {
             // press DOWN to select music below
             this.selected = (this.selected + 1) % G.musics.length;
-            this.loadBackground(G.musics[this.selected].bg);
+            this.loadBackground(`songs/${G.musics[this.selected].bg}`);
             G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
             this.animateMusicSprites();
         } else if (G.input.isPressed(G.input.ENTER)) {
@@ -165,6 +164,8 @@ export default class SceneMusicSelect extends SceneBase {
         for (let i = 0; i < G.musics.length; i++) {
             const music = G.musics[i];
             const sprite = new PIXI.Container;
+            sprite.x = 0;
+            sprite.y = -MUSIC_LIST_ITEM_HEIGHT * 10;
             this.animateSprite(sprite, i);
             // draw background
             const itemBackground = new PIXI.Graphics();
@@ -194,35 +195,6 @@ export default class SceneMusicSelect extends SceneBase {
         }
     }
     /**
-     * Load current music's bg
-     */
-    loadBackground(url) {
-        G.resource.add(`songs/${url}`);
-        this.backgroundLoaded = false;
-    }
-    /**
-     * Update background image
-     */
-    updateBackground(url) {
-        if (!this.backgroundLoaded) {
-            const texture = G.resource.get(`songs/${url}`);
-            if (texture) {
-                this.backgroundSprite.texture = texture;
-                setPosition(this.backgroundSprite, () => {
-                    const size = G.resource.getSize(`songs/${url}`);
-                    const rate = fitSize(size.width, size.height, window.innerWidth, window.innerHeight);
-                    return {
-                        x: 0.5 * window.innerWidth,
-                        y: 0.5 * window.innerHeight,
-                        width: size.width * rate,
-                        height: size.height * rate,
-                    };
-                }, true);
-                this.backgroundLoaded = true;
-            }
-        }
-    }
-    /**
      * Update music list
      */
     animateMusicSprites() {
@@ -245,7 +217,7 @@ export default class SceneMusicSelect extends SceneBase {
         const center = 0.5 * (window.innerHeight - MUSIC_LIST_ITEM_HEIGHT);
         const newX = Math.abs(pos) / ips * MUSIC_LIST_ITEM_DELTA * window.innerWidth;
         const newY = center + pos * MUSIC_LIST_ITEM_HEIGHT * 0.9;
-        const newAlpha = 0.8 - Math.abs(pos) * 0.2;
+        const newAlpha = 1 - Math.abs(pos) * 0.25;
         // set animation
         G.animation.set(sprite, {
             x: sprite.x,
