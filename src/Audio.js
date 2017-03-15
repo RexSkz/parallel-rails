@@ -55,8 +55,8 @@ export default class Audio {
      * Update all audio status
      */
     update() {
-        if (this.bgmStatus != this.bgmNeedStatus && sounds[this.bgmSrc] && sounds[this.bgmSrc].buffer) {
-            this.bgmObject = sounds[this.bgmSrc];
+        this.bgmObject = G.resource.getAudio(this.bgmSrc);
+        if (this.bgmStatus != this.bgmNeedStatus && this.bgmObject) {
             switch (this.bgmNeedStatus) {
             case 'update':
                 this.bgmObject.loop = true;

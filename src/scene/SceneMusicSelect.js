@@ -14,6 +14,7 @@ import SceneGaming from './SceneGaming';
 
 const {
     MAIN_FONT,
+    MAIN_FONT_SIZE,
     MUSIC_LIST_ITEM_HEIGHT,
     MUSIC_LIST_ITEM_PADDING,
     MUSIC_LIST_ITEM_TITLE_SIZE,
@@ -85,7 +86,7 @@ export default class SceneMusicSelect extends SceneBase {
         // mode text
         this.modeTextSprite = new PIXI.Text(`Mode: ${G.mode}\n\n${modeText}`, {
             fontFamily: MAIN_FONT,
-            fontSize: 20,
+            fontSize: MAIN_FONT_SIZE,
             fill: '#FFF',
         });
         setPosition(this.modeTextSprite, () => ({

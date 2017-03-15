@@ -10,6 +10,11 @@ import {
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 
+const {
+    MAIN_FONT,
+    MAIN_FONT_SIZE,
+} = G.constant;
+
 /**
  * Define title scene
  * @class
@@ -34,7 +39,7 @@ export default class SceneTitle extends SceneBase {
     onInitialize(next) {
         // title message
         this.titleMessageSprite = new PIXI.Text(this.str, {
-            fontFamily: G.constant.MAIN_FONT,
+            fontFamily: MAIN_FONT,
             fontSize: 48,
             fill: '#FFF',
         });
@@ -45,8 +50,8 @@ export default class SceneTitle extends SceneBase {
         this.stage.addChild(this.titleMessageSprite);
         // start message
         this.startMessageSprite = new PIXI.Text('Made by Rex Zeng using Pixi.js', {
-            fontFamily: G.constant.MAIN_FONT,
-            fontSize: 18,
+            fontFamily: MAIN_FONT,
+            fontSize: MAIN_FONT_SIZE,
             fill: '#FFF',
         });
         setPosition(this.startMessageSprite, () => ({
@@ -56,8 +61,8 @@ export default class SceneTitle extends SceneBase {
         this.stage.addChild(this.startMessageSprite);
         // press button message
         this.pressMessageSprite = new PIXI.Text('[P] play beatmap\n\n[E] edit beatmap', {
-            fontFamily: G.constant.MAIN_FONT,
-            fontSize: 20,
+            fontFamily: MAIN_FONT,
+            fontSize: MAIN_FONT_SIZE,
             fill: '#FFF',
         });
         setPosition(this.pressMessageSprite, () => ({

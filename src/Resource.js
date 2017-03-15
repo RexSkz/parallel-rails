@@ -90,6 +90,14 @@ export default class Resource {
         return res ? res.texture : null;
     }
     /**
+     * Get audio by name
+     * @param {string} resourceName - Resource name
+     */
+    getAudio(resourceName) {
+        const res = sounds[resourceName];
+        return (res && res.hasLoaded) ? res : null;
+    }
+    /**
      * Get resource size by name
      * @param {string} resourceName - Resource name
      */
@@ -99,5 +107,8 @@ export default class Resource {
             width: res.data.width,
             height: res.data.height,
         } : null;
+    }
+    getCurrentPlayTime(audio) {
+        return audio.soundNode ? (audio.startOffset + audio.soundNode.context.currentTime - audio.startTime) : 0;
     }
 }

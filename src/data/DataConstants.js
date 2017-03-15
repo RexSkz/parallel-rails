@@ -8,6 +8,7 @@ export default class DataConstants {
         return {
             // main font
             MAIN_FONT: 'Consolas',
+            MAIN_FONT_SIZE: 16,
             // music list
             MUSIC_LIST_ITEM_HEIGHT: 75,
             MUSIC_LIST_ITEM_PADDING: 15,
@@ -20,6 +21,8 @@ export default class DataConstants {
             TIMING_WINDOW_WIDTH_PERCENT: 0.9,
             TIMING_WINDOW_HEIGHT: 30,
             TIMING_NUMBER_FONT_SIZE: 12,
+            // help window
+            HELP_WINDOW_PADDING: 10,
         };
     }
 }
