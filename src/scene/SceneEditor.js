@@ -6,6 +6,7 @@
 import G from '../Global';
 import {
     setPosition,
+    appendTimingPointEditingWindow,
 } from '../Functions';
 import WindowTiming from '../window/WindowTiming';
 import WindowHelp from '../window/WindowHelp';
@@ -70,8 +71,8 @@ export default class SceneEditor extends SceneBase {
         // load background
         this.loadBackground(this.bgUrl);
         // loading text
-        const audio = G.resource.get(this.audioUrl);
-        if (!audio) {
+        this.audio = G.resource.get(this.audioUrl);
+        if (!this.audio) {
             this.loadingTextSprite = new PIXI.Text('Music must be preloaded for editor, please wait...', {
                 fontFamily: MAIN_FONT,
                 fontSize: MAIN_FONT_SIZE,
@@ -86,7 +87,7 @@ export default class SceneEditor extends SceneBase {
             this.stage.addChild(this.loadingTextSprite);
         }
         // hint text
-        this.hintTextSprite = new PIXI.Text(`Editing \`${this.music.artist} - ${this.music.name}\`\n\nPress H for help.`, {
+        this.hintTextSprite = new PIXI.Text(`Editing \`${this.music.artist} - ${this.music.name}\`\nPress H for help.`, {
             fontFamily: MAIN_FONT,
             fontSize: MAIN_FONT_SIZE,
             fill: '#FFF',
@@ -98,25 +99,28 @@ export default class SceneEditor extends SceneBase {
         this.stage.addChild(this.hintTextSprite);
         // help window
         this.helpWindow = new WindowHelp([
-            '          H: Toggle this window.',
-            '          T: Timing BPM.',
-            '          D: Add green note.',
-            '    SHIFT+D: Add green slider start point / end point.',
-            '          F: Add orange note.',
-            '    SHIFT+F: Add orange slider start point / end point.',
-            '         UP: Switch to upper rail.',
-            '       DOWN: Switch to lower rail.',
-            '       LEFT: Set player back.',
-            ' SHIFT+LEFT: Set player back ten times.',
-            '      RIGHT: Set player move.',
-            'SHIFT+RIGHT: Set player move ten times.',
-            '       HOME: Jump to music start.',
-            '        END: Jump to music end.',
-            '      SPACE: Toggle play / pause.',
-            '        ESC: Return to music select scene, or cancel if slider is being add.',
+            '      H: Toggle this window.',
+            '      T: Timing current timing object\'s BPM.',
+            '      `: Toggle timing point editing window.',
+            '      D: Add green note.',
+            'SHIFT+D: Add green slider start point / end point.',
+            '      F: Add orange note.',
+            'SHIFT+F: Add orange slider start point / end point.',
+            '    DEL: Delete current hit object.',
+            '     UP: Add object to switch to upper rail.',
+            '   DOWN: Add object to switch to lower rail.',
+            '   LEFT: Set player back (SHIFT to 10x it).',
+            '  RIGHT: Set player move (SHIFT to 10x it).',
+            '   HOME: Jump to music start.',
+            '    END: Jump to music end.',
+            '  SPACE: Toggle play / pause.',
+            '    ESC: Return to music select scene or cancel slider edition.',
         ]);
         this.helpWindow.stage.visible = false;
         this.stage.addChild(this.helpWindow.stage);
+        // window for editing timing points
+        this.editWindow = appendTimingPointEditingWindow(t => this.data.timingPoints = t);
+        this.editWindowShown = false;
         // load cached data
         let savedData = localStorage.getItem(this.storageKey);
         if (savedData) {
@@ -146,6 +150,10 @@ export default class SceneEditor extends SceneBase {
                 G.scene = new SceneMusicSelect;
             }
         } else {
+            if (!this.editWindowShown) {
+                this.editWindow.show();
+                this.editWindowShown = true;
+            }
             this.loadingTextSprite.visible = false;
             // auto pause when finish playing
             if (this.data.currentTime >= this.data.duration) {
@@ -158,12 +166,21 @@ export default class SceneEditor extends SceneBase {
             this.updateEditor();
         }
     }
+    onTerminate() {
+        super.onTerminate();
+        this.editWindow.destroy();
+    }
     /**
      * Update inputs
      */
     updateInputs() {
         if (G.input.isPressed(G.input.H)) {
             this.helpWindow.stage.visible = !this.helpWindow.stage.visible;
+            if (this.helpWindow.stage.visible) {
+                this.editWindow.hide();
+            } else if (this.audio) {
+                this.editWindow.show();
+            }
         } else if (G.input.isRepeated(G.input.CTRL) && G.input.isRepeated(G.input.S)) {
             // CTRL+S to save to localStorage
             const dt = moment().format('Y-m-d H:m:s');
@@ -209,6 +226,7 @@ export default class SceneEditor extends SceneBase {
             if (this.uncached && !confirm('Your work has not been cached, quit by force?')) {
                 return;
             }
+            this.editWindow.hide();
             G.scene = new SceneMusicSelect;
         }
     }

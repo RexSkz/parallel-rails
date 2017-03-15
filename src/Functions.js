@@ -100,6 +100,60 @@ export function formatTime(time) {
     return `${minute}:${second}:${millsec}`;
 }
 
+/**
+ * Append timing point editing window
+ * @param {function} func - Function used to pass timing data
+ */
+export function appendTimingPointEditingWindow(func) {
+    const w = document.createElement('div');
+    w.className = 'timing-editor-wrapper';
+    w.innerHTML = `
+        <fieldset>
+            <legend>Timing point list</legend>
+            <select id="timing-points"></select>
+            <button id="timing-point-remove">-</button>
+            <button id="timing-point-add">+</button>
+        </fieldset>
+        <fieldset>
+            <legend>Timing point detail</legend>
+            <fieldset>
+                <legend>BPM and offset</legend>
+                <p><span>BPM × 100: </span><input type="number" min="1" id="bpm"></p>
+                <p><span>POS × 100: </span><input type="number" min="0" id="offset"></p>
+                <p><button id="use-current-time">Use current time</button></p>
+            </fieldset>
+            <fieldset>
+                <legend>Metronome</legend>
+                <input type="number" min="2" max="4" id="metronome" value="4"><span> / 4 (For instance, 4 for common and 3 for waltz)</span>
+            </fieldset>
+            <fieldset>
+                <legend>Kiai setting</legend>
+                <label for="kiai-time">
+                    <input type="checkbox" id="kiai-time">
+                    <span>It's kiai time!</span>
+                </label>
+            </fieldset>
+        </fieldset>
+    `;
+    const listener = () => {
+        func(w.timingData);
+    };
+    w.addEventListener('keydown', listener);
+    w.destroy = () => {
+        w.removeEventListener('keydown', listener);
+        document.body.removeChild(w);
+    };
+    w.show = () => w.className = 'timing-editor-wrapper show';
+    w.hide = () => w.className = 'timing-editor-wrapper';
+    const controls = w.querySelectorAll('input, select, button');
+    for (const control of controls) {
+        control.onfocus = () => G.nativeInputFocused = true;
+        control.onblur = () => G.nativeInputFocused = false;
+    }
+    document.body.appendChild(w);
+    return w;
+}
+
 // when window is resized, recalculate the position of elements in paint list
 window.addEventListener('resize', () => {
     for (const id in window._G.windowResizePaintList) {

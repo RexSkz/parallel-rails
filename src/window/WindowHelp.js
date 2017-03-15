@@ -35,6 +35,9 @@ export default class WindowHelp extends WindowBase {
         this.shadow.x = 0;
         this.shadow.y = 0;
         this.shadow.alpha = 0.7;
+        setPosition(this.shadow, () => ({
+            width: window.innerWidth,
+        }));
         this.stage.addChild(this.shadow);
         // help text
         this.helpTextSprite = new PIXI.Text(helpTexts.join('\n'), {

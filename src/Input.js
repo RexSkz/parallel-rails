@@ -3,6 +3,8 @@
  * @author Rex Zeng
  */
 
+import G from './Global';
+
 /**
  * Input class
  * @class
@@ -52,6 +54,7 @@ export default class Input {
         this.UP = 38;
         this.RIGHT = 39;
         this.DOWN = 40;
+        this.APOSTROPHE = 192;
         this.F1 = 112;
         this.F2 = 113;
         this.F3 = 114;
@@ -94,12 +97,16 @@ export default class Input {
      */
     addEventListeners() {
         window.addEventListener('keydown', e => {
-            e.preventDefault();
-            this.pressedKey = e.keyCode;
+            if (!G.nativeInputFocused) {
+                e.preventDefault();
+                this.pressedKey = e.keyCode;
+            }
         });
         window.addEventListener('keyup', e => {
-            e.preventDefault();
-            this.releasedKey = e.keyCode;
+            if (!G.nativeInputFocused) {
+                e.preventDefault();
+                this.releasedKey = e.keyCode;
+            }
         });
     }
     /**

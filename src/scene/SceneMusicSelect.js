@@ -84,7 +84,7 @@ export default class SceneMusicSelect extends SceneBase {
         this.darkenShadow.alpha = 0.5;
         this.stage.addChild(this.darkenShadow);
         // mode text
-        this.modeTextSprite = new PIXI.Text(`Mode: ${G.mode}\n\n${modeText}`, {
+        this.modeTextSprite = new PIXI.Text(`Mode: ${G.mode}\n${modeText}`, {
             fontFamily: MAIN_FONT,
             fontSize: MAIN_FONT_SIZE,
             fill: '#FFF',

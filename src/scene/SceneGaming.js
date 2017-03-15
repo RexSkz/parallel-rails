@@ -60,7 +60,7 @@ export default class SceneGaming extends SceneBase {
         this.darkenShadow.alpha = 0.8;
         this.stage.addChild(this.darkenShadow);
         // load background and music
-        this.loadBackground(G.musics[this.musicId].bg);
+        this.loadBackground(this.bgUrl);
         next();
     }
     /**
@@ -69,7 +69,7 @@ export default class SceneGaming extends SceneBase {
      */
     update() {
         super.update();
-        this.updateBackground(G.musics[this.musicId].bg);
+        this.updateBackground(this.bgUrl);
         // deal with input
         if (G.input.isPressed(G.input.ESC)) {
             // press ESC to back to title

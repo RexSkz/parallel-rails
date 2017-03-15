@@ -1,0 +1,116 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Consolas';
+    font-size: 16px;
+    color: #FFF;
+    user-select: none;
+}
+.timing-editor-wrapper {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #FFF;
+    box-sizing: border-box;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 75%;
+    min-width: 300px;
+    height: 60%;
+    min-height: 150px;
+    padding: 10px;
+    overflow: auto;
+    opacity: 0;
+    transition: opacity 0.5s;
+}
+.timing-editor-wrapper.show {
+    opacity: 1;
+}
+select, input[type=text], input[type=number], button {
+    font-family: 'Consolas';
+    font-size: 16px;
+    box-sizing: border-box;
+    outline: none;
+    text-align: center;
+    padding: 5px 10px;
+    min-width: 50px;
+    height: 30px;
+    vertical-align: top;
+    border-radius: 0.2em;
+}
+button:active {
+    color: #222;
+    background: #FFF;
+}
+fieldset {
+    border: 1px solid #FFF;
+    margin-bottom: 8px;
+}
+select, input[type=text], input[type=number] {
+    user-select: initial;
+    color: #FFF;
+    background: transparent;
+    border: 1px solid #FFF;
+}
+select:focus, input[type=text]:focus, input[type=number]:focus {
+    border-color: orange;
+}
+input[type=text], input[type=number] {
+    text-align: center;
+}
+label {
+    margin-bottom: 5px;
+    display: block;
+}
+button {
+    color: #FFF;
+    border: 1px solid #FFF;
+    background: transparent;
+    cursor: pointer;
+}
+input[type=checkbox] {
+    -webkit-appearance: none;
+    outline: none;
+    margin: 7px 0;
+}
+input[type=checkbox]:after {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    border: 1px solid #EC407A;
+    background: transparent;
+}
+input[type=checkbox]:checked:after {
+    background: #EC407A;
+}
+#timing-points {
+    max-width: 100%;
+}
+span {
+    line-height: 30px;
+}
+#timing-point-add, #timing-point-remove {
+    font-family: 'SimHei';
+    float: right;
+    min-width: 0;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    line-height: 29px;
+    box-sizing: border-box;
+    padding: 0;
+    margin-left: 8px;
+    margin-top: -2px;
+}
+p {
+    margin: 8px 0;
+}
+span, p, legend {
+    cursor: default;
+}
+label {
+    cursor: pointer;
+}
