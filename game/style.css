@@ -1,9 +1,16 @@
-html, body {
+::selection {
+    background: orange;
+    color: #FFF;
+}
+html,
+body {
     margin: 0;
     padding: 0;
     font-family: 'Consolas';
     font-size: 16px;
     color: #FFF;
+    -webkit-user-select: none;
+    -moz-user-select: none;
     user-select: none;
 }
 .timing-editor-wrapper {
@@ -11,13 +18,10 @@ html, body {
     border: 1px solid #FFF;
     box-sizing: border-box;
     position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 75%;
-    min-width: 300px;
-    height: 60%;
-    min-height: 150px;
+    top: 70px;
+    left: 5%;
+    right: 5%;
+    bottom: 90px;
     padding: 10px;
     overflow: auto;
     opacity: 0;
@@ -26,7 +30,9 @@ html, body {
 .timing-editor-wrapper.show {
     opacity: 1;
 }
-select, input[type=text], input[type=number], button {
+input[type=text],
+input[type=number],
+button {
     font-family: 'Consolas';
     font-size: 16px;
     box-sizing: border-box;
@@ -43,19 +49,24 @@ button:active {
     background: #FFF;
 }
 fieldset {
-    border: 1px solid #FFF;
+    border: 1px solid rgba(255, 255, 255, 0.5);
     margin-bottom: 8px;
 }
-select, input[type=text], input[type=number] {
+input[type=text],
+input[type=number] {
+    -webkit-user-select: initial;
+    -moz-user-select: initial;
     user-select: initial;
     color: #FFF;
     background: transparent;
     border: 1px solid #FFF;
 }
-select:focus, input[type=text]:focus, input[type=number]:focus {
-    border-color: orange;
+input:focus,
+button:focus {
+    border-color: orange !important;
 }
-input[type=text], input[type=number] {
+input[type=text],
+input[type=number] {
     text-align: center;
 }
 label {
@@ -92,25 +103,59 @@ input[type=checkbox]:checked:after {
 span {
     line-height: 30px;
 }
-#timing-point-add, #timing-point-remove {
-    font-family: 'SimHei';
-    float: right;
+#timing-point-add,
+#timing-point-remove {
     min-width: 0;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    line-height: 29px;
-    box-sizing: border-box;
-    padding: 0;
-    margin-left: 8px;
-    margin-top: -2px;
+    padding: 0 5px;
+}
+#timing-point-add {
+    color: #4caf50;
+    border-color: #4caf50;
+}
+#timing-point-add:active {
+    background: #4caf50;
+    color: #FFF;
+}
+#timing-point-remove {
+    height: 20px;
+    line-height: 1;
+    border: none;
+    color: #f44336;
+}
+#timing-point-remove:active {
+    background: #f44336;
+    color: #FFF;
 }
 p {
     margin: 8px 0;
 }
-span, p, legend {
+p,
+span,
+legend,
+table {
     cursor: default;
 }
-label {
+label,
+label > * {
     cursor: pointer;
+}
+table {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    margin-bottom: 10px;
+}
+tbody tr:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+th, td {
+    border-right: 1px solid rgba(255, 255, 255, 0.5);
+}
+th:last-child, td:last-child {
+    border-right: none;
+}
+th {
+    text-align: left;
+    background: rgba(255, 255, 255, 0.1);
+}
+td {
+    background: rgba(255, 255, 255, 0.05);
 }

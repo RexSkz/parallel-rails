@@ -110,14 +110,39 @@ export function appendTimingPointEditingWindow(func) {
     w.innerHTML = `
         <fieldset>
             <legend>Timing point list</legend>
-            <select id="timing-points"></select>
-            <button id="timing-point-remove">-</button>
-            <button id="timing-point-add">+</button>
+            <table width="100%" cellpadding="5" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Pos</th>
+                        <th>BPM</th>
+                        <th>Metronome</th>
+                        <th>Kiai</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><button id="timing-point-remove">Remove</button></td>
+                        <td>100.00</td>
+                        <td>240</td>
+                        <td>4/4</td>
+                        <td>Yes</td>
+                    </tr>
+                    <tr>
+                        <td><button id="timing-point-remove">Remove</button></td>
+                        <td>205.00</td>
+                        <td>230</td>
+                        <td>4/4</td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button id="timing-point-add">Add new timing point</button>
         </fieldset>
         <fieldset>
             <legend>Timing point detail</legend>
             <fieldset>
-                <legend>BPM and offset</legend>
+                <legend>BPM and position</legend>
                 <p><span>BPM × 100: </span><input type="number" min="1" id="bpm"></p>
                 <p><span>POS × 100: </span><input type="number" min="0" id="offset"></p>
                 <p><button id="use-current-time">Use current time</button></p>
