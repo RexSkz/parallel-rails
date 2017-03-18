@@ -261,19 +261,25 @@ export default class SceneEditor extends SceneBase {
                     }
                 }
             }
-        } else if (G.input.isRepeated(G.input.LEFT)) {
+        } else if (G.input.isPressed(G.input.LEFT)) {
             if (this.data.timingPoints.length == 0) {
                 this.setPlayFrom(this.data.currentTime - (G.input.isRepeated(G.input.SHIFT) ? 1 : 0.1));
             } else {
-                this.setPlayFrom(Tick.prevTickTime1000 / 1000);
-                Tick.setTime(Tick.prevTickTime1000, true);
+                let times = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
+                while (times--) {
+                    this.setPlayFrom(Tick.prevTickTime1000 / 1000);
+                    Tick.setTime(Tick.prevTickTime1000, true);
+                }
             }
-        } else if (G.input.isRepeated(G.input.RIGHT)) {
+        } else if (G.input.isPressed(G.input.RIGHT)) {
             if (this.data.timingPoints.length == 0) {
                 this.setPlayFrom(this.data.currentTime + (G.input.isRepeated(G.input.SHIFT) ? 1 : 0.1));
             } else {
-                this.setPlayFrom(Tick.nextTickTime1000 / 1000);
-                Tick.setTime(Tick.nextTickTime1000, true);
+                let times = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
+                while (times--) {
+                    this.setPlayFrom(Tick.nextTickTime1000 / 1000);
+                    Tick.setTime(Tick.nextTickTime1000, true);
+                }
             }
         } else if (G.input.isPressed(G.input.HOME)) {
             this.setPlayFrom(0);

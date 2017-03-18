@@ -68,8 +68,9 @@ class Tick {
                 l = tp;
             }
         }
+        tp = l;
         const tpObj = this.tp[tp];
-        const timePerTick = 60000000 / (tpObj.detail);
+        const timePerTick = 60000000 / (tpObj.bpm1000 * this.detail);
         const tick = Math.floor((time1000 - tpObj.pos1000) / timePerTick);
         return { tp, tick };
     }
