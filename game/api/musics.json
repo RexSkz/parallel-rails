@@ -25,4 +25,13 @@
     "bg": "don-coi/don-coi.jpg",
     "pr": "don-coi/don-coi.pr",
     "previewTime": 77.685
+}, {
+    "name": "Black Cat Waltz",
+    "creator": "skywalker_z",
+    "artist": "tarolabo",
+    "version": "normal",
+    "audio": "black-cat-waltz/black-cat-waltz.mp3",
+    "bg": "black-cat-waltz/black-cat-waltz.jpg",
+    "pr": "black-cat-waltz/black-cat-waltz.pr",
+    "previewTime": 77.685
 }]

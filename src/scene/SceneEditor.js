@@ -4,6 +4,7 @@
  */
 
 import G from '../Global';
+import Tick from '../Tick';
 import {
     setPosition,
     appendTimingPointEditingWindow,
@@ -45,6 +46,7 @@ export default class SceneEditor extends SceneBase {
             currentTime: 0,
             duration: 1,
             playFromTime: -1,
+            detail: 4,
         };
         this.storageKey = `${this.music.creator}-${this.music.artist}-${this.music.name}-${this.music.version}`;
         this.uncached = false;
@@ -70,7 +72,21 @@ export default class SceneEditor extends SceneBase {
         this.stage.addChild(this.darkenShadow);
         // load background
         this.loadBackground(this.bgUrl);
-        // loading text
+        // load pr file
+        fetch(this.prUrl).then(res => {
+            if (res.ok) {
+                res.json().then(data => {
+                    this.data.timingPoints = data.timingPoints;
+                    this.data.hitObjects = data.hitObjects;
+                    Tick.setTp(data.timingPoints);
+                    Tick.setTime(this.data.currentTime * 1000, true);
+                    this.updateFromCachedData();
+                });
+            } else {
+                console.error(`Get PR file '${this.data.artist} - ${this.data.name}' failed, code ${res.status}`); // eslint-disable-line no-console
+            }
+        });
+        // display loading text
         this.audio = G.resource.get(this.audioUrl);
         if (!this.audio) {
             this.loadingTextSprite = new PIXI.Text('Music must be preloaded for editor, please wait...', {
@@ -160,15 +176,44 @@ export default class SceneEditor extends SceneBase {
                 this.audio.pause();
                 this.data.currentTime = this.data.duration;
             }
+            // update tick
+            const tickReturn = Tick.setTime(this.data.currentTime * 1000);
+            if (tickReturn && this.audio.playing) {
+                sounds[`se/metronome-${tickReturn}.mp3`].play();
+            }
+            // other updates
             this.updateInputs();
             this.updatePlayFromTime();
             this.updateTimingWindow();
             this.updateEditor();
         }
     }
+    /**
+     * Trigger before the scene is terminated
+     * @override
+     */
     onTerminate() {
         super.onTerminate();
         this.editWindow.destroy();
+    }
+    /**
+     * Update timing points and hit objects from cached data
+     */
+    updateFromCachedData() {
+        this.editWindow.querySelector('tbody').innerHTML = this.data.timingPoints.map(item => {
+            const kiai = (item.kiai) ? 'Yes' : '';
+            return [
+                '<tr>',
+                    '<td>',
+                        '<button id="timing-point-remove">Remove</button>',
+                    '</td>',
+                    `<td>${item.pos1000 / 1000}</td>`,
+                    `<td>${item.bpm1000 / 1000}</td>`,
+                    `<td>${item.metronome}/4</td>`,
+                    `<td>${kiai}</td>`,
+                '</tr>',
+            ].join('');
+        }).join('');
     }
     /**
      * Update inputs
@@ -196,7 +241,10 @@ export default class SceneEditor extends SceneBase {
             if (newWindow) {
                 newWindow.document.body.innerText = JSON.stringify(this.data);
             } else {
-                console.log(JSON.stringify(this.data)); // eslint-disable-line no-console
+                console.log(JSON.stringify({
+                    timingPoints: this.data.timingPoints,
+                    hitObjects: this.data.hitObjects,
+                })); // eslint-disable-line no-console
                 alert('Failed to open window! Please allow popup window. Data has logged to console.');
             }
         } else if (G.input.isPressed(G.input.SPACE)) {
@@ -214,13 +262,25 @@ export default class SceneEditor extends SceneBase {
                 }
             }
         } else if (G.input.isRepeated(G.input.LEFT)) {
-            this.setPlayFrom(this.data.currentTime - (G.input.isRepeated(G.input.SHIFT) ? 1 : 0.1));
+            if (this.data.timingPoints.length == 0) {
+                this.setPlayFrom(this.data.currentTime - (G.input.isRepeated(G.input.SHIFT) ? 1 : 0.1));
+            } else {
+                this.setPlayFrom(Tick.prevTickTime1000 / 1000);
+                Tick.setTime(Tick.prevTickTime1000, true);
+            }
         } else if (G.input.isRepeated(G.input.RIGHT)) {
-            this.setPlayFrom(this.data.currentTime + (G.input.isRepeated(G.input.SHIFT) ? 1 : 0.1));
+            if (this.data.timingPoints.length == 0) {
+                this.setPlayFrom(this.data.currentTime + (G.input.isRepeated(G.input.SHIFT) ? 1 : 0.1));
+            } else {
+                this.setPlayFrom(Tick.nextTickTime1000 / 1000);
+                Tick.setTime(Tick.nextTickTime1000, true);
+            }
         } else if (G.input.isPressed(G.input.HOME)) {
             this.setPlayFrom(0);
+            Tick.setTime(0, true);
         } else if (G.input.isPressed(G.input.END)) {
             this.setPlayFrom(this.data.duration);
+            Tick.setTime(this.data.duration * 1000, true);
         } else if (G.input.isPressed(G.input.ESC)) {
             // ESC to back to title
             if (this.uncached && !confirm('Your work has not been cached, quit by force?')) {

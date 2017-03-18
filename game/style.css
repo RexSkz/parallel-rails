@@ -81,8 +81,9 @@ button {
 }
 input[type=checkbox] {
     -webkit-appearance: none;
+    -moz-appearance: none;
     outline: none;
-    margin: 7px 0;
+    margin: 7px 0 0 7px;
 }
 input[type=checkbox]:after {
     content: '';
@@ -138,6 +139,9 @@ table {
 label,
 label > * {
     cursor: pointer;
+}
+label:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 table {
     border: 1px solid rgba(255, 255, 255, 0.5);

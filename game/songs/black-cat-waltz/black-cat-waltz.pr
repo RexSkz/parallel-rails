@@ -1,0 +1,19 @@
+{
+    "timingPoints": [{
+        "pos1000": 2171,
+        "bpm1000": 55000,
+        "metronome": 3,
+        "kiai": 0
+    }, {
+        "pos1000": 6534,
+        "bpm1000": 110000,
+        "metronome": 3,
+        "kiai": 0
+    }, {
+        "pos1000": 13079,
+        "bpm1000": 220000,
+        "metronome": 3,
+        "kiai": 1
+    }],
+    "hitObjects": []
+}

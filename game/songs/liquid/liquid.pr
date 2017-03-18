@@ -1,7 +1,14 @@
 {
-    "name": "Liquid (Paul Rosenthal Remix)",
-    "creator": "skywalker_z",
-    "artist": "Rostik",
-    "version": "normal",
-    "audio": "liquid.mp3"
+    "timingPoints": [{
+        "pos1000": 436,
+        "bpm1000": 133000,
+        "metronome": 4,
+        "kiai": 0
+    }, {
+        "pos1000": 101488,
+        "bpm1000": 133000,
+        "metronome": 4,
+        "kiai": 1
+    }],
+    "hitObjects": []
 }

@@ -30,18 +30,15 @@ class ParallelRails {
         // setup the renderer
         this.setupRender(opt.el);
         // load resources
-        G.resource.add(GRAPHICS_PATH);
+        G.resource.addAudio(`se/metronome-high.mp3`);
+        G.resource.addAudio(`se/metronome-low.mp3`);
         // load music list
         if (!G.musics) {
             updateMusicList();
         }
-        try {
-            // loading scene don't need resources to be loaded
-            G.scene = new SceneLoading;
-            G.lock.sceneSwitch = false;
-        } catch (e) {
-            console.error(e); // eslint-disable-line no-console
-        }
+        // loading scene don't need resources to be loaded
+        G.scene = new SceneLoading;
+        G.lock.sceneSwitch = false;
     }
     /**
      * Setup the renderer

@@ -120,22 +120,7 @@ export function appendTimingPointEditingWindow(func) {
                         <th>Kiai</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td><button id="timing-point-remove">Remove</button></td>
-                        <td>100.00</td>
-                        <td>240</td>
-                        <td>4/4</td>
-                        <td>Yes</td>
-                    </tr>
-                    <tr>
-                        <td><button id="timing-point-remove">Remove</button></td>
-                        <td>205.00</td>
-                        <td>230</td>
-                        <td>4/4</td>
-                        <td></td>
-                    </tr>
-                </tbody>
+                <tbody></tbody>
             </table>
             <button id="timing-point-add">Add new timing point</button>
         </fieldset>
@@ -143,8 +128,8 @@ export function appendTimingPointEditingWindow(func) {
             <legend>Timing point detail</legend>
             <fieldset>
                 <legend>BPM and position</legend>
-                <p><span>BPM × 100: </span><input type="number" min="1" id="bpm"></p>
-                <p><span>POS × 100: </span><input type="number" min="0" id="offset"></p>
+                <p><span>BPM × 1000: </span><input type="number" min="1" id="bpm"></p>
+                <p><span>POS × 1000: </span><input type="number" min="0" id="offset"></p>
                 <p><button id="use-current-time">Use current time</button></p>
             </fieldset>
             <fieldset>
@@ -171,7 +156,8 @@ export function appendTimingPointEditingWindow(func) {
     w.show = () => w.className = 'timing-editor-wrapper show';
     w.hide = () => w.className = 'timing-editor-wrapper';
     const controls = w.querySelectorAll('input, select, button');
-    for (const control of controls) {
+    for (let i = 0; i < controls.length; i++) {
+        const control = controls[i];
         control.onfocus = () => G.nativeInputFocused = true;
         control.onblur = () => G.nativeInputFocused = false;
     }
