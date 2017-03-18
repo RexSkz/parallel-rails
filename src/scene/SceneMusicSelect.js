@@ -111,7 +111,7 @@ export default class SceneMusicSelect extends SceneBase {
         }
         // load background and music
         this.loadBackground(`songs/${G.musics[this.selected].bg}`);
-        G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
+        G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime / 1000);
         G.resource.load();
         next();
     }
@@ -136,13 +136,13 @@ export default class SceneMusicSelect extends SceneBase {
             // press UP to select music above
             this.selected = (this.selected - 1 + G.musics.length) % G.musics.length;
             this.loadBackground(`songs/${G.musics[this.selected].bg}`);
-            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
+            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime / 1000);
             this.animateMusicSprites();
         } else if (G.input.isPressed(G.input.DOWN)) {
             // press DOWN to select music below
             this.selected = (this.selected + 1) % G.musics.length;
             this.loadBackground(`songs/${G.musics[this.selected].bg}`);
-            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime);
+            G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime / 1000);
             this.animateMusicSprites();
         } else if (G.input.isPressed(G.input.ENTER)) {
             // press ENTER to enter playfield or editor

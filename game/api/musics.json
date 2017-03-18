@@ -6,7 +6,7 @@
     "audio": "liquid/liquid.mp3",
     "bg": "liquid/liquid.jpg",
     "pr": "liquid/liquid.pr",
-    "previewTime": 43.575
+    "previewTime": 43575
 }, {
     "name": "Pure Ruby",
     "creator": "skywalker_z",
@@ -15,7 +15,7 @@
     "audio": "pure-ruby/pure-ruby.mp3",
     "bg": "pure-ruby/pure-ruby.png",
     "pr": "pure-ruby/pure-ruby.pr",
-    "previewTime": 51.882
+    "previewTime": 51882
 }, {
     "name": "Don Coi (Instrumental)",
     "creator": "skywalker_z",
@@ -24,7 +24,7 @@
     "audio": "don-coi/don-coi.mp3",
     "bg": "don-coi/don-coi.jpg",
     "pr": "don-coi/don-coi.pr",
-    "previewTime": 77.685
+    "previewTime": 77685
 }, {
     "name": "Black Cat Waltz",
     "creator": "skywalker_z",
@@ -33,5 +33,5 @@
     "audio": "black-cat-waltz/black-cat-waltz.mp3",
     "bg": "black-cat-waltz/black-cat-waltz.jpg",
     "pr": "black-cat-waltz/black-cat-waltz.pr",
-    "previewTime": 77.685
+    "previewTime": 13079
 }]
