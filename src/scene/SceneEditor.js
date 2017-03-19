@@ -177,7 +177,7 @@ export default class SceneEditor extends SceneBase {
                 this.data.currentTime = this.data.duration;
             }
             // update tick
-            const tickReturn = Tick.setTime(this.data.currentTime * 1000);
+            const tickReturn = Tick.setTime(this.data.currentTime * 1000, false, G.input.isRepeated(G.input.CTRL));
             if (tickReturn && this.audio.playing) {
                 sounds[`se/metronome-${tickReturn}.mp3`].play();
             }

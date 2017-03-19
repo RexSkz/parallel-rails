@@ -31,8 +31,9 @@ class Tick {
      * Set current time
      * @param {number} time1000 - Current time (1000x)
      * @param {boolean} flush - Clear current process, start from new
+     * @param {boolean} half - Whether half the detail for tick se
      */
-    setTime(time1000, flush = false) {
+    setTime(time1000, flush = false, half = false) {
         let tick = false;
         if (flush) {
             const pos = this.findPositionByTime(time1000);
@@ -46,8 +47,10 @@ class Tick {
         } else if (time1000 >= this.nextTickTime1000) {
             this.updatePrevTick(time1000);
             this.updateNextTick(time1000, true);
-            if (this.currentTick % this.detail == 0) {
-                tick = (Math.floor(this.currentTick / this.detail) % this.tp[this.currentTp].metronome == 0) ? 'high' : 'low';
+            const detail = this.detail >> (half ? 1 : 0);
+            const metronome = this.tp[this.currentTp].metronome << (half ? 1 : 0);
+            if (this.currentTick % detail == 0) {
+                tick = (Math.floor(this.currentTick / detail) % metronome == 0) ? 'high' : 'low';
             }
         }
         return tick;
