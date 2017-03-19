@@ -102,9 +102,10 @@ export function formatTime(time) {
 
 /**
  * Append timing point editing window
- * @param {function} func - Function used to pass timing data
+ * @param {function} timFunc - Function used to pass timing data
+ * @param {function} divFunc - Function used to pass divisor data
  */
-export function appendTimingPointEditingWindow(func) {
+export function appendTimingPointEditingWindow(timFunc, divFunc) {
     const w = document.createElement('div');
     w.className = 'timing-editor-wrapper';
     w.innerHTML = `
@@ -128,8 +129,8 @@ export function appendTimingPointEditingWindow(func) {
             <legend>Timing point detail</legend>
             <fieldset>
                 <legend>BPM and position</legend>
-                <p><span>BPM × 1000: </span><input type="number" min="1" id="bpm"></p>
-                <p><span>POS × 1000: </span><input type="number" min="0" id="offset"></p>
+                <p><span>BPM(×1000): </span><input type="number" min="1" id="bpm"></p>
+                <p><span>POS(×1000): </span><input type="number" min="0" id="pos"></p>
                 <p><button id="use-current-time">Use current time</button></p>
             </fieldset>
             <fieldset>
@@ -139,17 +140,45 @@ export function appendTimingPointEditingWindow(func) {
             <fieldset>
                 <legend>Kiai setting</legend>
                 <label for="kiai-time">
-                    <input type="checkbox" id="kiai-time">
+                    <input type="checkbox" id="kiai-time" onchange="this.blur()">
                     <span>It's kiai time!</span>
                 </label>
             </fieldset>
         </fieldset>
+        <fieldset>
+            <legend>Beat snap divisor (1/<span id="divisor-show">4</span>)</legend>
+            <p><input type="range" min="1" max="12" step="0.01" value="4" id="divisor" onchange="this.blur()"></p>
+            <button id="scale-up">&lt;- Timeline zoom+ -&gt;</button>
+            <button id="scale-down">-&gt; Timeline zoom- &lt;-</button>
+        </fieldset>
     `;
     const listener = () => {
-        func(w.timingData);
+        timFunc(w.timingPoints);
     };
     w.addEventListener('keydown', listener);
+    const divisor = w.querySelector('#divisor');
+    const divisorShow = w.querySelector('#divisor-show');
+    const changeDivisor = () => {
+        let value = 1;
+        if (divisor.value <= 1.5) {
+            value = 1;
+        } else if (divisor.value <= 3) {
+            value = 2;
+        } else if (divisor.value <= 5) {
+            value = 4;
+        } else if (divisor.value <= 7) {
+            value = 6;
+        } else if (divisor.value <= 10) {
+            value = 8;
+        } else {
+            value = 12;
+        }
+        divisorShow.innerText = value;
+        divFunc(value);
+    }
+    divisor.addEventListener('input', changeDivisor);
     w.destroy = () => {
+        divisor.removeEventListener('input', changeDivisor);
         w.removeEventListener('keydown', listener);
         document.body.removeChild(w);
     };

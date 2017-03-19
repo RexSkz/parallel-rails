@@ -4,12 +4,12 @@
  */
 
 import G from '../Global';
-import Tick from '../Tick';
 import {
     setPosition,
     appendTimingPointEditingWindow,
 } from '../Functions';
 import WindowTiming from '../window/WindowTiming';
+import WindowTimeRuler from '../window/WindowTimeRuler';
 import WindowHelp from '../window/WindowHelp';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
@@ -72,20 +72,36 @@ export default class SceneEditor extends SceneBase {
         this.stage.addChild(this.darkenShadow);
         // load background
         this.loadBackground(this.bgUrl);
-        // load pr file
-        fetch(this.prUrl).then(res => {
-            if (res.ok) {
-                res.json().then(data => {
-                    this.data.timingPoints = data.timingPoints;
-                    this.data.hitObjects = data.hitObjects;
-                    Tick.setTp(data.timingPoints);
-                    Tick.setTime(this.data.currentTime * 1000, true);
-                    this.updateFromCachedData();
-                });
-            } else {
-                console.error(`Get PR file '${this.data.artist} - ${this.data.name}' failed, code ${res.status}`); // eslint-disable-line no-console
+        // load cached data
+        let loaded = false;
+        let savedData = localStorage.getItem(this.storageKey);
+        if (savedData) {
+            savedData = JSON.parse(savedData);
+            if (confirm(`Found cached data at ${savedData.time}, would you like to load it?`)) {
+                this.data = savedData.data;
+                this.updateFromCachedData();
+                localStorage.removeItem(this.storageKey);
+                loaded = true;
+                alert('Data loaded, cache has been erased, you have to press Ctrl+S to cache it again.');
+            } else if (confirm('Would you like to erase this cache?')) {
+                localStorage.removeItem(this.storageKey);
+                alert('Cached data has been erased.');
             }
-        });
+        }
+        if (!loaded) {
+            // load pr file
+            fetch(this.prUrl).then(res => {
+                if (res.ok) {
+                    res.json().then(data => {
+                        this.data.timingPoints = data.timingPoints;
+                        this.data.hitObjects = data.hitObjects;
+                        this.updateFromCachedData();
+                    });
+                } else {
+                    console.error(`Get PR file '${this.data.artist} - ${this.data.name}' failed, code ${res.status}`); // eslint-disable-line no-console
+                }
+            });
+        }
         // display loading text
         this.audio = G.resource.get(this.audioUrl);
         if (!this.audio) {
@@ -102,6 +118,9 @@ export default class SceneEditor extends SceneBase {
             }));
             this.stage.addChild(this.loadingTextSprite);
         }
+        // time ruler window
+        this.timeRulerWindow = new WindowTimeRuler;
+        this.stage.addChild(this.timeRulerWindow.stage);
         // hint text
         this.hintTextSprite = new PIXI.Text(`Editing \`${this.music.artist} - ${this.music.name}\`\nPress H for help.`, {
             fontFamily: MAIN_FONT,
@@ -135,21 +154,11 @@ export default class SceneEditor extends SceneBase {
         this.helpWindow.stage.visible = false;
         this.stage.addChild(this.helpWindow.stage);
         // window for editing timing points
-        this.editWindow = appendTimingPointEditingWindow(t => this.data.timingPoints = t);
+        this.editWindow = appendTimingPointEditingWindow(
+            t => { this.data.timingPoints = t; },
+            t => { G.tick.setDivisor(t, this.data.currentTime); }
+        );
         this.editWindowShown = false;
-        // load cached data
-        let savedData = localStorage.getItem(this.storageKey);
-        if (savedData) {
-            savedData = JSON.parse(savedData);
-            if (confirm(`Found cached data at ${savedData.time}, would you like to load it?`)) {
-                this.data = savedData.data;
-                localStorage.removeItem(this.storageKey);
-                alert('Data loaded, cache has been erased, you have to press Ctrl+S to cache it again.');
-            } else if (confirm('Would you like to erase this cache?')) {
-                localStorage.removeItem(this.storageKey);
-                alert('Cached data has been erased.');
-            }
-        }
         next();
     }
     /**
@@ -177,7 +186,7 @@ export default class SceneEditor extends SceneBase {
                 this.data.currentTime = this.data.duration;
             }
             // update tick
-            const tickReturn = Tick.setTime(this.data.currentTime * 1000, false, G.input.isRepeated(G.input.CTRL));
+            const tickReturn = G.tick.setTime(this.data.currentTime * 1000, false, G.input.isRepeated(G.input.CTRL));
             if (tickReturn && this.audio.playing) {
                 sounds[`se/metronome-${tickReturn}.mp3`].play();
             }
@@ -200,6 +209,12 @@ export default class SceneEditor extends SceneBase {
      * Update timing points and hit objects from cached data
      */
     updateFromCachedData() {
+        G.tick.setTp(this.data.timingPoints);
+        G.tick.setTime(this.data.currentTime * 1000, true);
+        this.timeRulerWindow.setTimingPoints(0);
+        this.editWindow.timingPoints = this.data.timingPoints;
+        this.editWindow.querySelector('#bpm').value = this.data.timingPoints[0].bpm1000;
+        this.editWindow.querySelector('#pos').value = this.data.timingPoints[0].pos1000;
         this.editWindow.querySelector('tbody').innerHTML = this.data.timingPoints.map(item => {
             const kiai = (item.kiai) ? 'Yes' : '';
             return [
@@ -267,9 +282,10 @@ export default class SceneEditor extends SceneBase {
             } else {
                 let times = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
                 while (times--) {
-                    this.setPlayFrom(Tick.prevTickTime1000 / 1000);
-                    Tick.setTime(Tick.prevTickTime1000, true);
+                    G.tick.setTime(G.tick.prevTickTime1000, true);
                 }
+                this.setPlayFrom(G.tick.prevTickTime1000 / 1000);
+                this.timeRulerWindow.setTimingPoints(this.data.currentTime * 1000);
             }
         } else if (G.input.isPressed(G.input.RIGHT)) {
             if (this.data.timingPoints.length == 0) {
@@ -277,16 +293,19 @@ export default class SceneEditor extends SceneBase {
             } else {
                 let times = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
                 while (times--) {
-                    this.setPlayFrom(Tick.nextTickTime1000 / 1000);
-                    Tick.setTime(Tick.nextTickTime1000, true);
+                    G.tick.setTime(G.tick.nextTickTime1000, true);
                 }
+                this.setPlayFrom(G.tick.nextTickTime1000 / 1000);
+                this.timeRulerWindow.setTimingPoints(this.data.currentTime * 1000);
             }
         } else if (G.input.isPressed(G.input.HOME)) {
             this.setPlayFrom(0);
-            Tick.setTime(0, true);
+            G.tick.setTime(0, true);
+            this.timeRulerWindow.setTimingPoints(this.data.currentTime * 1000);
         } else if (G.input.isPressed(G.input.END)) {
             this.setPlayFrom(this.data.duration);
-            Tick.setTime(this.data.duration * 1000, true);
+            G.tick.setTime(this.data.duration * 1000, true);
+            this.timeRulerWindow.setTimingPoints(this.data.currentTime * 1000);
         } else if (G.input.isPressed(G.input.ESC)) {
             // ESC to back to title
             if (this.uncached && !confirm('Your work has not been cached, quit by force?')) {

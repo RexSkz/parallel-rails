@@ -24,20 +24,18 @@ export default class WindowHelp extends WindowBase {
     /**
      * @constructor
      * @param {string} helpText - Help text to show
+     * @param {string} align - Text align
      */
     constructor(helpTexts, align = 'left') {
         super();
         // shadow
         this.shadow = new PIXI.Graphics;
         this.shadow.beginFill(0x000000);
-        this.shadow.drawRect(0, 0, window.innerWidth, helpTexts.length * MAIN_FONT_SIZE + HELP_WINDOW_PADDING * 2);
+        this.shadow.drawRect(0, 0, 10000, helpTexts.length * MAIN_FONT_SIZE + HELP_WINDOW_PADDING * 2);
         this.shadow.endFill();
         this.shadow.x = 0;
         this.shadow.y = 0;
-        this.shadow.alpha = 0.7;
-        setPosition(this.shadow, () => ({
-            width: window.innerWidth,
-        }));
+        this.shadow.alpha = 0.6;
         this.stage.addChild(this.shadow);
         // help text
         this.helpTextSprite = new PIXI.Text(helpTexts.join('\n'), {

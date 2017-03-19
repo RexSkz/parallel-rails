@@ -49,7 +49,12 @@ export default class Audio {
      * Pause bgm
      */
     pauseBGM() {
+        this.bgmObject = G.resource.getAudio(this.bgmSrc);
+        if (this.bgmObject) {
+            this.bgmObject.pause();
+        }
         this.bgmNeedStatus = 'pause';
+        this.bgmStatus = 'pause';
     }
     /**
      * Update all audio status
@@ -63,10 +68,6 @@ export default class Audio {
                 this.bgmObject.playFrom(this.bgmStartTime);
                 this.bgmStatus = 'play';
                 this.bgmNeedStatus = 'play';
-                break;
-            case 'pause':
-                this.bgmObject.pause();
-                this.bgmStatus = 'pause';
                 break;
             default:
                 break;

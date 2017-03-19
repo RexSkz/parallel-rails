@@ -146,6 +146,8 @@ export default class SceneMusicSelect extends SceneBase {
             this.animateMusicSprites();
         } else if (G.input.isPressed(G.input.ENTER)) {
             // press ENTER to enter playfield or editor
+            G.audio.pauseBGM();
+            G.lastSelectMusic = this.selected;
             switch (G.mode) {
             case 'play':
                 G.scene = new SceneGaming(this.selected);
@@ -156,8 +158,6 @@ export default class SceneMusicSelect extends SceneBase {
             default:
                 break;
             }
-            G.audio.pauseBGM();
-            G.lastSelectMusic = this.selected;
         }
     }
     /**

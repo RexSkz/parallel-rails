@@ -8,6 +8,7 @@ import Animation from './Animation';
 import Audio from './Audio';
 import Input from './Input';
 import Resource from './Resource';
+import Tick from './Tick';
 import DataConstants from './data/DataConstants';
 
 // prevent repeat assignment for window._G
@@ -25,6 +26,8 @@ if (!window._G) {
         stageContainer: new PIXI.Container,
         // resource loader
         resource: new Resource,
+        // tick
+        tick: new Tick,
         // for window resizing
         windowResized: false,
         windowResizePaintList: {},

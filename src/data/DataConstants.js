@@ -23,6 +23,9 @@ export default class DataConstants {
             TIMING_NUMBER_FONT_SIZE: 12,
             // help window
             HELP_WINDOW_PADDING: 10,
+            // time ruler window
+            TIME_RULER_WINDOW_HEIGHT: 100,
+            TIME_RULER_LINE_TOP: 80,
         };
     }
 }
