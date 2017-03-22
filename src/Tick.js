@@ -1,229 +1,176 @@
 /**
  * Functions for timing points
+ * All time units are in millisecond, after Math.floor
  * @author Rex Zeng
  */
 
 /**
- * Define timing object function class
+ * Define class for timing points
  * @class
  */
 export default class Tick {
     /**
      * @constructor
-     * @param {array} tp - Timing points
      */
     constructor() {
+        this.divisor = 4;
         this.tp = [];
         this.currentTp = 0;
         this.currentTick = 0;
-        this.divisor = 4;
-        this.nextTickTime1000 = 0;
-        this.prevTickTime1000 = 0;
+        this.currentTime = 0;
+        this.prevTickTime = 0;
+        this.nextTickTime = 0;
     }
     /**
-     * Set timing points
-     * @param {array} tp - Timing point array
+     * Calculate time per tick
+     * @param {number} tp - Timing point index
      */
-    setTp(tp) {
-        this.tp = tp;
+    getTimePerTick(tp) {
+        const o = this.tp[tp];
+        return 60000000 / (o.bpm1000 * this.divisor);
+    }
+    /**
+     * Get time by tp and tick index
+     * @param {number} tp - Timing point index
+     * @param {number} tick - Tick index
+     */
+    getTime(tp, tick) {
+        if (tp < 0) {
+            return -Infinity;
+        } else if (tp >= this.tp.length) {
+            return Infinity;
+        } else {
+            return this.tp[tp].pos1000 + Math.floor(this.getTimePerTick(tp) * tick);
+        }
+    }
+    /**
+     * Get total tick of last tp
+     * @param {number} tp - Timing point index
+     */
+    getTotalTickOfPrevTp(tp) {
+        if (tp == 0) {
+            return 0;
+        }
+        const timeDiff = this.tp[tp].pos1000 - this.tp[tp - 1].pos1000;
+        return Math.floor(timeDiff / this.getTimePerTick(tp - 1));
     }
     /**
      * Set divisor
      * @param {number} divisor - Divisor
-     * @param {number} time1000 - Current time (1000x)
      */
-    setDivisor(divisor, time1000) {
+    setDivisor(divisor) {
         this.divisor = divisor;
-        this.setTime(time1000, true);
     }
     /**
-     * Set current time
-     * @param {number} time1000 - Current time (1000x)
-     * @param {boolean} flush - Clear current process, start from new
+     * Get tick mod number, used for draw tick line
+     * @param {number} tp - Timing point index
+     * @param {number} tick - Tick index
      * @param {boolean} half - Whether half the divisor for tick se
      */
-    setTime(time1000, flush = false, half = false) {
-        let tick = false;
-        if (flush) {
-            const pos = this.findPositionByTime(time1000);
-            this.currentTp = pos.tp;
-            this.currentTick = pos.tick;
-            this.getPrevTick();
-            this.getNextTick();
-        } else if (time1000 < this.prevTickTime1000) {
-            this.getPrevTick(true);
-            this.getNextTick();
-        } else if (time1000 >= this.nextTickTime1000) {
-            this.getPrevTick();
-            this.getNextTick(true);
-            const divisor = this.divisor >> (half ? 1 : 0);
-            const metronome = this.tp[this.currentTp].metronome << (half ? 1 : 0);
-            if (this.currentTick % divisor == 0) {
-                tick = (Math.floor(this.currentTick / divisor) % metronome == 0) ? 'high' : 'low';
-            }
+    getTickModNumber(tp, tick, half) {
+        const divisor = this.divisor >> (half ? 1 : 0);
+        const metronome = this.tp[tp].metronome << (half ? 1 : 0);
+        if (tick % divisor == 0) {
+            return Math.floor(tick / divisor) % metronome;
+        } else {
+            return false;
         }
-        return tick;
     }
     /**
-     * Find timing point and tick by current time
-     * @param {number} time1000 - Current time (1000x)
+     * Find timing point, tick, edges by time
+     * l and r means this time belongs to [l, r)
+     * @param {number} time - Current time
+     * @param {number} tp - Timing point index
+     * @param {number} tick - Tick index
      */
-    findPositionByTime(time1000) {
-        let l = 0;
-        let r = this.tp.length - 1;
-        let tp = 0;
-        while (l != r) {
-            tp = (l + r + 1) >> 1;
-            if (this.tp[tp].pos1000 > time1000) {
-                r = tp - 1;
-            } else {
-                l = tp;
+    findPositionByTime(time, tp = null, tick = null) {
+        if (tp == null) {
+            let l = 0, r = this.tp.length - 1;
+            while (l != r) {
+                tp = (l + r + 1) >> 1;
+                if (this.tp[tp].pos1000 > time) {
+                    r = tp - 1;
+                } else {
+                    l = tp;
+                }
             }
+            tp = l;
         }
-        tp = l;
-        const tpObj = this.tp[tp];
-        const timePerTick = 60000000 / (tpObj.bpm1000 * this.divisor);
-        const tick = Math.floor((time1000 - tpObj.pos1000) / timePerTick);
-        return { tp, tick };
+        const o = this.tp[tp];
+        const timePerTick = this.getTimePerTick(tp);
+        if (tick == null) {
+            tick = Math.floor((time - o.pos1000) / timePerTick);
+        }
+        const nextTickTime = o.pos1000 + Math.floor((tick + 1) * timePerTick);
+        const lEdge = o.pos1000 + Math.floor(tick * timePerTick);
+        const rEdge = Math.min(nextTickTime, (tp + 1 == this.tp.length) ? Infinity : this.tp[tp + 1].pos1000);
+        return {
+            tp: tp,
+            tick: tick,
+            l: lEdge,
+            r: rEdge,
+        };
     }
     /**
      * Update prev tick from now
-     * @param {boolean} update - Update currentTick or currentTp
-     * @param {number} currentTime - Provided current time
+     * @param {number} tp - Current timing point index
+     * @param {number} tick - Current tick index
+     * @param {boolean} atEdge - Whether it's at edge
      */
-    getPrevTick(update = false, currentTime = null) {
-        let tp, tpObj, tick;
-        let ret = {
-            tick: 0,
-            time: 0,
-        };
-        if (currentTime == null) {
-            tp = this.currentTp;
-            tpObj = this.tp[tp];
-            tick = this.currentTick;
-        } else {
-            ret = this.findPositionByTime(currentTime);
-            tp = ret.tp;
-            tpObj = this.tp[tp];
-            tick = ret.tick;
-        }
-        const timePerTick = 60000000 / (tpObj.bpm1000 * this.divisor);
-        const prevTpTime1000 = (tp == 0) ? -Infinity : this.tp[tp - 1].pos1000;
-        let prevTickTime1000 = 0;
-        // fix for 'current time is in a tick time'
-        if (currentTime == null) {
-            prevTickTime1000 = Math.floor(tpObj.pos1000 + (tick - 1) * timePerTick);
-        } else {
-            const currentTickTime = Math.floor(tpObj.pos1000 + tick * timePerTick);
-            if (currentTime == currentTickTime) {
-                prevTickTime1000 = Math.floor(tpObj.pos1000 + (tick - 1) * timePerTick);
-            } else {
-                prevTickTime1000 = currentTickTime;
-            }
-        }
-        if (prevTpTime1000 < prevTickTime1000) {
-            if (update) {
-                this.currentTick--;
-            } else {
-                ret.tick--;
-            }
-            prevTickTime1000 = Math.floor(prevTickTime1000);
-            if (currentTime == null) {
-                this.prevTickTime1000 = prevTickTime1000;
-            }
+    prev(tp, tick, atEdge = false) {
+        const totalTick = this.getTotalTickOfPrevTp(tp);
+        const lastTickTime = this.getTime(tp, atEdge ? (tick - 1) : tick);
+        const lastTpTime = this.getTime(tp - 1, totalTick);
+        if (lastTpTime >= lastTickTime) {
+            // tp first
+            const pos = this.findPositionByTime(lastTpTime, tp - 1, totalTick);
             return {
-                tick: {
-                    index: ret.tick,
-                    metronome: this.tp[this.currentTp].metronome,
-                    divisor: this.divisor,
-                },
-                time: prevTickTime1000,
+                tp: pos.tp,
+                tick: pos.tick,
+                metronome: this.tp[tp - 1].metronome,
+                divisor: this.divisor,
+                l: pos.l,
+                r: pos.r,
             };
         } else {
-            const tick = Math.floor((currentTime - this.tp[this.currentTp].pos1000) / timePerTick);
-            if (update) {
-                this.currentTp--;
-                this.currentTick = tick;
-            } else {
-                ret.tp--;
-                ret.tick = tick;
-            }
-            prevTickTime1000 = Math.floor(prevTpTime1000);
-            if (currentTime == null) {
-                this.prevTickTime1000 = prevTickTime1000;
-            }
+            const pos = this.findPositionByTime(lastTickTime, tp, atEdge ? (tick - 1) : tick);
             return {
-                tick: {
-                    index: ret.tick,
-                    metronome: this.tp[this.currentTp].metronome,
-                    divisor: this.divisor,
-                },
-                time: prevTickTime1000,
+                tp: pos.tp,
+                tick: pos.tick,
+                metronome: this.tp[tp].metronome,
+                divisor: this.divisor,
+                l: pos.l,
+                r: pos.r,
             };
         }
     }
     /**
      * Update next tick from now
-     * @param {boolean} update - Update currentTick or currentTp
-     * @param {number} currentTime - Provided current time
+     * @param {number} tp - Current timing point index
+     * @param {number} tick - Current tick index
      */
-    getNextTick(update = false, currentTime = null) {
-        let tp, tpObj, tick;
-        let ret = {
-            tick: 0,
-            time: 0,
-        };
-        if (currentTime == null) {
-            tp = this.currentTp;
-            tpObj = this.tp[tp];
-            tick = this.currentTick;
-        } else {
-            // fix for float uncertainty
-            ret = this.findPositionByTime(currentTime + 1);
-            tp = ret.tp;
-            tpObj = this.tp[tp];
-            tick = ret.tick;
-        }
-        const timePerTick = 60000000 / (tpObj.bpm1000 * this.divisor);
-        const nextTpTime1000 = (tp == this.tp.length - 1) ? Infinity : this.tp[tp + 1].pos1000;
-        let nextTickTime1000 = Math.floor(tpObj.pos1000 + (tick + 1) * timePerTick);
-        if (nextTpTime1000 > nextTickTime1000) {
-            if (update) {
-                this.currentTick++;
-            } else {
-                ret.tick++;
-            }
-            nextTickTime1000 = Math.floor(nextTickTime1000);
-            if (currentTime == null) {
-                this.nextTickTime1000 = nextTickTime1000;
-            }
+    next(tp, tick) {
+        const nextTickTime = this.getTime(tp, tick + 1);
+        const nextTpTime = this.getTime(tp + 1, 0);
+        if (nextTpTime <= nextTickTime) {
+            const pos = this.findPositionByTime(nextTpTime, tp + 1, 0);
             return {
-                tick: {
-                    index: ret.tick,
-                    metronome: this.tp[this.currentTp].metronome,
-                    divisor: this.divisor,
-                },
-                time: nextTickTime1000,
+                tp: pos.tp,
+                tick: pos.tick,
+                metronome: this.tp[tp + 1].metronome,
+                divisor: this.divisor,
+                l: pos.l,
+                r: pos.r,
             };
         } else {
-            if (update) {
-                this.currentTp++;
-                this.currentTick = 0;
-            } else {
-                ret.tp++;
-                ret.tick = 0;
-            }
-            nextTickTime1000 = Math.floor(nextTpTime1000);
-            if (currentTime == null) {
-                this.nextTickTime1000 = nextTickTime1000;
-            }
+            const pos = this.findPositionByTime(nextTickTime, tp, tick + 1);
             return {
-                tick: {
-                    index: ret.tick,
-                    metronome: this.tp[this.currentTp].metronome,
-                    divisor: this.divisor,
-                },
-                time: nextTickTime1000,
+                tp: pos.tp,
+                tick: pos.tick,
+                metronome: this.tp[tp].metronome,
+                divisor: this.divisor,
+                l: pos.l,
+                r: pos.r,
             };
         }
     }

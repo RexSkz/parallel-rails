@@ -50,6 +50,7 @@ export default class SceneEditor extends SceneBase {
         };
         this.storageKey = `${this.music.creator}-${this.music.artist}-${this.music.name}-${this.music.version}`;
         this.uncached = false;
+        this.atEdge = false;
     }
     /**
      * Trigger when scene is initialized
@@ -156,7 +157,7 @@ export default class SceneEditor extends SceneBase {
         // window for editing timing points
         this.editWindow = appendTimingPointEditingWindow(
             t => { this.data.timingPoints = t; },
-            t => { G.tick.setDivisor(t, this.data.currentTime); }
+            t => { G.tick.setDivisor(t); }
         );
         this.editWindowShown = false;
         next();
@@ -186,9 +187,14 @@ export default class SceneEditor extends SceneBase {
                 this.data.currentTime = this.data.duration;
             }
             // update tick
-            const tickReturn = G.tick.setTime(this.data.currentTime * 1000, false, G.input.isRepeated(G.input.CTRL));
-            if (tickReturn && this.audio.playing) {
-                sounds[`se/metronome-${tickReturn}.mp3`].play();
+            if (this.audio.playing && this.data.currentTime * 1000 >= this.pos.r) {
+                this.pos = G.tick.next(this.pos.tp, this.pos.tick);
+                const index = G.tick.getTickModNumber(this.pos.tp, this.pos.tick, G.input.isRepeated(G.input.CTRL));
+                if (index !== false) {
+                    // 1 for low, 2 for high
+                    const soundName = (index == 0) ? 2 : 1;
+                    sounds[`se/metronome-${soundName}.mp3`].play();
+                }
             }
             // other updates
             this.updateInputs();
@@ -209,9 +215,9 @@ export default class SceneEditor extends SceneBase {
      * Update timing points and hit objects from cached data
      */
     updateFromCachedData() {
-        G.tick.setTp(this.data.timingPoints);
-        G.tick.setTime(this.data.currentTime * 1000, true);
-        this.timeRulerWindow.setTimingPoints(0);
+        G.tick.tp = this.data.timingPoints;
+        this.pos = G.tick.findPositionByTime(this.data.currentTime * 1000, 0);
+        this.timeRulerWindow.repaintAllTimingPoints(0);
         this.editWindow.timingPoints = this.data.timingPoints;
         this.editWindow.querySelector('#bpm').value = this.data.timingPoints[0].bpm1000;
         this.editWindow.querySelector('#pos').value = this.data.timingPoints[0].pos1000;
@@ -277,35 +283,50 @@ export default class SceneEditor extends SceneBase {
                 }
             }
         } else if (G.input.isPressed(G.input.LEFT)) {
-            if (this.data.timingPoints.length == 0) {
-                this.setPlayFrom(this.data.currentTime - (G.input.isRepeated(G.input.SHIFT) ? 1 : 0.1));
-            } else {
-                let times = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
-                while (times--) {
-                    G.tick.setTime(G.tick.prevTickTime1000, true);
+            if (this.data.currentTime == 0) {
+                return;
+            }
+            if (this.data.timingPoints.length != 0) {
+                let count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
+                let currentTime = 0;
+                while (count--) {
+                    this.pos = G.tick.prev(this.pos.tp, this.pos.tick, this.atEdge);
+                    currentTime = this.pos.l;
                 }
-                this.setPlayFrom(G.tick.prevTickTime1000 / 1000);
-                this.timeRulerWindow.setTimingPoints(this.data.currentTime * 1000);
+                this.atEdge = true;
+                this.setPlayFrom(currentTime / 1000);
+                this.timeRulerWindow.repaintAllTimingPoints(currentTime);
             }
         } else if (G.input.isPressed(G.input.RIGHT)) {
-            if (this.data.timingPoints.length == 0) {
-                this.setPlayFrom(this.data.currentTime + (G.input.isRepeated(G.input.SHIFT) ? 1 : 0.1));
-            } else {
-                let times = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
-                while (times--) {
-                    G.tick.setTime(G.tick.nextTickTime1000, true);
+            if (this.data.currentTime == this.data.duration) {
+                return;
+            }
+            if (this.data.timingPoints.length != 0) {
+                let count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
+                let currentTime = 0;
+                while (count--) {
+                    this.pos = G.tick.next(this.pos.tp, this.pos.tick);
+                    currentTime = this.pos.l;
                 }
-                this.setPlayFrom(G.tick.nextTickTime1000 / 1000);
-                this.timeRulerWindow.setTimingPoints(this.data.currentTime * 1000);
+                this.atEdge = true;
+                this.setPlayFrom(currentTime / 1000);
+                this.timeRulerWindow.repaintAllTimingPoints(currentTime);
             }
         } else if (G.input.isPressed(G.input.HOME)) {
+            this.atEdge = false;
             this.setPlayFrom(0);
-            G.tick.setTime(0, true);
-            this.timeRulerWindow.setTimingPoints(this.data.currentTime * 1000);
+            const pos = G.tick.findPositionByTime(0);
+            this.pos.tp = pos.tp;
+            this.pos.tick = pos.tick;
+            this.pos.metronome = G.tick.tp[pos.tp].metronome;
+            this.timeRulerWindow.repaintAllTimingPoints(0);
         } else if (G.input.isPressed(G.input.END)) {
             this.setPlayFrom(this.data.duration);
-            G.tick.setTime(this.data.duration * 1000, true);
-            this.timeRulerWindow.setTimingPoints(this.data.currentTime * 1000);
+            const pos = G.tick.findPositionByTime(this.data.duration * 1000);
+            this.pos.tp = pos.tp;
+            this.pos.tick = pos.tick;
+            this.pos.metronome = G.tick.tp[pos.tp].metronome;
+            this.timeRulerWindow.repaintAllTimingPoints(this.data.duration * 1000);
         } else if (G.input.isPressed(G.input.ESC)) {
             // ESC to back to title
             if (this.uncached && !confirm('Your work has not been cached, quit by force?')) {

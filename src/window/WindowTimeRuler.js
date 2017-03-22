@@ -14,6 +14,7 @@ const {
     MAIN_FONT_SIZE,
     TIME_RULER_WINDOW_HEIGHT,
     TIME_RULER_LINE_TOP,
+    TIME_RULER_LINE_HEIGHT,
 } = G.constant;
 
 /**
@@ -26,6 +27,8 @@ export default class WindowTimeRuler extends WindowBase {
      */
     constructor() {
         super();
+        // timeline cache array
+        this.timeLineObject = [];
         // shadow
         this.shadow = new PIXI.Graphics;
         this.shadow.beginFill(0x000000);
@@ -43,86 +46,100 @@ export default class WindowTimeRuler extends WindowBase {
         this.shadowBorder.x = 0;
         this.shadowBorder.y = 0;
         this.stage.addChild(this.shadowBorder);
-        // current time line
-        this.currentTimeLine = new PIXI.Graphics;
-        this.currentTimeLine.lineStyle(3, 0xFFFFFF, 1);
-        this.currentTimeLine.moveTo(0, 50);
-        this.currentTimeLine.lineTo(0, TIME_RULER_WINDOW_HEIGHT);
-        this.currentTimeLine.y = 0;
-        setPosition(this.currentTimeLine, () => ({
-            x: Math.floor(window.innerWidth * 0.3),
-        }));
-        this.stage.addChild(this.currentTimeLine);
         // time lines
-        this.timeLines = new PIXI.Container;
-        this.timeLines.x = 0;
-        this.timeLines.y = TIME_RULER_LINE_TOP;
-        // timeLines's width placeholder
-        const placeholder = new PIXI.Graphics;
-        placeholder.beginFill(0x000000);
-        placeholder.drawRect(0, 0, 1000, TIME_RULER_WINDOW_HEIGHT - TIME_RULER_LINE_TOP);
-        placeholder.endFill();
-        placeholder.x = 0;
-        placeholder.y = 0;
-        placeholder.alpha = 0;
-        this.timeLines.addChild(placeholder);
-        setPosition(this.timeLines, () => ({
-            width: window.innerWidth,
-        }));
-        this.stage.addChild(this.timeLines);
+        this.timeLinesInner = new PIXI.Container;
+        this.timeLinesInner.y = 0;
+        this.timeLinesInner.width = 1000;
+        this.timeLinesInner.height = TIME_RULER_LINE_HEIGHT;
+        setPosition(this.timeLinesInner, () => {
+            this.timeLinesInner.x = 300;
+        }, true);
+        // current time line
+        const currentTimeLine = new PIXI.Graphics;
+        currentTimeLine.lineStyle(3, 0xFFFFFF, 1);
+        currentTimeLine.moveTo(0, 50);
+        currentTimeLine.lineTo(0, TIME_RULER_WINDOW_HEIGHT);
+        currentTimeLine.x = 300;
+        currentTimeLine.y = -80;
+        const timeLines = new PIXI.Container;
+        timeLines.addChild(this.timeLinesInner);
+        timeLines.addChild(currentTimeLine);
+        timeLines.x = 0;
+        timeLines.y = TIME_RULER_LINE_TOP;
+        setPosition(timeLines, () => {
+            timeLines.scale.x = window.innerWidth / 1000;
+        });
+        this.stage.addChild(timeLines);
     }
     /**
-     * Draw tick line
-     * @param {number} x - X axis
-     * @param {number} tick - Current tick
+     * Re-paint timing points
+     * @param {number} relativeTime - Relative time, will be painted at zero point
      */
-    drawLine(x, tick) {
-        let y = 15;
-        let height = 5;
-        if (tick.index % tick.divisor == 0 && Math.floor(tick.index / tick.divisor) % tick.metronome == 0) {
-            y = 0;
-            height = 20;
+    repaintAllTimingPoints(relativeTime) {
+        this.timeLinesInner.removeChildren();
+        const pxPerMs = 0.1;
+        console.log(Math.floor(-relativeTime * pxPerMs));
+        setPosition(this.timeLinesInner, () => {
+            this.timeLinesInner.x = Math.floor(-relativeTime * pxPerMs);
+        }, true);
+        const pos = G.tick.findPositionByTime(relativeTime);
+        let tp, tick, time, position;
+        // draw current tick first
+        tp = pos.tp;
+        tick = pos.tick;
+        time = pos.l;
+        position = 300 + Math.floor(pxPerMs * time);
+        if (pos.l == 436) {
+            console.log(position);
         }
-        const line = new PIXI.Graphics;
-        line.lineStyle(1, 0xFFFFFF, 1);
-        line.moveTo(x, 0);
-        line.lineTo(x, height);
-        line.y = y;
-        this.timeLines.addChild(line);
-    }
-    /**
-     * Set timing points
-     * @param {number} zeroTime1000 - Current zero time (1000x)
-     */
-    setTimingPoints(zeroTime1000) {
-        this.timeLines.removeChildren();
-        const zeroPos = 300;
-        const pxPerMs = 0.125;
-        let x = 0;
-        let ret = G.tick.getPrevTick(false, 0);
-        let tick = ret.tick;
-        let time = ret.time;
-        while (x > -43) {
-            const timeDelta = zeroTime1000 - time;
-            const distance = timeDelta * pxPerMs;
-            this.drawLine(zeroPos - distance, tick);
-            ret = G.tick.getPrevTick(false, time);
-            tick = ret.tick;
-            time = ret.time;
-            x--;
+        this.timeLineObject = [{
+            x: position,
+            mod: G.tick.getTickModNumber(tp, tick),
+        }];
+        // draw previous ticks
+        position = 0;
+        let prevPos = {
+            tp: pos.tp,
+            tick: pos.tick,
+        };
+        while (position >= 0) {
+            prevPos = G.tick.prev(prevPos.tp, prevPos.tick, true);
+            tp = prevPos.tp;
+            tick = prevPos.tick;
+            time = prevPos.l;
+            position = 300 + pxPerMs * (time - relativeTime);
+            this.timeLineObject.unshift({
+                x: position,
+                mod: G.tick.getTickModNumber(tp, tick),
+            });
         }
-        x = 1;
-        ret = G.tick.getNextTick(false, 0);
-        tick = ret.tick;
-        time = ret.time;
-        while (x < 100) {
-            const timeDelta = time - zeroTime1000;
-            const distance = timeDelta * pxPerMs;
-            this.drawLine(zeroPos + distance, tick);
-            ret = G.tick.getNextTick(false, time);
-            tick = ret.tick;
-            time = ret.time;
-            x++;
+        // draw next ticks
+        position = 0;
+        let nextPos = {
+            tp: pos.tp,
+            tick: pos.tick,
+        };
+        while (position <= 1000) {
+            nextPos = G.tick.next(nextPos.tp, nextPos.tick);
+            tp = nextPos.tp;
+            tick = nextPos.tick;
+            time = nextPos.l;
+            position = 300 + pxPerMs * (time - relativeTime);
+            this.timeLineObject.push({
+                x: position,
+                mod: G.tick.getTickModNumber(tp, tick),
+            });
+        }
+        // draw
+        for (const item of this.timeLineObject) {
+            const height = (item.mod !== false) ? 2 : 1;
+            const realHeight = height * 10 - 5;
+            const line = new PIXI.Graphics;
+            line.lineStyle(1, 0xFFFFFF, 1);
+            line.moveTo(item.x, 0);
+            line.lineTo(item.x, realHeight);
+            line.y = 20 - realHeight;
+            this.timeLinesInner.addChild(line);
         }
     }
 }

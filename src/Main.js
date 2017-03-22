@@ -30,8 +30,8 @@ class ParallelRails {
         // setup the renderer
         this.setupRender(opt.el);
         // load resources
-        G.resource.addAudio(`se/metronome-high.mp3`);
-        G.resource.addAudio(`se/metronome-low.mp3`);
+        G.resource.addAudio(`se/metronome-2.mp3`);
+        G.resource.addAudio(`se/metronome-1.mp3`);
         // load music list
         if (!G.musics) {
             updateMusicList();

@@ -23,12 +23,15 @@ export function setPosition(sprite, func, forceUpdate = false) {
     }
     const painter = () => {
         const result = func();
-        for (const key in result) {
-            sprite[key] = result[key];
+        if (result) {
+            for (const key in result) {
+                sprite[key] = result[key];
+            }
         }
     };
     painter.sprite = sprite;
     painter.sceneName = G.scene.name;
+    delete G.windowResizePaintList[sprite.queueId];
     G.windowResizePaintList[sprite.queueId] = painter;
     painter();
 }
@@ -90,7 +93,8 @@ export function formatTime(time) {
     if (second < 10) {
         second = '0' + second;
     }
-    time -= second;
+    // fix float error
+    time = (time * 1000 - second * 1000) / 1000;
     let millsec = Math.floor(time * 1000);
     if (millsec < 10) {
         millsec = '00' + millsec;

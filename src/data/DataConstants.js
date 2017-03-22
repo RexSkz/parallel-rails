@@ -26,6 +26,7 @@ export default class DataConstants {
             // time ruler window
             TIME_RULER_WINDOW_HEIGHT: 100,
             TIME_RULER_LINE_TOP: 80,
+            TIME_RULER_LINE_HEIGHT: 20,
         };
     }
 }
