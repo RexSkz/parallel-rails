@@ -27,6 +27,15 @@ export default class DataConstants {
             TIME_RULER_WINDOW_HEIGHT: 100,
             TIME_RULER_LINE_TOP: 80,
             TIME_RULER_LINE_HEIGHT: 20,
+            TIME_RULER_COLORS: {
+                1: [0xFFFFFF],
+                2: [0xFFFFFF, 0xE30405],
+                3: [0xFFFFFF, 0xB204B6, 0xB204B6],
+                4: [0xFFFFFF, 0x2E74E6, 0xE30405, 0x2E74E6],
+                6: [0xFFFFFF, 0x2E74E6, 0x2E74E6, 0xE30405, 0x2E74E6, 0x2E74E6],
+                8: [0xFFFFFF, 0xE3E405, 0x2E74E6, 0xE3E405, 0xE30405, 0xE3E405, 0x2E74E6, 0xE3E405],
+                12: [0xFFFFFF, 0x8E9092, 0x803C84, 0x2E74E6, 0xB203B6, 0x8E9092, 0xE30405, 0x8E9092, 0xB203B6, 0x2E74E6, 0x803C84, 0x8E9092],
+            },
         };
     }
 }

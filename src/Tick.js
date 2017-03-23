@@ -55,13 +55,6 @@ export default class Tick {
         return Math.floor(timeDiff / this.getTimePerTick(tp - 1));
     }
     /**
-     * Set divisor
-     * @param {number} divisor - Divisor
-     */
-    setDivisor(divisor) {
-        this.divisor = divisor;
-    }
-    /**
      * Get tick mod number, used for draw tick line
      * @param {number} tp - Timing point index
      * @param {number} tick - Tick index
@@ -70,10 +63,9 @@ export default class Tick {
     getTickModNumber(tp, tick, half) {
         const divisor = this.divisor >> (half ? 1 : 0);
         const metronome = this.tp[tp].metronome << (half ? 1 : 0);
-        if (tick % divisor == 0) {
-            return Math.floor(tick / divisor) % metronome;
-        } else {
-            return false;
+        return {
+            tick: Math.floor(tick / divisor) % metronome,
+            divisor: tick % divisor,
         }
     }
     /**

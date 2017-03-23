@@ -15,6 +15,7 @@ const {
     TIME_RULER_WINDOW_HEIGHT,
     TIME_RULER_LINE_TOP,
     TIME_RULER_LINE_HEIGHT,
+    TIME_RULER_COLORS,
 } = G.constant;
 
 /**
@@ -78,7 +79,6 @@ export default class WindowTimeRuler extends WindowBase {
     repaintAllTimingPoints(relativeTime) {
         this.timeLinesInner.removeChildren();
         const pxPerMs = 0.1;
-        console.log(Math.floor(-relativeTime * pxPerMs));
         setPosition(this.timeLinesInner, () => {
             this.timeLinesInner.x = Math.floor(-relativeTime * pxPerMs);
         }, true);
@@ -89,42 +89,39 @@ export default class WindowTimeRuler extends WindowBase {
         tick = pos.tick;
         time = pos.l;
         position = 300 + Math.floor(pxPerMs * time);
-        if (pos.l == 436) {
-            console.log(position);
-        }
         this.timeLineObject = [{
             x: position,
             mod: G.tick.getTickModNumber(tp, tick),
         }];
         // draw previous ticks
-        position = 0;
+        position = Infinity;
         let prevPos = {
             tp: pos.tp,
             tick: pos.tick,
         };
-        while (position >= 0) {
+        while (Math.floor(-relativeTime * pxPerMs) + position >= -300) {
             prevPos = G.tick.prev(prevPos.tp, prevPos.tick, true);
             tp = prevPos.tp;
             tick = prevPos.tick;
             time = prevPos.l;
-            position = 300 + pxPerMs * (time - relativeTime);
+            position = 300 + Math.floor(pxPerMs * time);
             this.timeLineObject.unshift({
                 x: position,
                 mod: G.tick.getTickModNumber(tp, tick),
             });
         }
         // draw next ticks
-        position = 0;
+        position = -Infinity;
         let nextPos = {
             tp: pos.tp,
             tick: pos.tick,
         };
-        while (position <= 1000) {
+        while (Math.floor(-relativeTime * pxPerMs) + position <= 1000) {
             nextPos = G.tick.next(nextPos.tp, nextPos.tick);
             tp = nextPos.tp;
             tick = nextPos.tick;
             time = nextPos.l;
-            position = 300 + pxPerMs * (time - relativeTime);
+            position = 300 + Math.floor(pxPerMs * time);
             this.timeLineObject.push({
                 x: position,
                 mod: G.tick.getTickModNumber(tp, tick),
@@ -132,13 +129,22 @@ export default class WindowTimeRuler extends WindowBase {
         }
         // draw
         for (const item of this.timeLineObject) {
-            const height = (item.mod !== false) ? 2 : 1;
-            const realHeight = height * 10 - 5;
+            let height = 0;
+            let color = TIME_RULER_COLORS[G.tick.divisor][Math.abs(item.mod.divisor)];
+            if (item.mod.divisor == 0) {
+                if (item.mod.tick == 0) {
+                    height = 20;
+                } else {
+                    height = 10;
+                }
+            } else {
+                height = 5;
+            }
             const line = new PIXI.Graphics;
-            line.lineStyle(1, 0xFFFFFF, 1);
+            line.lineStyle(1, color, 1);
             line.moveTo(item.x, 0);
-            line.lineTo(item.x, realHeight);
-            line.y = 20 - realHeight;
+            line.lineTo(item.x, height);
+            line.y = 20 - height;
             this.timeLinesInner.addChild(line);
         }
     }

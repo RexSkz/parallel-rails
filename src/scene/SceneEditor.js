@@ -157,7 +157,12 @@ export default class SceneEditor extends SceneBase {
         // window for editing timing points
         this.editWindow = appendTimingPointEditingWindow(
             t => { this.data.timingPoints = t; },
-            t => { G.tick.setDivisor(t); }
+            t => {
+                if (G.tick.divisor != t) {
+                    G.tick.divisor = t;
+                    this.timeRulerWindow.repaintAllTimingPoints(this.data.currentTime * 1000);
+                }
+            },
         );
         this.editWindowShown = false;
         next();
@@ -190,9 +195,9 @@ export default class SceneEditor extends SceneBase {
             if (this.audio.playing && this.data.currentTime * 1000 >= this.pos.r) {
                 this.pos = G.tick.next(this.pos.tp, this.pos.tick);
                 const index = G.tick.getTickModNumber(this.pos.tp, this.pos.tick, G.input.isRepeated(G.input.CTRL));
-                if (index !== false) {
+                if (index.divisor == 0) {
                     // 1 for low, 2 for high
-                    const soundName = (index == 0) ? 2 : 1;
+                    const soundName = (index.tick == 0) ? 2 : 1;
                     sounds[`se/metronome-${soundName}.mp3`].play();
                 }
             }
@@ -295,7 +300,7 @@ export default class SceneEditor extends SceneBase {
                 }
                 this.atEdge = true;
                 this.setPlayFrom(currentTime / 1000);
-                this.timeRulerWindow.repaintAllTimingPoints(currentTime);
+                this.timeRulerWindow.repaintAllTimingPoints(this.data.currentTime * 1000);
             }
         } else if (G.input.isPressed(G.input.RIGHT)) {
             if (this.data.currentTime == this.data.duration) {
@@ -310,22 +315,21 @@ export default class SceneEditor extends SceneBase {
                 }
                 this.atEdge = true;
                 this.setPlayFrom(currentTime / 1000);
-                this.timeRulerWindow.repaintAllTimingPoints(currentTime);
+                this.timeRulerWindow.repaintAllTimingPoints(this.data.currentTime * 1000);
             }
         } else if (G.input.isPressed(G.input.HOME)) {
+            this.pos = G.tick.findPositionByTime(0);
+            this.pos.metronome = G.tick.tp[this.pos.tp].metronome;
+            this.pos.divisor = G.tick.divisor;
             this.atEdge = false;
             this.setPlayFrom(0);
-            const pos = G.tick.findPositionByTime(0);
-            this.pos.tp = pos.tp;
-            this.pos.tick = pos.tick;
-            this.pos.metronome = G.tick.tp[pos.tp].metronome;
             this.timeRulerWindow.repaintAllTimingPoints(0);
         } else if (G.input.isPressed(G.input.END)) {
+            this.pos = G.tick.findPositionByTime(this.data.duration * 1000);
+            this.pos.metronome = G.tick.tp[this.pos.tp].metronome;
+            this.pos.divisor = G.tick.divisor;
+            this.atEdge = false;
             this.setPlayFrom(this.data.duration);
-            const pos = G.tick.findPositionByTime(this.data.duration * 1000);
-            this.pos.tp = pos.tp;
-            this.pos.tick = pos.tick;
-            this.pos.metronome = G.tick.tp[pos.tp].metronome;
             this.timeRulerWindow.repaintAllTimingPoints(this.data.duration * 1000);
         } else if (G.input.isPressed(G.input.ESC)) {
             // ESC to back to title
