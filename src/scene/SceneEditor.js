@@ -201,6 +201,10 @@ export default class SceneEditor extends SceneBase {
                     sounds[`se/metronome-${soundName}.mp3`].play();
                 }
             }
+            // update time ruler
+            if (this.audio.playing) {
+                this.timeRulerWindow.paintTpRightTo(this.data.currentTime * 1000);
+            }
             // other updates
             this.updateInputs();
             this.updatePlayFromTime();
@@ -315,7 +319,7 @@ export default class SceneEditor extends SceneBase {
                 }
                 this.atEdge = true;
                 this.setPlayFrom(currentTime / 1000);
-                this.timeRulerWindow.repaintAllTimingPoints(this.data.currentTime * 1000);
+                this.timeRulerWindow.paintTpRightTo(this.data.currentTime * 1000);
             }
         } else if (G.input.isPressed(G.input.HOME)) {
             this.pos = G.tick.findPositionByTime(0);
