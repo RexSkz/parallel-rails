@@ -49,8 +49,8 @@ export default class SceneLoading extends SceneBase {
         }));
         this.stage.addChild(this.urlTextSprite);
         // load resources
-        G.resource.addAudio(`se/metronome-2.mp3`);
-        G.resource.addAudio(`se/metronome-1.mp3`);
+        G.resource.addAudio('se/metronome-1.mp3');
+        G.resource.addAudio('se/metronome-2.mp3');
         next();
     }
     /**

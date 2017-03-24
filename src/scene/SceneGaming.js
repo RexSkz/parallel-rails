@@ -7,6 +7,7 @@ import G from '../Global';
 import {
     setPosition,
 } from '../Functions';
+import WindowHitObject from '../window/WindowHitObject';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 
@@ -59,6 +60,9 @@ export default class SceneGaming extends SceneBase {
         this.darkenShadow.endFill();
         this.darkenShadow.alpha = 0.8;
         this.stage.addChild(this.darkenShadow);
+        // hit object window
+        this.hitObjectWindow = new WindowHitObject('gaming');
+        this.stage.addChild(this.hitObjectWindow.stage);
         // load background and music
         this.loadBackground(this.bgUrl);
         next();

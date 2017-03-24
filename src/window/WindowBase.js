@@ -3,10 +3,6 @@
  * @author Rex Zeng
  */
 
-import {
-    setPosition,
-} from '../Functions';
-
 /**
  * Timing window class
  * @class

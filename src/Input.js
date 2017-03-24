@@ -84,7 +84,7 @@ export default class Input {
      */
     initKeyState() {
         this.keyState = [];
-        for (let keyCode = 1; keyCode < 128; keyCode++) {
+        for (let keyCode = 1; keyCode < 256; keyCode++) {
             this.keyState[keyCode] = {
                 isPressed: false, // nearly pressed down
                 isReleased: false, // nearly released up

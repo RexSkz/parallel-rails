@@ -9,9 +9,6 @@ import {
 } from './Functions';
 import SceneLoading from './scene/SceneLoading';
 
-// define graphics path for further use
-const GRAPHICS_PATH = 'graphics/sprites.json';
-
 /**
  * Game main class
  * @class

@@ -4,7 +4,6 @@
  */
 
 import G from './Global';
-import moment from 'moment';
 
 /**
  * Set sprite position with percent data provided
@@ -179,15 +178,13 @@ export function appendTimingPointEditingWindow(timFunc, divFunc) {
         }
         divisorShow.innerText = value;
         divFunc(value);
-    }
+    };
     divisor.addEventListener('input', changeDivisor);
     w.destroy = () => {
         divisor.removeEventListener('input', changeDivisor);
         w.removeEventListener('keydown', listener);
         document.body.removeChild(w);
     };
-    w.show = () => w.className = 'timing-editor-wrapper show';
-    w.hide = () => w.className = 'timing-editor-wrapper';
     const controls = w.querySelectorAll('input, select, button');
     for (let i = 0; i < controls.length; i++) {
         const control = controls[i];

@@ -66,7 +66,7 @@ export default class Tick {
         return {
             tick: Math.floor(tick / divisor) % metronome,
             divisor: tick % divisor,
-        }
+        };
     }
     /**
      * Find timing point, tick, edges by time

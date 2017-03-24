@@ -6,7 +6,6 @@
 import G from '../Global';
 import {
     setPosition,
-    formatTime,
 } from '../Functions';
 import WindowBase from './WindowBase';
 

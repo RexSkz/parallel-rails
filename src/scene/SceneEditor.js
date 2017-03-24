@@ -8,9 +8,10 @@ import {
     setPosition,
     appendTimingPointEditingWindow,
 } from '../Functions';
-import WindowTiming from '../window/WindowTiming';
-import WindowTimeRuler from '../window/WindowTimeRuler';
 import WindowHelp from '../window/WindowHelp';
+import WindowHitObject from '../window/WindowHitObject';
+import WindowTimeRuler from '../window/WindowTimeRuler';
+import WindowTiming from '../window/WindowTiming';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 import moment from 'moment';
@@ -51,6 +52,8 @@ export default class SceneEditor extends SceneBase {
         this.storageKey = `${this.music.creator}-${this.music.artist}-${this.music.name}-${this.music.version}`;
         this.uncached = false;
         this.atEdge = false;
+        // options: hitObject, timingPoint
+        this.currentMode = 'hitObject';
     }
     /**
      * Trigger when scene is initialized
@@ -155,16 +158,18 @@ export default class SceneEditor extends SceneBase {
         this.helpWindow.stage.visible = false;
         this.stage.addChild(this.helpWindow.stage);
         // window for editing timing points
-        this.editWindow = appendTimingPointEditingWindow(
-            t => { this.data.timingPoints = t; },
-            t => {
-                if (G.tick.divisor != t) {
-                    G.tick.divisor = t;
-                    this.timeRulerWindow.repaintAllTimingPoints(this.data.currentTime * 1000);
-                }
-            },
-        );
-        this.editWindowShown = false;
+        const updateTimingPoint = t => { this.data.timingPoints = t; };
+        const updateDivisor = t => {
+            if (G.tick.divisor != t) {
+                G.tick.divisor = t;
+                this.timeRulerWindow.repaintAllTimingPoints(this.data.currentTime * 1000);
+            }
+        };
+        this.tpWindow = appendTimingPointEditingWindow(updateTimingPoint, updateDivisor);
+        this.tpWindow.style.opacity = 0;
+        // hit object window
+        this.hitObjectWindow = new WindowHitObject('editor');
+        this.stage.addChild(this.hitObjectWindow.stage);
         next();
     }
     /**
@@ -181,10 +186,6 @@ export default class SceneEditor extends SceneBase {
                 G.scene = new SceneMusicSelect;
             }
         } else {
-            if (!this.editWindowShown) {
-                this.editWindow.show();
-                this.editWindowShown = true;
-            }
             this.loadingTextSprite.visible = false;
             // auto pause when finish playing
             if (this.data.currentTime >= this.data.duration) {
@@ -194,11 +195,13 @@ export default class SceneEditor extends SceneBase {
             // update tick
             if (this.audio.playing && this.data.currentTime * 1000 >= this.pos.r) {
                 this.pos = G.tick.next(this.pos.tp, this.pos.tick);
-                const index = G.tick.getTickModNumber(this.pos.tp, this.pos.tick, G.input.isRepeated(G.input.CTRL));
-                if (index.divisor == 0) {
-                    // 1 for low, 2 for high
-                    const soundName = (index.tick == 0) ? 2 : 1;
-                    sounds[`se/metronome-${soundName}.mp3`].play();
+                if (this.tpWindow.style.opacity == 1) {
+                    const index = G.tick.getTickModNumber(this.pos.tp, this.pos.tick, G.input.isRepeated(G.input.CTRL));
+                    if (index.divisor == 0) {
+                        // 1 for low, 2 for high
+                        const soundName = (index.tick == 0) ? 2 : 1;
+                        sounds[`se/metronome-${soundName}.mp3`].play();
+                    }
                 }
             }
             // update time ruler
@@ -218,7 +221,7 @@ export default class SceneEditor extends SceneBase {
      */
     onTerminate() {
         super.onTerminate();
-        this.editWindow.destroy();
+        this.tpWindow.destroy();
     }
     /**
      * Update timing points and hit objects from cached data
@@ -227,20 +230,20 @@ export default class SceneEditor extends SceneBase {
         G.tick.tp = this.data.timingPoints;
         this.pos = G.tick.findPositionByTime(this.data.currentTime * 1000, 0);
         this.timeRulerWindow.repaintAllTimingPoints(0);
-        this.editWindow.timingPoints = this.data.timingPoints;
-        this.editWindow.querySelector('#bpm').value = this.data.timingPoints[0].bpm1000;
-        this.editWindow.querySelector('#pos').value = this.data.timingPoints[0].pos1000;
-        this.editWindow.querySelector('tbody').innerHTML = this.data.timingPoints.map(item => {
+        this.tpWindow.timingPoints = this.data.timingPoints;
+        this.tpWindow.querySelector('#bpm').value = this.data.timingPoints[0].bpm1000;
+        this.tpWindow.querySelector('#pos').value = this.data.timingPoints[0].pos1000;
+        this.tpWindow.querySelector('tbody').innerHTML = this.data.timingPoints.map(item => {
             const kiai = (item.kiai) ? 'Yes' : '';
             return [
                 '<tr>',
-                    '<td>',
-                        '<button id="timing-point-remove">Remove</button>',
-                    '</td>',
-                    `<td>${item.pos1000 / 1000}</td>`,
-                    `<td>${item.bpm1000 / 1000}</td>`,
-                    `<td>${item.metronome}/4</td>`,
-                    `<td>${kiai}</td>`,
+                '<td>',
+                '<button id="timing-point-remove">Remove</button>',
+                '</td>',
+                `<td>${item.pos1000 / 1000}</td>`,
+                `<td>${item.bpm1000 / 1000}</td>`,
+                `<td>${item.metronome}/4</td>`,
+                `<td>${kiai}</td>`,
                 '</tr>',
             ].join('');
         }).join('');
@@ -251,11 +254,9 @@ export default class SceneEditor extends SceneBase {
     updateInputs() {
         if (G.input.isPressed(G.input.H)) {
             this.helpWindow.stage.visible = !this.helpWindow.stage.visible;
-            if (this.helpWindow.stage.visible) {
-                this.editWindow.hide();
-            } else if (this.audio) {
-                this.editWindow.show();
-            }
+        } else if (G.input.isPressed(G.input.APOSTROPHE)) {
+            this.hitObjectWindow.stage.visible = !this.hitObjectWindow.stage.visible;
+            this.tpWindow.style.opacity = 1 - this.tpWindow.style.opacity;
         } else if (G.input.isRepeated(G.input.CTRL) && G.input.isRepeated(G.input.S)) {
             // CTRL+S to save to localStorage
             const dt = moment().format('Y-m-d H:m:s');
@@ -271,10 +272,10 @@ export default class SceneEditor extends SceneBase {
             if (newWindow) {
                 newWindow.document.body.innerText = JSON.stringify(this.data);
             } else {
-                console.log(JSON.stringify({
+                console.log(JSON.stringify({ // eslint-disable-line no-console
                     timingPoints: this.data.timingPoints,
                     hitObjects: this.data.hitObjects,
-                })); // eslint-disable-line no-console
+                }));
                 alert('Failed to open window! Please allow popup window. Data has logged to console.');
             }
         } else if (G.input.isPressed(G.input.SPACE)) {
@@ -295,6 +296,12 @@ export default class SceneEditor extends SceneBase {
             if (this.data.currentTime == 0) {
                 return;
             }
+            if (G.input.isRepeated(G.input.CTRL)) {
+                const count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
+                this.setPlayFrom(this.data.currentTime - 0.001 * count);
+                this.timeRulerWindow.paintTpLeftTo(this.data.currentTime * 1000);
+                return;
+            }
             if (this.data.timingPoints.length != 0) {
                 let count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
                 let currentTime = 0;
@@ -308,6 +315,12 @@ export default class SceneEditor extends SceneBase {
             }
         } else if (G.input.isPressed(G.input.RIGHT)) {
             if (this.data.currentTime == this.data.duration) {
+                return;
+            }
+            if (G.input.isRepeated(G.input.CTRL)) {
+                const count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
+                this.setPlayFrom(this.data.currentTime + 0.001 * count);
+                this.timeRulerWindow.paintTpRightTo(this.data.currentTime * 1000);
                 return;
             }
             if (this.data.timingPoints.length != 0) {
@@ -340,7 +353,7 @@ export default class SceneEditor extends SceneBase {
             if (this.uncached && !confirm('Your work has not been cached, quit by force?')) {
                 return;
             }
-            this.editWindow.hide();
+            this.tpWindow.style.opacity = 0;
             G.scene = new SceneMusicSelect;
         }
     }

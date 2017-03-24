@@ -10,8 +10,6 @@ import {
 import WindowBase from './WindowBase';
 
 const {
-    MAIN_FONT,
-    MAIN_FONT_SIZE,
     TIME_RULER_WINDOW_HEIGHT,
     TIME_RULER_LINE_TOP,
     TIME_RULER_LINE_HEIGHT,
