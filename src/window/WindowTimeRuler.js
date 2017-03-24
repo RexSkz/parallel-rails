@@ -74,8 +74,52 @@ export default class WindowTimeRuler extends WindowBase {
         this.stage.addChild(timeLines);
     }
     /**
+     * Delta paint to the left(<-) direction
+     * @param {number} relativeTime - Current time
+     */
+    paintTpLeftTo(relativeTime) {
+        setPosition(this.timeLinesInner, () => {
+            this.timeLinesInner.x = Math.floor(-relativeTime * this.zoom);
+        }, true);
+        let position = -Infinity;
+        // deque right
+        while (this.timeLineObject.length > 0) {
+            position = 300 + Math.floor(this.zoom * this.timeLineObject[this.timeLineObject.length - 1].time);
+            if (Math.floor(-relativeTime * this.zoom) + position > 1000) {
+                this.timeLineObject.pop();
+                this.timeLinesInner.removeChildAt(this.timeLinesInner.children.length - 1);
+            } else {
+                break;
+            }
+        }
+        // enque left
+        const first = this.timeLineObject[0];
+        let prevPos = {
+            tp: first.tp,
+            tick: first.tick,
+            time: first.time,
+        };
+        let { tp, tick, time } = prevPos;
+        position = 300 + Math.floor(this.zoom * time);
+        while (Math.floor(-relativeTime * this.zoom) + position >= 0) {
+            prevPos = G.tick.prev(prevPos.tp, prevPos.tick, true);
+            tp = prevPos.tp;
+            tick = prevPos.tick;
+            time = prevPos.l;
+            position = 300 + Math.floor(this.zoom * time);
+            const o = {
+                x: position,
+                mod: G.tick.getTickModNumber(tp, tick),
+                tp: tp,
+                tick: tick,
+                time: time,
+            };
+            this.timeLineObject.unshift(o);
+            this.timeLinesInner.addChildAt(this.getLineByObj(o), 0);
+        }
+    }
+    /**
      * Delta paint to the right(->) direction
-     * TODO: finish `paintTpLeftTo` function
      * @param {number} relativeTime - Current time
      */
     paintTpRightTo(relativeTime) {
@@ -86,7 +130,7 @@ export default class WindowTimeRuler extends WindowBase {
         // deque left
         while (this.timeLineObject.length > 0) {
             position = 300 + Math.floor(this.zoom * this.timeLineObject[0].time);
-            if (Math.floor(-relativeTime * this.zoom) + position < -300) {
+            if (Math.floor(-relativeTime * this.zoom) + position < 0) {
                 this.timeLineObject.shift();
                 this.timeLinesInner.removeChildAt(0);
             } else {

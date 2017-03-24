@@ -304,7 +304,7 @@ export default class SceneEditor extends SceneBase {
                 }
                 this.atEdge = true;
                 this.setPlayFrom(currentTime / 1000);
-                this.timeRulerWindow.repaintAllTimingPoints(this.data.currentTime * 1000);
+                this.timeRulerWindow.paintTpLeftTo(this.data.currentTime * 1000);
             }
         } else if (G.input.isPressed(G.input.RIGHT)) {
             if (this.data.currentTime == this.data.duration) {
