@@ -48,6 +48,9 @@ export default class SceneLoading extends SceneBase {
             y: 0.5 * (window.innerHeight - this.urlTextSprite.height) + 10,
         }));
         this.stage.addChild(this.urlTextSprite);
+        // load resources
+        G.resource.addAudio(`se/metronome-2.mp3`);
+        G.resource.addAudio(`se/metronome-1.mp3`);
         next();
     }
     /**
@@ -57,7 +60,7 @@ export default class SceneLoading extends SceneBase {
     update() {
         super.update();
         this.updateLoaderText(G.resource);
-        if (!G.lock.loader) {
+        if (!G.lock.loader && !G.lock.soundLoader) {
             G.scene = new SceneTitle;
         }
     }

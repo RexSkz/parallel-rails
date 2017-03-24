@@ -54,6 +54,8 @@ export default class Resource {
                 this.soundQueue = [];
                 G.lock.soundLoader = true;
                 sounds.load(q);
+                // TODO: this is a hack for sound.js, waiting for author's next update
+                this.updateLoaderData({ progress: 0 }, { url: q[0] });
                 sounds.whenLoaded = () => G.lock.soundLoader = false;
             }
         }
