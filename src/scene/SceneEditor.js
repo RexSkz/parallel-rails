@@ -148,8 +148,8 @@ export default class SceneEditor extends SceneBase {
             '    DEL: Delete current hit object.',
             '     UP: Add object to switch to upper rail.',
             '   DOWN: Add object to switch to lower rail.',
-            '   LEFT: Set player back (SHIFT to 10x it).',
-            '  RIGHT: Set player move (SHIFT to 10x it).',
+            '   LEFT: Time back (SHIFT: 10x, CTRL: in millisecond unit).',
+            '  RIGHT: Time move (SHIFT: 10x, CTRL: in millisecond unit).',
             '   HOME: Jump to music start.',
             '    END: Jump to music end.',
             '  SPACE: Toggle play / pause.',
@@ -167,6 +167,7 @@ export default class SceneEditor extends SceneBase {
         };
         this.tpWindow = appendTimingPointEditingWindow(updateTimingPoint, updateDivisor);
         this.tpWindow.style.opacity = 0;
+        this.tpWindow.style.visibility = 'hidden';
         // hit object window
         this.hitObjectWindow = new WindowHitObject('editor');
         this.stage.addChild(this.hitObjectWindow.stage);
@@ -254,9 +255,11 @@ export default class SceneEditor extends SceneBase {
     updateInputs() {
         if (G.input.isPressed(G.input.H)) {
             this.helpWindow.stage.visible = !this.helpWindow.stage.visible;
+            this.tpWindow.style.display = this.helpWindow.stage.visible ? 'none' : 'block';
         } else if (G.input.isPressed(G.input.APOSTROPHE)) {
             this.hitObjectWindow.stage.visible = !this.hitObjectWindow.stage.visible;
             this.tpWindow.style.opacity = 1 - this.tpWindow.style.opacity;
+            this.tpWindow.style.visibility = this.helpWindow.stage.visible ? 'hidden' : 'visible';
         } else if (G.input.isRepeated(G.input.CTRL) && G.input.isRepeated(G.input.S)) {
             // CTRL+S to save to localStorage
             const dt = moment().format('Y-m-d H:m:s');
@@ -268,14 +271,17 @@ export default class SceneEditor extends SceneBase {
             alert(`Data has been cached in localStorage at ${dt}.`);
         } else if (G.input.isPressed(G.input.F12)) {
             // F12 to export data
-            const newWindow = window.open('', this.storageKey, 'height=500,width=500,top=20,left=20,menubar=no,scrollbars=yes,resizable=yes');
+            const data = JSON.stringify({
+                timingPoints: this.data.timingPoints,
+                hitObjects: this.data.hitObjects,
+            });
+            const newWindow = window.open('', '', 'height=500,width=500,top=20,left=20,menubar=no,scrollbars=yes,resizable=yes');
             if (newWindow) {
-                newWindow.document.body.innerText = JSON.stringify(this.data);
+                newWindow.document.title = `Content of beatmap '${this.storageKey}'`;
+                newWindow.document.body.innerHTML = '<pre style="white-space:pre-wrap;word-break:break-all"></pre>';
+                newWindow.document.querySelector('pre').innerText = data;
             } else {
-                console.log(JSON.stringify({ // eslint-disable-line no-console
-                    timingPoints: this.data.timingPoints,
-                    hitObjects: this.data.hitObjects,
-                }));
+                console.log(data); // eslint-disable-line no-console
                 alert('Failed to open window! Please allow popup window. Data has logged to console.');
             }
         } else if (G.input.isPressed(G.input.SPACE)) {

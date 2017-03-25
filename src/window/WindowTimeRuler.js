@@ -66,9 +66,6 @@ export default class WindowTimeRuler extends WindowBase {
         timeLines.addChild(currentTimeLine);
         timeLines.x = 0;
         timeLines.y = TIME_RULER_LINE_TOP;
-        setPosition(timeLines, () => {
-            timeLines.scale.x = window.innerWidth / 1000;
-        });
         this.stage.addChild(timeLines);
     }
     /**
@@ -83,7 +80,7 @@ export default class WindowTimeRuler extends WindowBase {
         // deque right
         while (this.timeLineObject.length > 0) {
             position = 300 + Math.floor(this.zoom * this.timeLineObject[this.timeLineObject.length - 1].time);
-            if (Math.floor(-relativeTime * this.zoom) + position > 1000) {
+            if (Math.floor(-relativeTime * this.zoom) + position > window.innerWidth) {
                 this.timeLineObject.pop();
                 this.timeLinesInner.removeChildAt(this.timeLinesInner.children.length - 1);
             } else {
@@ -144,7 +141,7 @@ export default class WindowTimeRuler extends WindowBase {
         };
         let { tp, tick, time } = nextPos;
         position = 300 + Math.floor(this.zoom * time);
-        while (Math.floor(-relativeTime * this.zoom) + position <= 1000) {
+        while (Math.floor(-relativeTime * this.zoom) + position <= window.innerWidth) {
             nextPos = G.tick.next(nextPos.tp, nextPos.tick);
             tp = nextPos.tp;
             tick = nextPos.tick;
@@ -233,7 +230,7 @@ export default class WindowTimeRuler extends WindowBase {
             tp: pos.tp,
             tick: pos.tick,
         };
-        while (Math.floor(-relativeTime * this.zoom) + position <= 1000) {
+        while (Math.floor(-relativeTime * this.zoom) + position <= window.innerWidth) {
             nextPos = G.tick.next(nextPos.tp, nextPos.tick);
             tp = nextPos.tp;
             tick = nextPos.tick;
