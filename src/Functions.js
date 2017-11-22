@@ -6,22 +6,36 @@
 import G from './Global';
 
 /**
+ * Make a render loop
+ * @param {func} func - Function to loop, return false to stop loop
+ */
+export function renderLoop(func) {
+    const l = () => {
+        G.input.update();
+        G.audio.update();
+        G.animation.update();
+        if (func() !== false) {
+            G.renderer.render(G.rootStage);
+            requestAnimationFrame(l);
+        }
+    };
+    l();
+}
+
+/**
  * Set sprite position with percent data provided
- * @param {PixiSprite} sprite - The sprite we want to move
+ * @param {Sprite} sprite - The sprite we want to move
  * @param {function} func - Function with two numbers output
  * @param {boolean} forceUpdate - Whether force update the render function
+ * @param {boolean} global - Whether set a global sprite, MUST BE DELETED MANUALLY
  */
-export function setPosition(sprite, func, forceUpdate = false) {
-    if (sprite.queueId && !forceUpdate) {
+export function setPosition(sprite, func, forceUpdate = false, global = false) {
+    if (sprite.id && !forceUpdate) {
         // avoid adding to queue again
         return;
     }
-    // first adding or force update
-    if (!sprite.queueId) {
-        sprite.queueId = new Date().valueOf() + '-' + Math.random();
-    }
     const painter = () => {
-        const result = func();
+        const result = func(window.innerWidth, window.innerHeight, sprite);
         if (result) {
             for (const key in result) {
                 sprite[key] = result[key];
@@ -29,37 +43,11 @@ export function setPosition(sprite, func, forceUpdate = false) {
         }
     };
     painter.sprite = sprite;
-    painter.sceneName = G.scene.name;
-    delete G.windowResizePaintList[sprite.queueId];
-    G.windowResizePaintList[sprite.queueId] = painter;
+    painter.sceneName = G.sceneName;
+    // add to repaint list
+    G.repaintList[sprite.id] = painter;
+    // paint once
     painter();
-}
-
-/**
- * Calculate the size of current sprite to fit the outer container
- * @param {number} width - Width of current sprite
- * @param {number} height - Height of current sprite
- * @param {number} outerWidth - Width of outer container
- * @param {number} outerHeight - Height of outer container
- * @return {object} Include width and height
- */
-export function fitSize(width, height, outerWidth, outerHeight) {
-    return Math.max(outerWidth / width, outerHeight / height);
-}
-
-/**
- * Update music list
- */
-export function updateMusicList() {
-    fetch('api/musics.json').then(res => {
-        if (res.ok) {
-            res.json().then(data => {
-                G.musics = data;
-            });
-        } else {
-            console.error(`Get music info failed, code ${res.status}`); // eslint-disable-line no-console
-        }
-    });
 }
 
 /**
@@ -197,17 +185,5 @@ export function appendTimingPointEditingWindow(timFunc, divFunc) {
 
 // when window is resized, recalculate the position of elements in paint list
 window.addEventListener('resize', () => {
-    for (const id in window._G.windowResizePaintList) {
-        const item = window._G.windowResizePaintList[id];
-        // don't recalculate the invisible item
-        if (!item.sprite.visible) {
-            continue;
-        }
-        // remove items that is not belongs to current scene
-        if (item.sceneName != window._G.scene.name) {
-            delete window._G.windowResizePaintList[id];
-            continue;
-        }
-        item();
-    }
+    G.windowResized = true;
 });

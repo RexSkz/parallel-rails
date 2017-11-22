@@ -10,5 +10,21 @@
         "metronome": 4,
         "kiai": 1
     }],
-    "hitObjects": []
+    "hitObjects": [{
+        "type": 0,
+        "pos1000": 436,
+        "color": "green"
+    }, {
+        "type": 0,
+        "pos1000": 661,
+        "color": "green"
+    }, {
+        "type": 0,
+        "pos1000": 774,
+        "color": "orange"
+    }, {
+        "type": 0,
+        "pos1000": 887,
+        "color": "orange"
+    }]
 }

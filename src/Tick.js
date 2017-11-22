@@ -48,7 +48,7 @@ export default class Tick {
      * @param {number} tp - Timing point index
      */
     getTotalTickOfPrevTp(tp) {
-        if (tp == 0) {
+        if (tp === 0) {
             return 0;
         }
         const timeDiff = this.tp[tp].pos1000 - this.tp[tp - 1].pos1000;
@@ -65,7 +65,7 @@ export default class Tick {
         const metronome = this.tp[tp].metronome << (half ? 1 : 0);
         return {
             tick: Math.floor(tick / divisor) % metronome,
-            divisor: tick % divisor,
+            divisor: tick % divisor
         };
     }
     /**
@@ -76,9 +76,10 @@ export default class Tick {
      * @param {number} tick - Tick index
      */
     findPositionByTime(time, tp = null, tick = null) {
-        if (tp == null) {
-            let l = 0, r = this.tp.length - 1;
-            while (l != r) {
+        if (tp === null) {
+            let l = 0;
+            let r = this.tp.length - 1;
+            while (l !== r) {
                 tp = (l + r + 1) >> 1;
                 if (this.tp[tp].pos1000 > time) {
                     r = tp - 1;
@@ -90,17 +91,17 @@ export default class Tick {
         }
         const o = this.tp[tp];
         const timePerTick = this.getTimePerTick(tp);
-        if (tick == null) {
+        if (tick === null) {
             tick = Math.floor((time - o.pos1000) / timePerTick);
         }
         const nextTickTime = o.pos1000 + Math.floor((tick + 1) * timePerTick);
         const lEdge = o.pos1000 + Math.floor(tick * timePerTick);
-        const rEdge = Math.min(nextTickTime, (tp + 1 == this.tp.length) ? Infinity : this.tp[tp + 1].pos1000);
+        const rEdge = Math.min(nextTickTime, (tp + 1 === this.tp.length) ? Infinity : this.tp[tp + 1].pos1000);
         return {
             tp: tp,
             tick: tick,
             l: lEdge,
-            r: rEdge,
+            r: rEdge
         };
     }
     /**
@@ -122,7 +123,7 @@ export default class Tick {
                 metronome: this.tp[tp - 1].metronome,
                 divisor: this.divisor,
                 l: pos.l,
-                r: pos.r,
+                r: pos.r
             };
         } else {
             const pos = this.findPositionByTime(lastTickTime, tp, atEdge ? (tick - 1) : tick);
@@ -132,7 +133,7 @@ export default class Tick {
                 metronome: this.tp[tp].metronome,
                 divisor: this.divisor,
                 l: pos.l,
-                r: pos.r,
+                r: pos.r
             };
         }
     }
@@ -152,7 +153,7 @@ export default class Tick {
                 metronome: this.tp[tp + 1].metronome,
                 divisor: this.divisor,
                 l: pos.l,
-                r: pos.r,
+                r: pos.r
             };
         } else {
             const pos = this.findPositionByTime(nextTickTime, tp, tick + 1);
@@ -162,7 +163,7 @@ export default class Tick {
                 metronome: this.tp[tp].metronome,
                 divisor: this.divisor,
                 l: pos.l,
-                r: pos.r,
+                r: pos.r
             };
         }
     }

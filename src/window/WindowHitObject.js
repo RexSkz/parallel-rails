@@ -10,8 +10,8 @@
 import WindowBase from './WindowBase';
 
 // const {
-//     MAIN_FONT,
-//     MAIN_FONT_SIZE,
+//     DEFAULT_FONT,
+//     DEFAULT_FONT_SIZE,
 // } = G.constant;
 
 /**
@@ -31,6 +31,6 @@ export default class WindowHitObject extends WindowBase {
      * Draw parallel rails
      */
     drawParallelRails() {
-        // 
+        //
     }
 }

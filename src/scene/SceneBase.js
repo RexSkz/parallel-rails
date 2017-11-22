@@ -4,11 +4,7 @@
  */
 
 import G from '../Global';
-import {
-    setPosition,
-    fitSize,
-} from '../Functions';
-import asyncTask from 'thenjs';
+import { renderLoop } from '../Functions';
 
 /**
  * Define base scene
@@ -18,200 +14,181 @@ export default class SceneBase {
     /**
      * @constructor
      */
-    constructor() {
-        G.lock.sceneSwitch = true;
+    constructor(fadeInTime = G.constant.SCENE_SWITCH_TIME, fadeOutTime = G.constant.SCENE_SWITCH_TIME) {
+        if (fadeInTime < 1) fadeInTime = 1;
+        if (fadeOutTime < 1) fadeOutTime = 1;
+        // for repaint sprite GC
+        G.sceneName = this.constructor.name;
         // each scene has a stage
-        this.stage = new PIXI.Container;
-        this.stage.visible = false;
-        G.stageContainer.addChild(this.stage);
+        this.stage = new PIXI.Container();
+        this.stage.id = this.constructor.name;
+        this.stage.alpha = 0;
+        G.rootStage.addChild(this.stage);
         // set some variables
-        this.isFadeIn = true;
-        this.fadeInTime = 30;
-        this.isFadeOut = true;
-        this.fadeOutTime = 30;
-        this.backgroundLoaded = false;
-        // do a series work
-        asyncTask(next => this.onInitialize(next))
-            .then(next => this.fadeIn(next))
-            .then(next => this.startLoop(next))
-            .then(next => this.fadeOut(next))
-            .then(next => this.onTerminate(next));
-        // need audio update when starting a new scene
-        G.audio.update();
+        this.fadeInTime = fadeInTime;
+        this.fadeOutTime = fadeOutTime;
+        this.loadingRemains = -1;
+        this.resourceToLoad = {
+            audio: [],
+            graphics: []
+        };
+        setTimeout(() => this.work(), 0);
+    }
+    /**
+     * A series of work
+     */
+    async work() {
+        await this.waitLoading();
+        this.onInitialize();
+        await this.fadeIn();
+        await this.mainLoop();
+        await this.fadeOut();
+        this.onTerminate();
+        this.repaintListGC();
+    }
+    /**
+     * Wait for resource loading finished
+     */
+    waitLoading() {
+        return new Promise((resolve, reject) => {
+            const loadingText = 'Loading resources...\nReceiving file...';
+            G.rootStage.addChild(this.loadingBar = G.graphics.createText(loadingText, {}, (w, h, self) => ({
+                x: 10,
+                y: h - self.height - 10
+            })));
+            G.resource.load(this.resourceToLoad);
+            renderLoop(() => {
+                if (G.resource.remains <= 0) {
+                    G.rootStage.removeChild(this.loadingBar);
+                    resolve();
+                    return false;
+                }
+                this.updateLoadingBar();
+            });
+        });
     }
     /**
      * Trigger when scene is initialized
-     * @param {function} next - Provided by then.js
      * @override
      */
-    onInitialize(next) {
-        next && next();
-    }
+    onInitialize() {}
     /**
      * Fade in from black screen
-     * @param {function} next - Provided by then.js
-     * @override
      */
-    fadeIn(next) {
-        if (!this.name) {
-            console.error('This scene has no name! It will affect the GC process.'); // eslint-disable-line no-console
-        }
-        if (!this.isFadeIn) {
-            this.stage.visible = true;
-            next();
-            return;
-        }
-        let timer = this.fadeInTime;
-        const shadow = new PIXI.Graphics;
-        shadow.x = 0;
-        shadow.y = 0;
-        shadow.beginFill(0x000000);
-        shadow.drawRect(0, 0, window.innerWidth, window.innerHeight);
-        shadow.endFill();
-        shadow.alpha = 1;
-        this.stage.addChild(shadow);
-        const fadeInLoop = () => {
-            if (!G.lock.sceneSwitch) {
-                G.input.update();
-                if (timer == 0) {
-                    this.stage.removeChild(shadow);
-                    next();
-                    return;
+    fadeIn() {
+        return new Promise((resolve, reject) => {
+            let timer = 0;
+            renderLoop(() => {
+                if (timer >= this.fadeInTime) {
+                    resolve();
+                    return false;
                 }
-                this.stage.visible = true;
-                timer--;
-                shadow.alpha = timer / this.fadeInTime;
-                if (G.windowResized) {
-                    shadow.drawRect(0, 0, window.innerWidth, window.innerHeight);
+                this.calcRepaintItems();
+                if (!G.lock.sceneSwitch) {
+                    this.stage.alpha = ++timer / this.fadeInTime;
                 }
-                G.renderer.render(G.stageContainer);
-                G.windowResized = false;
-            }
-            requestAnimationFrame(fadeInLoop);
-        };
-        fadeInLoop();
+            });
+        });
     }
     /**
      * Mainloop for current scene
-     * @param {function} next - Provided by then.js
      */
-    startLoop(next) {
-        const mainLoop = () => {
-            // another mainloop is running, break this
-            if (G.scene != this) {
-                next();
-                return;
-            }
-            G.resource.load();
-            G.input.update();
-            G.audio.update();
-            G.animation.update();
-            this.update();
-            G.renderer.render(G.stageContainer);
-            G.windowResized = false;
-            requestAnimationFrame(mainLoop);
-        };
-        mainLoop();
+    mainLoop() {
+        return new Promise((resolve, reject) => {
+            renderLoop(() => {
+                // switch to another scene
+                if (G.scene !== this) {
+                    G.lock.sceneSwitch = true;
+                    resolve();
+                    return false;
+                }
+                this.calcRepaintItems();
+                this.update();
+            });
+        });
     }
     /**
-     * Fade in from black screen
-     * @param {function} next - Provided by then.js
-     * @override
+     * Fade out to black screen
      */
-    fadeOut(next) {
-        if (!this.isFadeOut) {
-            this.stage.visible = false;
-            next();
-            return;
-        }
-        let timer = 0;
-        const shadow = new PIXI.Graphics;
-        shadow.x = 0;
-        shadow.y = 0;
-        shadow.beginFill(0x000000);
-        shadow.drawRect(0, 0, window.innerWidth, window.innerHeight);
-        shadow.endFill();
-        shadow.alpha = 0;
-        this.stage.addChild(shadow);
-        const fadeOutLoop = () => {
-            G.input.update();
-            if (timer == this.fadeOutTime) {
-                this.stage.removeChild(shadow);
-                this.stage.visible = false;
-                G.lock.sceneSwitch = false;
-                G.stageContainer.removeChild(this.stage);
-                next();
-                return;
-            }
-            timer++;
-            shadow.alpha = timer / this.fadeOutTime;
-            if (G.windowResized) {
-                shadow.drawRect(0, 0, window.innerWidth, window.innerHeight);
-            }
-            G.renderer.render(G.stageContainer);
-            G.windowResized = false;
-            requestAnimationFrame(fadeOutLoop);
-        };
-        fadeOutLoop();
+    fadeOut() {
+        return new Promise((resolve, reject) => {
+            let timer = this.fadeOutTime;
+            renderLoop(() => {
+                if (timer <= 0) {
+                    G.lock.sceneSwitch = false;
+                    resolve();
+                    return false;
+                }
+                this.calcRepaintItems();
+                this.stage.alpha = --timer / this.fadeOutTime;
+            });
+        });
     }
     /**
      * Trigger before the scene is terminated
-     * @param {function} next - Provided by then.js
      * @override
      */
-    onTerminate(next) {
-        this.repaintListGC();
-        next && next();
-    }
+    onTerminate() {}
     /**
      * Do calculations only, DO NOT do any paint in this function
      * @override
      */
     update() {}
     /**
-     * Garbage collect for window resize repaint list
+     * Recalculate items in repaint list
      */
-    repaintListGC() {
-        for (const id in G.windowResizePaintList) {
-            const item = G.windowResizePaintList[id];
-            // remove items that is not belongs to current scene
-            if (item.sceneName != G.scene.name) {
-                delete G.windowResizePaintList[id];
-                continue;
+    calcRepaintItems() {
+        if (G.windowResized) {
+            for (const id in G.repaintList) {
+                const item = G.repaintList[id];
+                // don't recalculate the invisible item
+                if (!item.sprite.visible) {
+                    continue;
+                }
+                item();
             }
+            G.windowResized = false;
         }
     }
     /**
-     * Load background image
-     * @param (string) url - Url of the background
+     * Garbage collect for window resize repaint list
      */
-    loadBackground(url) {
-        G.resource.add(url);
-        this.backgroundLoaded = false;
-        // maybe is loaded, try to update before scene fade in
-        this.updateBackground(url);
+    repaintListGC() {
+        for (const id in G.repaintList) {
+            const item = G.repaintList[id];
+            // remove items that is not belongs to current scene
+            if (item.sceneName !== G.sceneName) {
+                // G.repaintList[id].sprite.destroy();
+                delete G.repaintList[id];
+            }
+        }
+        G.rootStage.removeChild(this.stage);
+        // this.stage.destroy();
     }
     /**
-     * Update background image
-     * @param (string) url - Url of the background
+     * Set resource to load
+     * @param {object} res - Contains `audio` and `graphics` array
      */
-    updateBackground(url) {
-        if (!this.backgroundLoaded) {
-            const texture = G.resource.get(url);
-            if (texture) {
-                this.backgroundSprite.texture = texture;
-                setPosition(this.backgroundSprite, () => {
-                    const size = G.resource.getSize(url);
-                    const rate = fitSize(size.width, size.height, window.innerWidth, window.innerHeight);
-                    return {
-                        x: 0.5 * window.innerWidth,
-                        y: 0.5 * window.innerHeight,
-                        width: size.width * rate,
-                        height: size.height * rate,
-                    };
-                }, true);
-                this.backgroundLoaded = true;
-            }
+    loadResource(res) {
+        if (res.audio) {
+            this.resourceToLoad.audio = [
+                ...this.resourceToLoad.audio,
+                ...res.audio
+            ];
+        }
+        if (res.graphics) {
+            this.resourceToLoad.graphics = [
+                ...this.resourceToLoad.graphics,
+                ...res.graphics
+            ];
+        }
+    }
+    /**
+     * Update resource loading bar text
+     */
+    updateLoadingBar() {
+        if (this.loadingRemains !== G.resource.remains) {
+            this.loadingBar.text = `${G.resource.remains} resource(s) to load...\nReceived file '${G.resource.currentLoad}'.`;
         }
     }
 }

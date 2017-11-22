@@ -6,6 +6,7 @@
 
 import Animation from './Animation';
 import Audio from './Audio';
+import Graphics from './Graphics';
 import Input from './Input';
 import Resource from './Resource';
 import Tick from './Tick';
@@ -15,27 +16,29 @@ import DataConstants from './data/DataConstants';
 if (!window._G) {
     window._G = {
         // data structure objects
-        constant: new DataConstants,
+        constant: new DataConstants(),
         // animation controller
-        animation: new Animation,
+        animation: new Animation(),
         // input state
-        input: new Input,
+        input: new Input(),
         // audio
-        audio: new Audio,
+        audio: new Audio(),
+        // graphics
+        graphics: new Graphics(),
         // root stage
-        stageContainer: new PIXI.Container,
+        rootStage: new PIXI.Container(),
         // resource loader
-        resource: new Resource,
+        resource: new Resource(),
         // tick
-        tick: new Tick,
+        tick: new Tick(),
         // for window resizing
         windowResized: false,
-        windowResizePaintList: {},
+        repaintList: {},
         // locks
         lock: {
             pixiLoader: false,
             soundLoader: false,
-            sceneSwitch: false,
+            sceneSwitch: false
         },
         // current scene
         scene: null,
@@ -48,7 +51,7 @@ if (!window._G) {
         // last selected music
         lastSelectMusic: -1,
         // game mode
-        mode: 'play',
+        mode: 'play'
     };
 }
 

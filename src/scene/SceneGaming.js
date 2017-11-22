@@ -5,7 +5,7 @@
 
 import G from '../Global';
 import {
-    setPosition,
+    setPosition
 } from '../Functions';
 import WindowHitObject from '../window/WindowHitObject';
 import SceneBase from './SceneBase';
@@ -30,31 +30,30 @@ export default class SceneGaming extends SceneBase {
     }
     /**
      * Trigger when scene is initialized
-     * @param {function} next - Provided by then.js
      * @override
      */
-    onInitialize(next) {
+    onInitialize() {
         // loading text
         this.loadingTextSprite = new PIXI.Text('Loading music data...', {
-            fontFamily: G.constant.MAIN_FONT,
+            fontFamily: G.constant.DEFAULT_FONT,
             fontSize: 24,
-            fill: '#FFF',
+            fill: '#FFF'
         });
         this.loadingTextSprite.anchor.x = 0.5;
         this.loadingTextSprite.anchor.y = 0.5;
         setPosition(this.loadingTextSprite, () => ({
             x: 0.5 * window.innerWidth,
-            y: 0.5 * window.innerHeight,
+            y: 0.5 * window.innerHeight
         }));
         this.stage.addChild(this.loadingTextSprite);
         // background
-        this.backgroundSprite = new PIXI.Sprite;
+        this.backgroundSprite = new PIXI.Sprite();
         // set anchor to image center
         this.backgroundSprite.anchor.x = 0.5;
         this.backgroundSprite.anchor.y = 0.5;
         this.stage.addChild(this.backgroundSprite);
         // add darken shadow
-        this.darkenShadow = new PIXI.Graphics;
+        this.darkenShadow = new PIXI.Graphics();
         this.darkenShadow.beginFill(0x000000);
         this.darkenShadow.drawRect(0, 0, 10000, 10000);
         this.darkenShadow.endFill();
@@ -65,7 +64,6 @@ export default class SceneGaming extends SceneBase {
         this.stage.addChild(this.hitObjectWindow.stage);
         // load background and music
         this.loadBackground(this.bgUrl);
-        next();
     }
     /**
      * Do calculations only, DO NOT do any paint in this function
@@ -77,7 +75,7 @@ export default class SceneGaming extends SceneBase {
         // deal with input
         if (G.input.isPressed(G.input.ESC)) {
             // press ESC to back to title
-            G.scene = new SceneMusicSelect;
+            G.scene = new SceneMusicSelect();
         }
     }
 }

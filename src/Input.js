@@ -88,7 +88,7 @@ export default class Input {
             this.keyState[keyCode] = {
                 isPressed: false, // nearly pressed down
                 isReleased: false, // nearly released up
-                isRepeated: false, // continuously pressed down
+                isRepeated: false // continuously pressed down
             };
         }
     }
@@ -113,29 +113,30 @@ export default class Input {
      * Update input signal
      */
     update() {
-        if (this.pressedKey != 0) {
+        if (this.pressedKey) {
             const key = this.keyState[this.pressedKey];
             if (key) {
-                key.isPressed = !key.isRepeated;
-                key.isReleased = false;
-                key.isRepeated = true;
-                if (!key.isPressed) {
+                if (key.isPressed) {
+                    key.isPressed = false;
                     this.pressedKey = 0;
+                } else {
+                    key.isPressed = true;
+                    key.isReleased = false;
+                    key.isRepeated = true;
                 }
             }
-            return;
-        }
-        if (this.releasedKey != 0) {
+        } else if (this.releasedKey) {
             const key = this.keyState[this.releasedKey];
             if (key) {
-                key.isReleased = key.isRepeated;
-                key.isPressed = false;
-                key.isRepeated = false;
-                if (!key.isReleased) {
+                if (key.isReleased) {
+                    key.isReleased = false;
                     this.releasedKey = 0;
+                } else {
+                    key.isReleased = true;
+                    key.isPressed = false;
+                    key.isRepeated = false;
                 }
             }
-            return;
         }
     }
     /**
@@ -145,6 +146,7 @@ export default class Input {
     isPressed(keyCode) {
         if (!this.keyState[keyCode]) {
             console.error('Key code error!'); // eslint-disable-line no-console
+            return null;
         }
         return this.keyState[keyCode].isPressed;
     }
@@ -155,6 +157,7 @@ export default class Input {
     isReleased(keyCode) {
         if (!this.keyState[keyCode]) {
             console.error('Key code error!'); // eslint-disable-line no-console
+            return null;
         }
         return this.keyState[keyCode].isReleased;
     }
@@ -165,6 +168,7 @@ export default class Input {
     isRepeated(keyCode) {
         if (!this.keyState[keyCode]) {
             console.error('Key code error!'); // eslint-disable-line no-console
+            return null;
         }
         return this.keyState[keyCode].isRepeated;
     }

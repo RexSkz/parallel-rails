@@ -6,7 +6,7 @@
 import G from '../Global';
 import {
     setPosition,
-    appendTimingPointEditingWindow,
+    appendTimingPointEditingWindow
 } from '../Functions';
 import WindowHelp from '../window/WindowHelp';
 import WindowHitObject from '../window/WindowHitObject';
@@ -17,8 +17,8 @@ import SceneMusicSelect from './SceneMusicSelect';
 import moment from 'moment';
 
 const {
-    MAIN_FONT,
-    MAIN_FONT_SIZE,
+    DEFAULT_FONT,
+    DEFAULT_FONT_SIZE
 } = G.constant;
 
 /**
@@ -47,35 +47,39 @@ export default class SceneEditor extends SceneBase {
             currentTime: 0,
             duration: 1,
             playFromTime: -1,
-            detail: 4,
+            detail: 4
         };
         this.storageKey = `${this.music.creator}-${this.music.artist}-${this.music.name}-${this.music.version}`;
         this.uncached = false;
         this.atEdge = false;
         // options: hitObject, timingPoint
         this.currentMode = 'hitObject';
+        this.resourceToLoad = {
+            audio: [this.audioUrl],
+            graphics: [this.bgUrl]
+        };
     }
     /**
      * Trigger when scene is initialized
-     * @param {function} next - Provided by then.js
      * @override
      */
-    onInitialize(next) {
+    onInitialize() {
+        G.audio.pauseBGM();
+        this.audio = G.resource.audio(this.audioUrl);
         // background
-        this.backgroundSprite = new PIXI.Sprite;
-        // set anchor to image center
-        this.backgroundSprite.anchor.x = 0.5;
-        this.backgroundSprite.anchor.y = 0.5;
-        this.stage.addChild(this.backgroundSprite);
-        // add darken shadow
-        this.darkenShadow = new PIXI.Graphics;
-        this.darkenShadow.beginFill(0x000000);
-        this.darkenShadow.drawRect(0, 0, 10000, 10000);
-        this.darkenShadow.endFill();
-        this.darkenShadow.alpha = 0.5;
-        this.stage.addChild(this.darkenShadow);
-        // load background
-        this.loadBackground(this.bgUrl);
+        this.stage.addChild(G.graphics.createImage(this.bgUrl, (w, h, self) => ({
+            position: 'center',
+            size: 'cover'
+        })));
+        // darken shadow
+        this.stage.addChild(G.graphics.createRect({
+            top: 0,
+            left: 0,
+            width: 9999,
+            height: 9999,
+            background: 0x000000,
+            opacity: 0.3
+        }));
         // load cached data
         let loaded = false;
         let savedData = localStorage.getItem(this.storageKey);
@@ -106,34 +110,18 @@ export default class SceneEditor extends SceneBase {
                 }
             });
         }
-        // display loading text
-        this.audio = G.resource.get(this.audioUrl);
-        if (!this.audio) {
-            this.loadingTextSprite = new PIXI.Text('Music must be preloaded for editor, please wait...', {
-                fontFamily: MAIN_FONT,
-                fontSize: MAIN_FONT_SIZE,
-                fill: '#FFF',
-            });
-            this.loadingTextSprite.anchor.x = 0.5;
-            this.loadingTextSprite.anchor.y = 0.5;
-            setPosition(this.loadingTextSprite, () => ({
-                x: 0.5 * window.innerWidth,
-                y: 0.5 * window.innerHeight,
-            }));
-            this.stage.addChild(this.loadingTextSprite);
-        }
         // time ruler window
-        this.timeRulerWindow = new WindowTimeRuler;
+        this.timeRulerWindow = new WindowTimeRuler();
         this.stage.addChild(this.timeRulerWindow.stage);
         // hint text
         this.hintTextSprite = new PIXI.Text(`Editing \`${this.music.artist} - ${this.music.name}\`\nPress H for help.`, {
-            fontFamily: MAIN_FONT,
-            fontSize: MAIN_FONT_SIZE,
-            fill: '#FFF',
+            fontFamily: DEFAULT_FONT,
+            fontSize: DEFAULT_FONT_SIZE,
+            fill: '#FFF'
         });
         setPosition(this.hintTextSprite, () => ({
             x: 20,
-            y: 20,
+            y: 20
         }));
         this.stage.addChild(this.hintTextSprite);
         // help window
@@ -153,14 +141,14 @@ export default class SceneEditor extends SceneBase {
             '   HOME: Jump to music start.',
             '    END: Jump to music end.',
             '  SPACE: Toggle play / pause.',
-            '    ESC: Return to music select scene or cancel slider edition.',
+            '    ESC: Return to music select scene or cancel slider edition.'
         ]);
         this.helpWindow.stage.visible = false;
         this.stage.addChild(this.helpWindow.stage);
         // window for editing timing points
         const updateTimingPoint = t => { this.data.timingPoints = t; };
         const updateDivisor = t => {
-            if (G.tick.divisor != t) {
+            if (G.tick.divisor !== t) {
                 G.tick.divisor = t;
                 this.timeRulerWindow.repaintAllTimingPoints(this.data.currentTime * 1000);
             }
@@ -171,50 +159,38 @@ export default class SceneEditor extends SceneBase {
         // hit object window
         this.hitObjectWindow = new WindowHitObject('editor');
         this.stage.addChild(this.hitObjectWindow.stage);
-        next();
     }
     /**
      * Do calculations only, DO NOT do any paint in this function
      * @override
      */
     update() {
-        super.update();
-        this.updateBackground(this.bgUrl);
-        this.audio = G.resource.getAudio(this.audioUrl);
-        if (!this.audio) {
-            // you can do nothing but return to music select scene before audio is loaded
-            if (G.input.isPressed(G.input.ESC)) {
-                G.scene = new SceneMusicSelect;
-            }
-        } else {
-            this.loadingTextSprite.visible = false;
-            // auto pause when finish playing
-            if (this.data.currentTime >= this.data.duration) {
-                this.audio.pause();
-                this.data.currentTime = this.data.duration;
-            }
-            // update tick
-            if (this.audio.playing && this.data.currentTime * 1000 >= this.pos.r) {
-                this.pos = G.tick.next(this.pos.tp, this.pos.tick);
-                if (this.tpWindow.style.opacity == 1) {
-                    const index = G.tick.getTickModNumber(this.pos.tp, this.pos.tick, G.input.isRepeated(G.input.CTRL));
-                    if (index.divisor == 0) {
-                        // 1 for low, 2 for high
-                        const soundName = (index.tick == 0) ? 2 : 1;
-                        sounds[`se/metronome-${soundName}.mp3`].play();
-                    }
+        // auto pause when finish playing
+        if (this.data.currentTime >= this.data.duration) {
+            this.audio.pause();
+            this.data.currentTime = this.data.duration;
+        }
+        // update tick
+        if (this.audio.playing && this.data.currentTime * 1000 >= this.pos.r) {
+            this.pos = G.tick.next(this.pos.tp, this.pos.tick);
+            if (this.tpWindow.style.opacity === '1') {
+                const index = G.tick.getTickModNumber(this.pos.tp, this.pos.tick, G.input.isRepeated(G.input.CTRL));
+                if (index.divisor === 0) {
+                    // 1 for low, 2 for high
+                    const soundName = (index.tick === 0) ? 2 : 1;
+                    G.audio.playSE(`se/metronome-${soundName}.mp3`);
                 }
             }
-            // update time ruler
-            if (this.audio.playing) {
-                this.timeRulerWindow.paintTpRightTo(this.data.currentTime * 1000);
-            }
-            // other updates
-            this.updateInputs();
-            this.updatePlayFromTime();
-            this.updateTimingWindow();
-            this.updateEditor();
         }
+        // update time ruler
+        if (this.audio.playing) {
+            this.timeRulerWindow.paintTpRightTo(this.data.currentTime * 1000);
+        }
+        // other updates
+        this.updateInputs();
+        this.updatePlayFromTime();
+        this.updateTimingWindow();
+        this.updateEditor();
     }
     /**
      * Trigger before the scene is terminated
@@ -238,14 +214,12 @@ export default class SceneEditor extends SceneBase {
             const kiai = (item.kiai) ? 'Yes' : '';
             return [
                 '<tr>',
-                '<td>',
-                '<button id="timing-point-remove">Remove</button>',
-                '</td>',
+                '<td><button id="timing-point-remove">Remove</button></td>',
                 `<td>${item.pos1000 / 1000}</td>`,
                 `<td>${item.bpm1000 / 1000}</td>`,
                 `<td>${item.metronome}/4</td>`,
                 `<td>${kiai}</td>`,
-                '</tr>',
+                '</tr>'
             ].join('');
         }).join('');
     }
@@ -265,7 +239,7 @@ export default class SceneEditor extends SceneBase {
             const dt = moment().format('Y-m-d H:m:s');
             localStorage.setItem(this.storageKey, JSON.stringify({
                 time: dt,
-                data: this.data,
+                data: this.data
             }));
             this.uncached = false;
             alert(`Data has been cached in localStorage at ${dt}.`);
@@ -273,7 +247,7 @@ export default class SceneEditor extends SceneBase {
             // F12 to export data
             const data = JSON.stringify({
                 timingPoints: this.data.timingPoints,
-                hitObjects: this.data.hitObjects,
+                hitObjects: this.data.hitObjects
             });
             const newWindow = window.open('', '', 'height=500,width=500,top=20,left=20,menubar=no,scrollbars=yes,resizable=yes');
             if (newWindow) {
@@ -299,7 +273,7 @@ export default class SceneEditor extends SceneBase {
                 }
             }
         } else if (G.input.isPressed(G.input.LEFT)) {
-            if (this.data.currentTime == 0) {
+            if (this.data.currentTime === 0) {
                 return;
             }
             if (G.input.isRepeated(G.input.CTRL)) {
@@ -308,7 +282,7 @@ export default class SceneEditor extends SceneBase {
                 this.timeRulerWindow.paintTpLeftTo(this.data.currentTime * 1000);
                 return;
             }
-            if (this.data.timingPoints.length != 0) {
+            if (this.data.timingPoints.length !== 0) {
                 let count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
                 let currentTime = 0;
                 while (count--) {
@@ -320,7 +294,7 @@ export default class SceneEditor extends SceneBase {
                 this.timeRulerWindow.paintTpLeftTo(this.data.currentTime * 1000);
             }
         } else if (G.input.isPressed(G.input.RIGHT)) {
-            if (this.data.currentTime == this.data.duration) {
+            if (this.data.currentTime === this.data.duration) {
                 return;
             }
             if (G.input.isRepeated(G.input.CTRL)) {
@@ -329,7 +303,7 @@ export default class SceneEditor extends SceneBase {
                 this.timeRulerWindow.paintTpRightTo(this.data.currentTime * 1000);
                 return;
             }
-            if (this.data.timingPoints.length != 0) {
+            if (this.data.timingPoints.length !== 0) {
                 let count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
                 let currentTime = 0;
                 while (count--) {
@@ -360,7 +334,8 @@ export default class SceneEditor extends SceneBase {
                 return;
             }
             this.tpWindow.style.opacity = 0;
-            G.scene = new SceneMusicSelect;
+            this.audio.fadeOut(0.5);
+            G.scene = new SceneMusicSelect();
         }
     }
     /**
@@ -369,7 +344,7 @@ export default class SceneEditor extends SceneBase {
     updateTimingWindow() {
         if (this.timingWindow) {
             if (this.audio.playing) {
-                this.data.currentTime = G.resource.getCurrentPlayTime(this.audio);
+                this.data.currentTime = G.audio.getCurrentPlayTime(this.audio);
             }
             this.timingWindow.update(this.data.currentTime);
         } else {

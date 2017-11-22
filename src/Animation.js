@@ -4,9 +4,6 @@
  */
 
 import G from './Global';
-import {
-    setPosition,
-} from './Functions';
 
 /**
  * Animation class
@@ -25,61 +22,81 @@ export default class Animation {
      */
     initEasingFunctions() {
         this.EASE_IN_EXPO = (l, r, x) => (l + (r - l) * Math.pow(2, (x - 1) * 7));
-        // 0.14285714285714285 == (1 / log(2, 128))
-        this.EASE_OUT_EXPO = (l, r, x) => (l + (r - l) * Math.log(x * 127 + 1) / Math.LN2 * 0.14285714285714285);
+        this.EASE_OUT_EXPO = (l, r, x) => (l + (r - l) * Math.log(x * 127 + 1) / Math.LN2 / 7);
     }
     /**
      * Set a new animation
-     * @param {PixiSprite} sprite - The sprite we want to animate
-     * @param {number} start - Start point
-     * @param {number} end - End point
-     * @param {number} time - Time last (frame)
+     * @param {Sprite} sprite - The sprite we want to animate
+     * @param {function or object} end - End point
+     * @param {number} totalFrames - Time last in frame unit
      * @param {function} func - Easing function
      * @param {boolean} loop - Whether the animation is looped
+     * @param {function} callback - Executes when animation is over (disabled if loop)
      */
-    set(sprite, start, end, time, func, loop = false, callback = null) {
-        sprite.animationProgress = 0;
-        if (!sprite.animateQid) {
-            sprite.animateQid = new Date().valueOf() + '-' + Math.random();
+    set(sprite, end, totalFrames, func, loop = false, callback = null) {
+        if (this.queue[sprite.id]) {
+            delete this.queue[sprite.id];
         }
-        const item = { sprite, start, end, time, func, loop, callback, sceneName: G.scene.name };
-        this.queue[sprite.animateQid] = item;
+        let start = {};
+        let result = {};
+        if (typeof end === 'function') {
+            result = end(window.innerWidth, window.innerHeight, sprite);
+        } else if (typeof end === 'object') {
+            result = end;
+        } else {
+            console.error('Param `end` must be a function or object!');
+        }
+        for (const key in result) {
+            if (!sprite[key]) {
+                console.warn(`Sprite has no key: '${key}'!`, sprite);
+            }
+            start[key] = sprite[key];
+        }
+        const item = {
+            sprite,
+            start,
+            end,
+            totalFrames,
+            currentFrames: 0,
+            func,
+            loop,
+            callback,
+            sceneName: G.sceneName
+        };
+        this.queue[sprite.id] = item;
     }
     /**
      * Update all animations
      */
     update() {
-        for (const id in this.queue) {
-            const { sprite, start, end, time, func, loop, callback, sceneName } = this.queue[id];
+        for (const item of Object.values(this.queue)) {
             // GC start
-            if (sceneName != G.scene.name) {
-                delete this.queue[id];
+            if (item.sceneName !== G.sceneName) {
+                delete this.queue[item.sprite.id];
                 continue;
             }
             // increase progress
-            sprite.animationProgress += 0.6 / time;
+            ++item.currentFrames;
             // change attributes
-            const keys = Object.keys(start);
-            for (const i in keys) {
-                if (end[keys[i]] != undefined) {
-                    sprite[keys[i]] = func(start[keys[i]], end[keys[i]], sprite.animationProgress);
-                }
+            let result = {};
+            if (typeof item.end === 'function') {
+                result = item.end(window.innerWidth, window.innerHeight, item.sprite);
+            } else if (typeof item.end === 'object') {
+                result = item.end;
+            }
+            for (const key in result) {
+                item.sprite[key] = item.func(item.start[key], result[key], item.currentFrames / item.totalFrames);
             }
             // animation finished
-            if (sprite.animationProgress >= 1) {
-                if (loop) {
-                    // replay
-                    sprite.animationProgress = 0;
+            if (item.currentFrames >= item.totalFrames) {
+                if (item.loop) {
+                    item.currentFrames = 0;
                 } else {
                     // delete, set final position, run callback
-                    delete this.queue[id];
-                    setPosition(sprite, () => {
-                        const x = (start.x != undefined) ? func(start.x, end.x, 1) : sprite.x;
-                        const y = (start.y != undefined) ? func(start.y, end.y, 1) : sprite.y;
-                        return { x, y };
-                    });
-                    if (callback) {
-                        callback();
+                    delete this.queue[item.sprite.id];
+                    G.graphics.setPosition(item.sprite, item.end);
+                    if (typeof item.callback === 'function') {
+                        item.callback();
                     }
                 }
             }

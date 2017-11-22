@@ -3,8 +3,6 @@
  * @author Rex Zeng
  */
 
-import G from './Global';
-
 /**
  * Resource loader class
  * @class
@@ -14,67 +12,34 @@ export default class Resource {
      * @constructor
      */
     constructor() {
-        this.added = {};
-        this.soundAdded = {};
-        this.queue = [];
-        this.soundQueue = [];
-        this.url = '';
-        this.progress = 0;
+        this.remains = 0;
+        this.currentLoad = '';
         PIXI.loader
             .on('progress', this.updateLoaderData.bind(this))
             .on('error', this.setLoaderErrorMsg.bind(this));
+        sounds.onProgress = this.updateLoaderData.bind(this);
+        sounds.onFailed = this.setLoaderErrorMsg.bind(this);
+        sounds.whenLoaded = () => {};
     }
     /**
-     * Add resource url to queue
-     * @param {string or array} url - Resource url
+     * Start loading resources
+     * @param {object} res - Contains `audio` and `graphics` array
      */
-    add(url) {
-        if (!this.added[url]) {
-            this.queue.push(url);
-            this.added[url] = true;
-        }
-    }
-    /**
-     * Add audio resource url to queue
-     * @param {string or array} url - Resource url
-     */
-    addAudio(url) {
-        if (!this.soundAdded[url]) {
-            this.soundQueue.push(url);
-            this.soundAdded[url] = true;
-        }
-    }
-    /**
-     * Load resources when queue not empty and Pixi.loader not locked
-     */
-    load() {
-        if (!G.lock.soundLoader && this.soundQueue.length > 0) {
-            while (this.soundQueue.length > 0) {
-                const q = this.soundQueue;
-                this.soundQueue = [];
-                G.lock.soundLoader = true;
-                sounds.load(q);
-                // TODO: this is a hack for sound.js, waiting for author's next update
-                this.updateLoaderData({ progress: 0 }, { url: q[0] });
-                sounds.whenLoaded = () => G.lock.soundLoader = false;
-            }
-        }
-        if (!G.lock.pixiLoader && this.queue.length > 0) {
-            while (this.queue.length > 0) {
-                PIXI.loader.add(this.queue.shift());
-            }
-            G.lock.pixiLoader = true;
-            PIXI.loader.load(() => G.lock.pixiLoader = false);
-        }
+    load(res) {
+        res.audio = res.audio.filter(src => !sounds[src]);
+        res.graphics = res.graphics.filter(src => !PIXI.loader.resources[src]);
+        this.remains = res.audio.length + res.graphics.length;
+        sounds.load(res.audio);
+        PIXI.loader.reset().add(res.graphics).load();
     }
     /**
      * Update loader data
      * @param {object} progress - Current loading progress
      * @param {object} url - Current loading url
      */
-    updateLoaderData(progress, url) {
-        this.progress = progress.progress;
-        this.url = url.url || '';
+    updateLoaderData(_, url) {
+        --this.remains;
+        this.currentLoad = url.url;
     }
     /**
      * Set error message when load failed
@@ -87,7 +52,7 @@ export default class Resource {
      * Get resource by name
      * @param {string} resourceName - Resource name
      */
-    get(resourceName) {
+    graphics(resourceName) {
         const res = PIXI.loader.resources[resourceName];
         return res ? res.texture : null;
     }
@@ -95,22 +60,8 @@ export default class Resource {
      * Get audio by name
      * @param {string} resourceName - Resource name
      */
-    getAudio(resourceName) {
+    audio(resourceName) {
         const res = sounds[resourceName];
         return (res && res.hasLoaded) ? res : null;
-    }
-    /**
-     * Get resource size by name
-     * @param {string} resourceName - Resource name
-     */
-    getSize(resourceName) {
-        const res = PIXI.loader.resources[resourceName];
-        return res ? {
-            width: res.data.width,
-            height: res.data.height,
-        } : null;
-    }
-    getCurrentPlayTime(audio) {
-        return audio.soundNode ? (audio.startOffset + audio.soundNode.context.currentTime - audio.startTime) : 0;
     }
 }

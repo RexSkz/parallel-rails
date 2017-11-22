@@ -1,4 +1,3 @@
-var webpack = require('webpack');
 var path = require('path');
 var autoprefixer = require('autoprefixer');
 
@@ -14,10 +13,10 @@ module.exports = {
         filename: 'parallel-rails.min.js',
         library: 'ParallelRails',
         libraryTarget: 'umd',
-        umdNamedDefine: true,
+        umdNamedDefine: true
     },
     devServer: {
-        publicPath: "/dist/",
+        publicPath: '/dist/'
     },
     module: {
         loaders: [{
@@ -25,20 +24,20 @@ module.exports = {
             loader: 'babel',
             include: APP_PATH,
             query: {
-                presets: ['es2015'],
-            },
+                presets: ['env']
+            }
         }, {
             test: /\.css$/,
-            loaders: ['style', 'css', 'postcss', 'sass'],
-            include: APP_PATH,
-        }],
+            loaders: ['style', 'css', 'postcss'],
+            include: APP_PATH
+        }]
     },
-    plugins: [
-        new webpack.optimize.UglifyJsPlugin({
-            compress: {
-                warnings: false,
-            },
-        })
-    ],
-    postcss: [autoprefixer({ browsers: ['last 10 versions'] })],
+    // plugins: [
+    //     new webpack.optimize.UglifyJsPlugin({
+    //         compress: {
+    //             warnings: false
+    //         }
+    //     })
+    // ],
+    postcss: [autoprefixer({ browsers: ['last 10 versions'] })]
 };

@@ -4,10 +4,9 @@
  */
 
 import G from './Global';
-import {
-    updateMusicList,
-} from './Functions';
-import SceneLoading from './scene/SceneLoading';
+import SceneTitle from './scene/SceneTitle';
+
+import Debug from './Debug';
 
 /**
  * Game main class
@@ -20,19 +19,18 @@ class ParallelRails {
      */
     constructor(opt) {
         // check if parameter is valid
-        if (!(opt.el && opt.el.nodeName)) {
+        if (!(opt && opt.el && opt.el.nodeName)) {
             console.error('Parameter el must be an html element'); // eslint-disable-line no-console
             return false;
         }
         // setup the renderer
         this.setupRender(opt.el);
-        // load music list
-        if (!G.musics) {
-            updateMusicList();
+        // load the real game scene
+        try {
+            G.scene = new SceneTitle();
+        } catch (e) {
+            alert('Script error, open console to get more info.');
         }
-        // loading scene don't need resources to be loaded
-        G.scene = new SceneLoading;
-        G.lock.sceneSwitch = false;
     }
     /**
      * Setup the renderer
@@ -43,7 +41,7 @@ class ParallelRails {
         G.renderer = PIXI.autoDetectRenderer(0, 0, {
             antialias: false,
             transparent: false,
-            resolution: window.devicePixelRatio,
+            resolution: window.devicePixelRatio || 1
         });
         // set renderer to fullscreen
         G.renderer.view.style.position = 'absolute';
@@ -61,5 +59,7 @@ class ParallelRails {
         target.appendChild(G.renderer.view);
     }
 }
+
+window.Debug = new Debug();
 
 module.exports = ParallelRails;

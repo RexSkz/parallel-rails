@@ -4,16 +4,8 @@
  */
 
 import G from '../Global';
-import {
-    setPosition,
-} from '../Functions';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
-
-const {
-    MAIN_FONT,
-    MAIN_FONT_SIZE,
-} = G.constant;
 
 /**
  * Define title scene
@@ -25,67 +17,62 @@ export default class SceneTitle extends SceneBase {
      */
     constructor() {
         super();
-        this.name = 'title';
         this.titleTextTimer = 0;
-        this.str = 'Parallel Rails';
-        this.pos = -1;
-        this.chrBak = '';
+        this.titleText = 'Parallel Rails';
+        this.randomChr = {
+            pos: -1,
+            bak: ''
+        };
+        this.loadResource({
+            audio: [
+                'se/metronome-1.mp3',
+                'se/metronome-2.mp3',
+                'bgm/we-are-electric.mp3'
+            ],
+            graphics: [
+                'graphics/title-bg.jpg'
+            ]
+        });
     }
     /**
      * Trigger when scene is initialized
-     * @param {function} next - Provided by then.js
      * @override
      */
-    onInitialize(next) {
-        // title message
-        this.titleMessageSprite = new PIXI.Text(this.str, {
-            fontFamily: MAIN_FONT,
-            fontSize: 48,
-            fill: '#FFF',
-        });
-        setPosition(this.titleMessageSprite,  () => ({
-            x: 0.5 * (window.innerWidth - this.titleMessageSprite.width),
-            y: 0.5 * (window.innerHeight - this.titleMessageSprite.height) - 32,
+    onInitialize() {
+        G.audio.playBGM('bgm/we-are-electric.mp3');
+        this.stage.addChild(G.graphics.createImage('graphics/title-bg.jpg', {
+            position: 'center',
+            size: 'cover'
         }));
-        this.stage.addChild(this.titleMessageSprite);
-        // start message
-        this.startMessageSprite = new PIXI.Text('Made by Rex Zeng using Pixi.js', {
-            fontFamily: MAIN_FONT,
-            fontSize: MAIN_FONT_SIZE,
-            fill: '#FFF',
-        });
-        setPosition(this.startMessageSprite, () => ({
-            x: 0.5 * (window.innerWidth - this.startMessageSprite.width),
-            y: 0.5 * (window.innerHeight - this.startMessageSprite.height) + 15,
-        }));
-        this.stage.addChild(this.startMessageSprite);
+        this.stage.addChild(this.titleTextSprite = G.graphics.createText(this.titleText, { fontSize: 48 }, (w, h, self) => ({
+            x: 0.5 * (w - self.width),
+            y: 0.5 * (h - self.height) - 32
+        })));
+        this.stage.addChild(G.graphics.createText('Made by Rex Zeng using Pixi.js', {}, (w, h, self) => ({
+            x: 0.5 * (w - self.width),
+            y: 0.5 * (h - self.height) + 15
+        })));
         // press button message
-        this.pressMessageSprite = new PIXI.Text('[P] play beatmap\n\n[E] edit beatmap', {
-            fontFamily: MAIN_FONT,
-            fontSize: MAIN_FONT_SIZE,
-            fill: '#FFF',
-        });
-        setPosition(this.pressMessageSprite, () => ({
-            x: 0.5 * (window.innerWidth - this.pressMessageSprite.width),
-            y: 0.5 * (window.innerHeight - this.pressMessageSprite.height) + 80,
-        }));
-        this.stage.addChild(this.pressMessageSprite);
-        next();
+        this.stage.addChild(G.graphics.createText('[P] play beatmap\n\n[E] edit beatmap', {}, (w, h, self) => ({
+            x: 0.5 * (w - self.width),
+            y: 0.5 * (h - self.height) + 80
+        })));
     }
     /**
      * Do calculations only, DO NOT do any paint in this function
      * @override
      */
     update() {
-        super.update();
         this.updateTitleTextContent();
         if (G.input.isPressed(G.input.P)) {
+            G.audio.playSE('se/metronome-1.mp3');
             // press P to enter music select
             G.mode = 'play';
-            G.scene = new SceneMusicSelect;
+            G.scene = new SceneMusicSelect();
         } else if (G.input.isPressed(G.input.E)) {
+            G.audio.playSE('se/metronome-1.mp3');
             G.mode = 'edit';
-            G.scene = new SceneMusicSelect;
+            G.scene = new SceneMusicSelect();
         }
     }
     /**
@@ -94,26 +81,22 @@ export default class SceneTitle extends SceneBase {
     updateTitleTextContent() {
         this.titleTextTimer++;
         if (this.titleTextTimer < 20) {
-            let rnd = 0, t = 0;
+            let rnd = 0;
+            let t = 0;
             do {
                 rnd = Math.random();
-                t = String(rnd * this.str.length);
-                if (/\-/.test(t)) {
-                    t = 0;
-                } else {
-                    t = parseInt(t);
-                }
-            } while (t == this.pos || this.str[t] == ' ');
-            if (this.chrBak.length == 0) {
-                this.pos = t;
-                this.chrBak = this.str[this.pos];
+                t = parseInt(rnd * this.titleText.length);
+            } while (t === this.randomChr.pos || this.titleText[t] === ' ');
+            if (this.randomChr.bak.length === 0) {
+                this.randomChr.pos = t;
+                this.randomChr.bak = this.titleText[t];
             }
-            this.str = this.str.slice(0, this.pos) + String.fromCharCode(rnd * 26 + (rnd > 0.5 ? 65 : 97)) + this.str.slice(this.pos + 1);
-            this.titleMessageSprite.text = this.str;
-        } else if (this.titleTextTimer == 20) {
-            this.str = this.str.slice(0, this.pos) + this.chrBak + this.str.slice(this.pos + 1);
-            this.titleMessageSprite.text = this.str;
-            this.chrBak = '';
+            this.titleText = this.titleText.slice(0, this.randomChr.pos) + String.fromCharCode(rnd * 26 + (rnd > 0.5 ? 65 : 97)) + this.titleText.slice(this.randomChr.pos + 1);
+            this.titleTextSprite.text = this.titleText;
+        } else if (this.titleTextTimer === 20) {
+            this.titleText = this.titleText.slice(0, this.randomChr.pos) + this.randomChr.bak + this.titleText.slice(this.randomChr.pos + 1);
+            this.titleTextSprite.text = this.titleText;
+            this.randomChr.bak = '';
         } else if (this.titleTextTimer >= 120) {
             this.titleTextTimer = 0;
         }

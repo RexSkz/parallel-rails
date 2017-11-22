@@ -5,14 +5,14 @@
 
 import G from '../Global';
 import {
-    setPosition,
+    setPosition
 } from '../Functions';
 import WindowBase from './WindowBase';
 
 const {
-    MAIN_FONT,
-    MAIN_FONT_SIZE,
-    HELP_WINDOW_PADDING,
+    DEFAULT_FONT,
+    DEFAULT_FONT_SIZE,
+    HELP_WINDOW_PADDING
 } = G.constant;
 
 /**
@@ -28,9 +28,9 @@ export default class WindowHelp extends WindowBase {
     constructor(helpTexts, align = 'left') {
         super();
         // shadow
-        this.shadow = new PIXI.Graphics;
+        this.shadow = new PIXI.Graphics();
         this.shadow.beginFill(0x000000);
-        this.shadow.drawRect(0, 0, 10000, helpTexts.length * MAIN_FONT_SIZE + HELP_WINDOW_PADDING * 2);
+        this.shadow.drawRect(0, 0, 10000, helpTexts.length * DEFAULT_FONT_SIZE + HELP_WINDOW_PADDING * 2);
         this.shadow.endFill();
         this.shadow.x = 0;
         this.shadow.y = 0;
@@ -38,19 +38,19 @@ export default class WindowHelp extends WindowBase {
         this.stage.addChild(this.shadow);
         // help text
         this.helpTextSprite = new PIXI.Text(helpTexts.join('\n'), {
-            fontFamily: MAIN_FONT,
-            fontSize: MAIN_FONT_SIZE,
+            fontFamily: DEFAULT_FONT,
+            fontSize: DEFAULT_FONT_SIZE,
             fill: '#FFF',
-            align: align,
+            align: align
         });
         setPosition(this.helpTextSprite, () => ({
             x: (window.innerWidth - this.helpTextSprite.width) * 0.5,
-            y: (this.stage.height - this.helpTextSprite.height) * 0.5,
+            y: (this.stage.height - this.helpTextSprite.height) * 0.5
         }));
         this.stage.addChild(this.helpTextSprite);
         setPosition(this.stage, () => ({
             x: 0,
-            y: (window.innerHeight - this.stage.height) * 0.5,
+            y: (window.innerHeight - this.stage.height) * 0.5
         }));
     }
 }

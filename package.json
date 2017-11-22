@@ -4,7 +4,8 @@
   "description": "A music game made with Pixi.js, about infinite parallel rails.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "webpack",
+    "lint": "eslint src/"
   },
   "repository": {
     "type": "git",
@@ -15,21 +16,24 @@
   "dependencies": {
     "moment": "^2.17.1",
     "pixi.js": "^4.4.1",
-    "thenjs": "^2.0.5",
     "whatwg-fetch": "^2.0.3"
   },
   "devDependencies": {
     "autoprefixer": "^6.4.0",
     "babel-core": "^6.22.1",
     "babel-loader": "^6.2.10",
-    "babel-preset-es2015": "^6.2.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
+    "babel-preset-env": "^1.6.1",
     "css-loader": "^0.25.0",
     "eslint": "^3.17.1",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-standard": "^3.0.1",
     "exports-loader": "^0.6.3",
     "file-loader": "^0.10.0",
-    "node-sass": "^4.4.0",
     "postcss-loader": "^1.0.0",
-    "sass-loader": "^4.0.0",
     "style-loader": "^0.13.1",
     "url-loader": "^0.5.7",
     "webpack": "^1.13.1",

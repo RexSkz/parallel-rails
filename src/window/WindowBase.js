@@ -12,7 +12,7 @@ export default class WindowBase {
      * @constructor
      */
     constructor() {
-        this.stage = new PIXI.Container;
+        this.stage = new PIXI.Container();
     }
     /**
      * Update window

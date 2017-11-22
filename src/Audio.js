@@ -3,8 +3,6 @@
  * @author Rex Zeng
  */
 
-import G from './Global';
-
 /**
  * Audio class
  * @class
@@ -14,64 +12,60 @@ export default class Audio {
      * @constructor
      */
     constructor() {
-        this.bgmSrc = '';
-        this.bgmObject = null;
-        this.bgmStatus = '';
-        this.bgmNeedStatus = '';
-        this.bgmStartTime = 0;
-        this.bgmFadeIn = 0;
-        this.bgmFadeOut = 0;
-        this.se = {};
+        this.bgm = {
+            name: '',
+            playing: false,
+            fadeOut: () => {}
+        };
     }
     /**
      * Play BGM
      * @param {string} src - BGM source
-     * @param {number} previewTime - Start position
-     * @param {number} fadeIn - Fade in time
-     * @param {number} fadeOut - Fade out time
+     * @param {number} startTime - Start time
      */
-    playBGM(src, previewTime = 0, fadeIn = 0, fadeOut = 0) {
+    playBGM(src, startTime = 0) {
+        if (!sounds[src]) {
+            console.error(`Resource ${src} not loaded!`);
+            return false;
+        }
         // bgm only played once
-        if (src == this.bgmSrc && this.bgmObject && this.bgmObject.playing) {
-            return;
+        if (src === this.bgm.name && this.bgm.playing) {
+            return false;
         }
-        if (this.bgmObject) {
-            this.bgmObject.pause();
-        }
-        G.resource.addAudio(src);
-        this.bgmSrc = src;
-        this.bgmNeedStatus = 'update';
-        this.bgmStartTime = previewTime;
-        this.bgmFadeIn = fadeIn;
-        this.bgmFadeOut = fadeOut;
+        this.bgm.fadeOut(1);
+        this.bgm = sounds[src];
+        this.bgm.loop = true;
+        this.bgm.playFrom(startTime);
+        this.bgm.fadeIn(1);
     }
     /**
      * Pause bgm
      */
     pauseBGM() {
-        this.bgmObject = G.resource.getAudio(this.bgmSrc);
-        if (this.bgmObject) {
-            this.bgmObject.pause();
+        this.bgm.pause();
+    }
+    /**
+     * Play SE
+     * @param {string} src - SE source
+     */
+    playSE(src) {
+        if (!sounds[src]) {
+            console.error(`Resource ${src} not loaded!`);
+            return false;
         }
-        this.bgmNeedStatus = 'pause';
-        this.bgmStatus = 'pause';
+        sounds[src].loop = false;
+        sounds[src].play();
     }
     /**
      * Update all audio status
      */
-    update() {
-        this.bgmObject = G.resource.getAudio(this.bgmSrc);
-        if (this.bgmStatus != this.bgmNeedStatus && this.bgmObject) {
-            switch (this.bgmNeedStatus) {
-            case 'update':
-                this.bgmObject.loop = true;
-                this.bgmObject.playFrom(this.bgmStartTime);
-                this.bgmStatus = 'play';
-                this.bgmNeedStatus = 'play';
-                break;
-            default:
-                break;
-            }
-        }
+    update() {}
+    /**
+     * Get audio's current play time
+     * @param {Audio} audio - The audio
+     * @return {number} Audio's current play time
+     */
+    getCurrentPlayTime(audio) {
+        return audio.soundNode ? (audio.startOffset + audio.soundNode.context.currentTime - audio.startTime) : 0;
     }
 }

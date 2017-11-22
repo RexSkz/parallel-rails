@@ -5,8 +5,8 @@
 ## 构建流程
 
 ```text
-$ npm install
-$ webpack
+$ yarn install
+$ yarn run build
 ```
 
 然后通过 `localhost` 或其它域名来访问 `game/index.html` 即可。
