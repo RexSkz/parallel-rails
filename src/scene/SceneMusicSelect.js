@@ -31,12 +31,38 @@ export default class SceneMusicSelect extends SceneBase {
     constructor() {
         super();
         this.selected = 0;
+        this.loadResource({
+            audio: [
+                'bgm/voltexes-ii.mp3',
+                'se/menu-cursor.mp3',
+                'se/menu-click.mp3',
+                'se/menu-back.mp3'
+            ],
+            graphics: [
+                'graphics/music-select-bg.jpg'
+            ]
+        });
     }
     /**
      * Trigger when scene is initialized
      * @override
      */
     async onInitialize() {
+        G.audio.playBGM('bgm/voltexes-ii.mp3');
+        // backgrounds
+        this.stage.addChild(G.graphics.createImage('graphics/music-select-bg.jpg', {
+            position: 'center',
+            size: 'cover'
+        }));
+        // darken shadow
+        this.stage.addChild(G.graphics.createRect({
+            top: 0,
+            left: 0,
+            width: 9999,
+            height: 9999,
+            background: 0x000000,
+            opacity: 0.5
+        }));
         if (!G.musics) {
             // loading text
             this.stage.addChild(this.loadingTextSprite = G.graphics.createText('Loading music list...', {
@@ -74,20 +100,22 @@ export default class SceneMusicSelect extends SceneBase {
     update() {
         // deal with input
         if (G.input.isPressed(G.input.ESC)) {
+            G.audio.playSE('se/menu-back.mp3');
             // press ESC to back to title
             G.scene = new SceneTitle();
             G.lastSelectMusic = this.selected;
-        } else if (G.input.isPressed(G.input.UP)) {
-            // press UP to select music above
+        } else if (G.input.isPressed(G.input.UP) || G.input.isPressed(G.input.LEFT)) {
+            // press UP or LEFT to select music above
             this.selected = (this.selected - 1 + G.musics.length) % G.musics.length;
-            // G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime / 1000);
+            G.audio.playSE('se/menu-cursor.mp3');
             this.animateMusicSprites();
-        } else if (G.input.isPressed(G.input.DOWN)) {
-            // press DOWN to select music below
+        } else if (G.input.isPressed(G.input.DOWN) || G.input.isPressed(G.input.RIGHT)) {
+            // press DOWN or RIGHT to select music below
             this.selected = (this.selected + 1) % G.musics.length;
-            // G.audio.playBGM(`songs/${G.musics[this.selected].audio}`, G.musics[this.selected].previewTime / 1000);
+            G.audio.playSE('se/menu-cursor.mp3');
             this.animateMusicSprites();
         } else if (G.input.isPressed(G.input.ENTER)) {
+            G.audio.playSE('se/menu-click.mp3');
             // press ENTER to enter playfield or editor
             G.lastSelectMusic = this.selected;
             switch (G.mode) {
@@ -110,8 +138,8 @@ export default class SceneMusicSelect extends SceneBase {
         for (const music of G.musics) {
             const offset = index++ - this.selected;
             const sprite = G.graphics.createSprite((w, h, self) => ({
-                x: 0.5 * w + (Math.abs(offset) * 0.5 * w * MUSIC_LIST_ITEM_X_DELTA),
-                y: 0.5 * h + MUSIC_LIST_ITEM_HEIGHT * (1 - MUSIC_LIST_ITEM_Y_DELTA) * (offset - 0.5)
+                x: w,
+                y: 0.3 * h + MUSIC_LIST_ITEM_HEIGHT * (1 - MUSIC_LIST_ITEM_Y_DELTA) * (offset - 0.5)
             }));
             sprite.width = 9999;
             sprite.height = MUSIC_LIST_ITEM_HEIGHT;
@@ -121,10 +149,10 @@ export default class SceneMusicSelect extends SceneBase {
                 left: 0,
                 width: 9999,
                 height: MUSIC_LIST_ITEM_HEIGHT,
-                background: 0x000000,
-                borderColor: 0xffffff,
+                background: 0x3498db,
+                borderColor: 0x2980b9,
                 borderWidth: 1,
-                opacity: 0.95
+                opacity: 1
             }));
             // draw inner text
             sprite.addChild(G.graphics.createText(`${music.artist} - ${music.name}`, {}, () => ({
@@ -139,6 +167,10 @@ export default class SceneMusicSelect extends SceneBase {
             })));
             // setup sprite
             this.musicListSprite.addChild(sprite);
+            G.animation.set(sprite, (w, h, self) => ({
+                x: 0.5 * w + (Math.abs(offset) * 0.5 * w * MUSIC_LIST_ITEM_X_DELTA),
+                y: 0.5 * h + MUSIC_LIST_ITEM_HEIGHT * (1 - MUSIC_LIST_ITEM_Y_DELTA) * (offset - 0.5)
+            }), MUSIC_LIST_SWITCH_TIME * 3);
         }
     }
     animateMusicSprites() {
@@ -148,7 +180,7 @@ export default class SceneMusicSelect extends SceneBase {
             G.animation.set(sprite, (w, h, self) => ({
                 x: 0.5 * w + (Math.abs(offset) * 0.5 * w * MUSIC_LIST_ITEM_X_DELTA),
                 y: 0.5 * h + MUSIC_LIST_ITEM_HEIGHT * (1 - MUSIC_LIST_ITEM_Y_DELTA) * (offset - 0.5)
-            }), MUSIC_LIST_SWITCH_TIME, G.animation.EASE_OUT_EXPO);
+            }), MUSIC_LIST_SWITCH_TIME);
         }
     }
 }

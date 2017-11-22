@@ -9,7 +9,7 @@ export default class Debug {
     constructor() {
         G.rootStage.id = 'ROOT';
     }
-    sprites(om = G.rootStage, indent = 0) {
+    text(om = G.rootStage, indent = 0) {
         const output = [
             (om.id || 'Untitled').substr(0, 30),
             '(' + Math.floor(om.x) + ',' + Math.floor(om.y) + ')',
@@ -20,8 +20,25 @@ export default class Debug {
         }
         console.log(output.join(' '));
         for (const child of om.children) {
-            this.sprites(child, indent + 2);
+            this.text(child, indent + 2);
         }
         return true;
+    }
+    object(om = G.rootStage) {
+        let output = {
+            id: (om.id || 'Untitled').substr(0, 30),
+            x: Math.floor(om.x),
+            y: Math.floor(om.y),
+            width: Math.floor(om.width),
+            height: Math.floor(om.height),
+            sprite: om
+        };
+        if (om.children.length) {
+            output.children = [];
+            for (const child of om.children) {
+                output.children.push(this.object(child));
+            }
+        }
+        return output;
     }
 }

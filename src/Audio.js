@@ -21,7 +21,7 @@ export default class Audio {
     /**
      * Play BGM
      * @param {string} src - BGM source
-     * @param {number} startTime - Start time
+     * @param {number} startTime - Start time in unit 'second'
      */
     playBGM(src, startTime = 0) {
         if (!sounds[src]) {

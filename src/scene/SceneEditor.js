@@ -4,10 +4,7 @@
  */
 
 import G from '../Global';
-import {
-    setPosition,
-    appendTimingPointEditingWindow
-} from '../Functions';
+import { appendTimingPointEditingWindow } from '../Functions';
 import WindowHelp from '../window/WindowHelp';
 import WindowHitObject from '../window/WindowHitObject';
 import WindowTimeRuler from '../window/WindowTimeRuler';
@@ -15,11 +12,6 @@ import WindowTiming from '../window/WindowTiming';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 import moment from 'moment';
-
-const {
-    DEFAULT_FONT,
-    DEFAULT_FONT_SIZE
-} = G.constant;
 
 /**
  * Define editor scene
@@ -55,7 +47,11 @@ export default class SceneEditor extends SceneBase {
         // options: hitObject, timingPoint
         this.currentMode = 'hitObject';
         this.resourceToLoad = {
-            audio: [this.audioUrl],
+            audio: [
+                'se/metronome-1.mp3',
+                'se/metronome-2.mp3',
+                this.audioUrl
+            ],
             graphics: [this.bgUrl]
         };
     }
@@ -63,7 +59,7 @@ export default class SceneEditor extends SceneBase {
      * Trigger when scene is initialized
      * @override
      */
-    onInitialize() {
+    async onInitialize() {
         G.audio.pauseBGM();
         this.audio = G.resource.audio(this.audioUrl);
         // background
@@ -80,50 +76,14 @@ export default class SceneEditor extends SceneBase {
             background: 0x000000,
             opacity: 0.3
         }));
-        // load cached data
-        let loaded = false;
-        let savedData = localStorage.getItem(this.storageKey);
-        if (savedData) {
-            savedData = JSON.parse(savedData);
-            if (confirm(`Found cached data at ${savedData.time}, would you like to load it?`)) {
-                this.data = savedData.data;
-                this.updateFromCachedData();
-                localStorage.removeItem(this.storageKey);
-                loaded = true;
-                alert('Data loaded, cache has been erased, you have to press Ctrl+S to cache it again.');
-            } else if (confirm('Would you like to erase this cache?')) {
-                localStorage.removeItem(this.storageKey);
-                alert('Cached data has been erased.');
-            }
-        }
-        if (!loaded) {
-            // load pr file
-            fetch(this.prUrl).then(res => {
-                if (res.ok) {
-                    res.json().then(data => {
-                        this.data.timingPoints = data.timingPoints;
-                        this.data.hitObjects = data.hitObjects;
-                        this.updateFromCachedData();
-                    });
-                } else {
-                    console.error(`Get PR file '${this.data.artist} - ${this.data.name}' failed, code ${res.status}`); // eslint-disable-line no-console
-                }
-            });
-        }
         // time ruler window
-        this.timeRulerWindow = new WindowTimeRuler();
-        this.stage.addChild(this.timeRulerWindow.stage);
+        this.addWindow(this.timeRulerWindow = new WindowTimeRuler());
         // hint text
-        this.hintTextSprite = new PIXI.Text(`Editing \`${this.music.artist} - ${this.music.name}\`\nPress H for help.`, {
-            fontFamily: DEFAULT_FONT,
-            fontSize: DEFAULT_FONT_SIZE,
-            fill: '#FFF'
-        });
-        setPosition(this.hintTextSprite, () => ({
-            x: 20,
-            y: 20
-        }));
-        this.stage.addChild(this.hintTextSprite);
+        this.stage.addChild(G.graphics.createText(
+            `Editing [${this.music.artist} - ${this.music.name}]\nPress H for help.`,
+            {},
+            { x: 20, y: 20 }
+        ));
         // help window
         this.helpWindow = new WindowHelp([
             '      H: Toggle this window.',
@@ -143,8 +103,7 @@ export default class SceneEditor extends SceneBase {
             '  SPACE: Toggle play / pause.',
             '    ESC: Return to music select scene or cancel slider edition.'
         ]);
-        this.helpWindow.stage.visible = false;
-        this.stage.addChild(this.helpWindow.stage);
+        this.addWindow(this.helpWindow);
         // window for editing timing points
         const updateTimingPoint = t => { this.data.timingPoints = t; };
         const updateDivisor = t => {
@@ -158,7 +117,31 @@ export default class SceneEditor extends SceneBase {
         this.tpWindow.style.visibility = 'hidden';
         // hit object window
         this.hitObjectWindow = new WindowHitObject('editor');
-        this.stage.addChild(this.hitObjectWindow.stage);
+        this.addWindow(this.hitObjectWindow);
+        // load pr file
+        const res = await fetch(this.prUrl);
+        if (res.ok) {
+            const data = await res.json();
+            this.data.timingPoints = data.timingPoints;
+            this.data.hitObjects = data.hitObjects;
+            this.updateFromCachedData();
+        } else {
+            console.error(`Get PR file '${this.data.artist} - ${this.data.name}' failed, code ${res.status}`); // eslint-disable-line no-console
+        }
+        // load cached data
+        let savedData = localStorage.getItem(this.storageKey);
+        if (savedData) {
+            savedData = JSON.parse(savedData);
+            if (confirm(`Found cached data at ${savedData.time}, would you like to load it?`)) {
+                this.data = savedData.data;
+                this.updateFromCachedData();
+                localStorage.removeItem(this.storageKey);
+                alert('Data loaded, cache has been erased, you have to press Ctrl+S to cache it again.');
+            } else if (confirm('Would you like to erase this cache?')) {
+                localStorage.removeItem(this.storageKey);
+                alert('Cached data has been erased.');
+            }
+        }
     }
     /**
      * Do calculations only, DO NOT do any paint in this function
@@ -197,8 +180,9 @@ export default class SceneEditor extends SceneBase {
      * @override
      */
     onTerminate() {
-        super.onTerminate();
+        this.audio.fadeOut(0.5);
         this.tpWindow.destroy();
+        setTimeout(() => this.audio.pause(), 500);
     }
     /**
      * Update timing points and hit objects from cached data
@@ -270,6 +254,7 @@ export default class SceneEditor extends SceneBase {
                     } else {
                         this.audio.play();
                     }
+                    this.audio.fadeIn(0);
                 }
             }
         } else if (G.input.isPressed(G.input.LEFT)) {
@@ -334,7 +319,7 @@ export default class SceneEditor extends SceneBase {
                 return;
             }
             this.tpWindow.style.opacity = 0;
-            this.audio.fadeOut(0.5);
+            G.audio.playSE('se/menu-back.mp3');
             G.scene = new SceneMusicSelect();
         }
     }

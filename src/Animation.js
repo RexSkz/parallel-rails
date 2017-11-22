@@ -33,7 +33,7 @@ export default class Animation {
      * @param {boolean} loop - Whether the animation is looped
      * @param {function} callback - Executes when animation is over (disabled if loop)
      */
-    set(sprite, end, totalFrames, func, loop = false, callback = null) {
+    set(sprite, end, totalFrames, func = this.EASE_OUT_EXPO, loop = false, callback = null) {
         if (this.queue[sprite.id]) {
             delete this.queue[sprite.id];
         }

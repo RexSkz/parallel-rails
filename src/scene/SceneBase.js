@@ -191,4 +191,11 @@ export default class SceneBase {
             this.loadingBar.text = `${G.resource.remains} resource(s) to load...\nReceived file '${G.resource.currentLoad}'.`;
         }
     }
+    /**
+     * Add a window to current stage
+     * @param {Window} wnd - Window variable
+     */
+    addWindow(wnd) {
+        this.stage.addChild(wnd.stage);
+    }
 }

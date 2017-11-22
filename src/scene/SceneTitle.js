@@ -25,9 +25,8 @@ export default class SceneTitle extends SceneBase {
         };
         this.loadResource({
             audio: [
-                'se/metronome-1.mp3',
-                'se/metronome-2.mp3',
-                'bgm/we-are-electric.mp3'
+                'bgm/sedap-malam.mp3',
+                'se/menu-click.mp3'
             ],
             graphics: [
                 'graphics/title-bg.jpg'
@@ -39,10 +38,19 @@ export default class SceneTitle extends SceneBase {
      * @override
      */
     onInitialize() {
-        G.audio.playBGM('bgm/we-are-electric.mp3');
+        G.audio.playBGM('bgm/sedap-malam.mp3', 2);
         this.stage.addChild(G.graphics.createImage('graphics/title-bg.jpg', {
             position: 'center',
             size: 'cover'
+        }));
+        // darken shadow
+        this.stage.addChild(G.graphics.createRect({
+            top: 0,
+            left: 0,
+            width: 9999,
+            height: 9999,
+            background: 0x000000,
+            opacity: 0.5
         }));
         this.stage.addChild(this.titleTextSprite = G.graphics.createText(this.titleText, { fontSize: 48 }, (w, h, self) => ({
             x: 0.5 * (w - self.width),
@@ -65,12 +73,12 @@ export default class SceneTitle extends SceneBase {
     update() {
         this.updateTitleTextContent();
         if (G.input.isPressed(G.input.P)) {
-            G.audio.playSE('se/metronome-1.mp3');
+            G.audio.playSE('se/menu-click.mp3');
             // press P to enter music select
             G.mode = 'play';
             G.scene = new SceneMusicSelect();
         } else if (G.input.isPressed(G.input.E)) {
-            G.audio.playSE('se/metronome-1.mp3');
+            G.audio.playSE('se/menu-click.mp3');
             G.mode = 'edit';
             G.scene = new SceneMusicSelect();
         }

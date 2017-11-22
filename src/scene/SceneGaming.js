@@ -70,7 +70,6 @@ export default class SceneGaming extends SceneBase {
      * @override
      */
     update() {
-        super.update();
         this.updateBackground(this.bgUrl);
         // deal with input
         if (G.input.isPressed(G.input.ESC)) {

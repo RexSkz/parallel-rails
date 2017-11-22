@@ -119,13 +119,16 @@ export default class Input {
                 if (key.isPressed) {
                     key.isPressed = false;
                     this.pressedKey = 0;
-                } else {
+                } else if (key.isRepeated) {
+                    this.pressedKey = 0;
+                } else if (!key.isReleased) {
                     key.isPressed = true;
                     key.isReleased = false;
                     key.isRepeated = true;
                 }
             }
-        } else if (this.releasedKey) {
+        }
+        if (this.releasedKey) {
             const key = this.keyState[this.releasedKey];
             if (key) {
                 if (key.isReleased) {

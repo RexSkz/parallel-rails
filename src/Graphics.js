@@ -45,9 +45,10 @@ export default class Graphics {
         const sprite = new PIXI.Text(str, {
             fontFamily: style.fontFamily || G.constant.DEFAULT_FONT,
             fontSize: style.fontSize || G.constant.MUSIC_LIST_ITEM_CREATOR_SIZE,
-            fill: style.color || G.constant.DEFAULT_COLOR
+            fill: style.color || G.constant.DEFAULT_COLOR,
+            align: style.align || 'left'
         });
-        sprite.id = 'TXT_' + str.replace(/\s/g, '_').replace(/\W/g, '');
+        sprite.id = 'TXT_' + str.replace(/\s+/g, '_').replace(/\W/g, '');
         this.setPosition(sprite, pos, global);
         return sprite;
     }
@@ -74,7 +75,7 @@ export default class Graphics {
         if (style.borderWidth) {
             rect.lineStyle(style.borderWidth, style.borderColor, 1);
         }
-        rect.drawRect(style.top, style.left, style.width, style.height);
+        rect.drawRect(style.top || 0, style.left || 0, style.width, style.height);
         rect.endFill();
         rect.alpha = style.opacity;
         return rect;
@@ -105,16 +106,18 @@ export default class Graphics {
      * @param {function or object} pos - Position information
      */
     painter(sprite, pos) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
         let result = {};
         if (typeof pos === 'function') {
-            result = pos(window.innerWidth, window.innerHeight, sprite);
+            result = pos(w, h, sprite);
         } else if (typeof pos === 'object') {
             result = pos;
         } else {
             console.error('Param `pos` must be a function or object!');
         }
         if (result.size === 'cover') {
-            const ratio = Math.max(window.innerWidth / sprite.width, window.innerHeight / sprite.height);
+            const ratio = Math.max(w / sprite.width, h / sprite.height);
             result.width = sprite.width * ratio;
             result.height = sprite.height * ratio;
         }
@@ -124,10 +127,10 @@ export default class Graphics {
             result.positionY = 'center';
         }
         if (result.positionX === 'center') {
-            result.x = 0.5 * (window.innerWidth - result.width);
+            result.x = 0.5 * (w - (result.width || sprite.width));
         }
         if (result.positionY === 'center') {
-            result.y = 0.5 * (window.innerHeight - result.height);
+            result.y = 0.5 * (h - (result.height || sprite.height));
         }
         return result;
     };

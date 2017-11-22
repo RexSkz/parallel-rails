@@ -13,6 +13,7 @@ export default class WindowBase {
      */
     constructor() {
         this.stage = new PIXI.Container();
+        this.stage.id = this.constructor.name + '_' + parseInt(Math.random() * 1e5);
     }
     /**
      * Update window
