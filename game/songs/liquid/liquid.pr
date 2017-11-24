@@ -13,18 +13,18 @@
     "hitObjects": [{
         "type": 0,
         "pos1000": 436,
-        "color": "green"
+        "color": 0
     }, {
         "type": 0,
         "pos1000": 661,
-        "color": "green"
+        "color": 0
     }, {
         "type": 0,
         "pos1000": 774,
-        "color": "orange"
+        "color": 1
     }, {
         "type": 0,
         "pos1000": 887,
-        "color": "orange"
+        "color": 1
     }]
 }

@@ -10,6 +10,7 @@ export default class DataConstants {
             DEFAULT_FONT: 'Consolas',
             DEFAULT_FONT_SIZE: 16,
             DEFAULT_COLOR: '#fff',
+            JUDGEMENT_LINE_LEFT: 250,
             // music list
             MUSIC_LIST_ITEM_HEIGHT: 75,
             MUSIC_LIST_ITEM_PADDING: 15,
@@ -39,7 +40,11 @@ export default class DataConstants {
                 6: [0xFFFFFF, 0x2E74E6, 0x2E74E6, 0xE30405, 0x2E74E6, 0x2E74E6],
                 8: [0xFFFFFF, 0xE3E405, 0x2E74E6, 0xE3E405, 0xE30405, 0xE3E405, 0x2E74E6, 0xE3E405],
                 12: [0xFFFFFF, 0x8E9092, 0x803C84, 0x2E74E6, 0xB203B6, 0x8E9092, 0xE30405, 0x8E9092, 0xB203B6, 0x2E74E6, 0x803C84, 0x8E9092]
-            }
+            },
+            // hit object window
+            HITOBJ_WINDOW_PADDING: 20,
+            HITOBJ_CIRCLE_RADIUS: 27,
+            HITOBJ_MARGIN_SIZE: 2.75
         };
     }
 }

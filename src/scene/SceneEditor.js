@@ -52,7 +52,11 @@ export default class SceneEditor extends SceneBase {
                 'se/metronome-2.mp3',
                 this.audioUrl
             ],
-            graphics: [this.bgUrl]
+            graphics: [
+                'graphics/hit-circle-green.png',
+                'graphics/hit-circle-orange.png',
+                this.bgUrl
+            ]
         };
     }
     /**
@@ -84,6 +88,29 @@ export default class SceneEditor extends SceneBase {
             {},
             { x: 20, y: 20 }
         ));
+        // load pr file
+        const res = await fetch(this.prUrl);
+        if (res.ok) {
+            const data = await res.json();
+            this.data.timingPoints = data.timingPoints;
+            this.data.hitObjects = data.hitObjects;
+        } else {
+            console.error(`Get PR file '${this.data.artist} - ${this.data.name}' failed, code ${res.status}`); // eslint-disable-line no-console
+        }
+        // window for editing timing points
+        const updateTimingPoint = t => { this.data.timingPoints = t; };
+        const updateDivisor = t => {
+            if (G.tick.divisor !== t) {
+                G.tick.divisor = t;
+                this.timeRulerWindow.repaintAllTimingPoints(this.data.currentTime * 1000);
+            }
+        };
+        this.tpWindow = appendTimingPointEditingWindow(updateTimingPoint, updateDivisor);
+        this.tpWindow.style.opacity = 0;
+        this.tpWindow.style.visibility = 'hidden';
+        // hit object window
+        this.hitObjectWindow = new WindowHitObject(this.data);
+        this.addWindow(this.hitObjectWindow);
         // help window
         this.helpWindow = new WindowHelp([
             '      H: Toggle this window.',
@@ -104,30 +131,6 @@ export default class SceneEditor extends SceneBase {
             '    ESC: Return to music select scene or cancel slider edition.'
         ]);
         this.addWindow(this.helpWindow);
-        // window for editing timing points
-        const updateTimingPoint = t => { this.data.timingPoints = t; };
-        const updateDivisor = t => {
-            if (G.tick.divisor !== t) {
-                G.tick.divisor = t;
-                this.timeRulerWindow.repaintAllTimingPoints(this.data.currentTime * 1000);
-            }
-        };
-        this.tpWindow = appendTimingPointEditingWindow(updateTimingPoint, updateDivisor);
-        this.tpWindow.style.opacity = 0;
-        this.tpWindow.style.visibility = 'hidden';
-        // hit object window
-        this.hitObjectWindow = new WindowHitObject('editor');
-        this.addWindow(this.hitObjectWindow);
-        // load pr file
-        const res = await fetch(this.prUrl);
-        if (res.ok) {
-            const data = await res.json();
-            this.data.timingPoints = data.timingPoints;
-            this.data.hitObjects = data.hitObjects;
-            this.updateFromCachedData();
-        } else {
-            console.error(`Get PR file '${this.data.artist} - ${this.data.name}' failed, code ${res.status}`); // eslint-disable-line no-console
-        }
         // load cached data
         let savedData = localStorage.getItem(this.storageKey);
         if (savedData) {
@@ -141,6 +144,8 @@ export default class SceneEditor extends SceneBase {
                 localStorage.removeItem(this.storageKey);
                 alert('Cached data has been erased.');
             }
+        } else {
+            this.updateFromCachedData();
         }
     }
     /**
@@ -217,7 +222,7 @@ export default class SceneEditor extends SceneBase {
         } else if (G.input.isPressed(G.input.APOSTROPHE)) {
             this.hitObjectWindow.stage.visible = !this.hitObjectWindow.stage.visible;
             this.tpWindow.style.opacity = 1 - this.tpWindow.style.opacity;
-            this.tpWindow.style.visibility = this.helpWindow.stage.visible ? 'hidden' : 'visible';
+            this.tpWindow.style.visibility = +this.tpWindow.style.opacity ? 'visible' : 'hidden';
         } else if (G.input.isRepeated(G.input.CTRL) && G.input.isRepeated(G.input.S)) {
             // CTRL+S to save to localStorage
             const dt = moment().format('Y-m-d H:m:s');

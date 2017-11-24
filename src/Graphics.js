@@ -11,12 +11,6 @@ import G from './Global';
  */
 export default class Graphics {
     /**
-     * @constructor
-     */
-    constructor() {
-        console.log('Graphics class');
-    }
-    /**
      * Create a responsive image
      * @param {string} src - Image src
      * @param {function or object} pos - Used by `setPosition`
@@ -48,7 +42,7 @@ export default class Graphics {
             fill: style.color || G.constant.DEFAULT_COLOR,
             align: style.align || 'left'
         });
-        sprite.id = 'TXT_' + str.replace(/\s+/g, '_').replace(/\W/g, '');
+        sprite.id = 'TXT_' + str.replace(/\W+/g, ' ').replace(/\s+/g, '_');
         this.setPosition(sprite, pos, global);
         return sprite;
     }

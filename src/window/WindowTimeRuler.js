@@ -13,7 +13,8 @@ const {
     TIME_RULER_WINDOW_HEIGHT,
     TIME_RULER_LINE_TOP,
     TIME_RULER_LINE_HEIGHT,
-    TIME_RULER_COLORS
+    TIME_RULER_COLORS,
+    JUDGEMENT_LINE_LEFT
 } = G.constant;
 
 /**
@@ -31,6 +32,7 @@ export default class WindowTimeRuler extends WindowBase {
         this.timeLineObject = [];
         // shadow
         this.shadow = new PIXI.Graphics();
+        this.shadow.id = 'RECT_SHADOW';
         this.shadow.beginFill(0x000000);
         this.shadow.drawRect(0, 0, 10000, TIME_RULER_WINDOW_HEIGHT);
         this.shadow.endFill();
@@ -40,7 +42,8 @@ export default class WindowTimeRuler extends WindowBase {
         this.stage.addChild(this.shadow);
         // shadow border-bottom
         this.shadowBorder = new PIXI.Graphics();
-        this.shadowBorder.lineStyle(1, 0xFFFFFF, 1);
+        this.shadowBorder.id = 'LINE_SHADOW_BORDER_BOTTOM';
+        this.shadowBorder.lineStyle(1, 0xffffff, 1);
         this.shadowBorder.moveTo(0, TIME_RULER_WINDOW_HEIGHT);
         this.shadowBorder.lineTo(10000, TIME_RULER_WINDOW_HEIGHT);
         this.shadowBorder.x = 0;
@@ -48,20 +51,23 @@ export default class WindowTimeRuler extends WindowBase {
         this.stage.addChild(this.shadowBorder);
         // time lines
         this.timeLinesInner = new PIXI.Container();
+        this.timeLinesInner.id = 'SPRITE_TIME_LINES_INNER';
         this.timeLinesInner.y = 0;
         this.timeLinesInner.width = 1000;
         this.timeLinesInner.height = TIME_RULER_LINE_HEIGHT;
         setPosition(this.timeLinesInner, () => {
-            this.timeLinesInner.x = 300;
+            this.timeLinesInner.x = JUDGEMENT_LINE_LEFT;
         }, true);
         // current time line
         const currentTimeLine = new PIXI.Graphics();
-        currentTimeLine.lineStyle(3, 0xFFFFFF, 1);
+        currentTimeLine.id = 'LINE_CURRENT_TIME';
+        currentTimeLine.lineStyle(3, 0xffffff, 1);
         currentTimeLine.moveTo(0, 50);
         currentTimeLine.lineTo(0, TIME_RULER_WINDOW_HEIGHT);
-        currentTimeLine.x = 300;
+        currentTimeLine.x = JUDGEMENT_LINE_LEFT;
         currentTimeLine.y = -80;
         const timeLines = new PIXI.Container();
+        timeLines.id = 'SPRITE_TIME_LINES_CONTAINER';
         timeLines.addChild(this.timeLinesInner);
         timeLines.addChild(currentTimeLine);
         timeLines.x = 0;
@@ -79,7 +85,7 @@ export default class WindowTimeRuler extends WindowBase {
         let position = -Infinity;
         // deque right
         while (this.timeLineObject.length > 0) {
-            position = 300 + Math.floor(this.zoom * this.timeLineObject[this.timeLineObject.length - 1].time);
+            position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * this.timeLineObject[this.timeLineObject.length - 1].time);
             if (Math.floor(-relativeTime * this.zoom) + position > window.innerWidth) {
                 this.timeLineObject.pop();
                 this.timeLinesInner.removeChildAt(this.timeLinesInner.children.length - 1);
@@ -95,13 +101,13 @@ export default class WindowTimeRuler extends WindowBase {
             time: first.time
         };
         let { tp, tick, time } = prevPos;
-        position = 300 + Math.floor(this.zoom * time);
+        position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
         while (Math.floor(-relativeTime * this.zoom) + position >= 0) {
             prevPos = G.tick.prev(prevPos.tp, prevPos.tick, true);
             tp = prevPos.tp;
             tick = prevPos.tick;
             time = prevPos.l;
-            position = 300 + Math.floor(this.zoom * time);
+            position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
             const o = {
                 x: position,
                 mod: G.tick.getTickModNumber(tp, tick),
@@ -124,7 +130,7 @@ export default class WindowTimeRuler extends WindowBase {
         let position = -Infinity;
         // deque left
         while (this.timeLineObject.length > 0) {
-            position = 300 + Math.floor(this.zoom * this.timeLineObject[0].time);
+            position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * this.timeLineObject[0].time);
             if (Math.floor(-relativeTime * this.zoom) + position < 0) {
                 this.timeLineObject.shift();
                 this.timeLinesInner.removeChildAt(0);
@@ -140,13 +146,13 @@ export default class WindowTimeRuler extends WindowBase {
             time: last.time
         };
         let { tp, tick, time } = nextPos;
-        position = 300 + Math.floor(this.zoom * time);
+        position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
         while (Math.floor(-relativeTime * this.zoom) + position <= window.innerWidth) {
             nextPos = G.tick.next(nextPos.tp, nextPos.tick);
             tp = nextPos.tp;
             tick = nextPos.tick;
             time = nextPos.l;
-            position = 300 + Math.floor(this.zoom * time);
+            position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
             const o = {
                 x: position,
                 mod: G.tick.getTickModNumber(tp, tick),
@@ -175,6 +181,7 @@ export default class WindowTimeRuler extends WindowBase {
             height = 5;
         }
         const line = new PIXI.Graphics();
+        line.id = 'LINE_TICK_' + item.mod.tick + '_' + item.mod.divisor + '_' + item.time;
         line.lineStyle(1, color, 1);
         line.moveTo(item.x, 0);
         line.lineTo(item.x, height);
@@ -196,7 +203,7 @@ export default class WindowTimeRuler extends WindowBase {
         tp = pos.tp;
         tick = pos.tick;
         time = pos.l;
-        position = 300 + Math.floor(this.zoom * time);
+        position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
         this.timeLineObject = [{
             x: position,
             mod: G.tick.getTickModNumber(tp, tick),
@@ -210,12 +217,12 @@ export default class WindowTimeRuler extends WindowBase {
             tp: pos.tp,
             tick: pos.tick
         };
-        while (Math.floor(-relativeTime * this.zoom) + position >= -300) {
+        while (Math.floor(-relativeTime * this.zoom) + position >= -JUDGEMENT_LINE_LEFT) {
             prevPos = G.tick.prev(prevPos.tp, prevPos.tick, true);
             tp = prevPos.tp;
             tick = prevPos.tick;
             time = prevPos.l;
-            position = 300 + Math.floor(this.zoom * time);
+            position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
             this.timeLineObject.unshift({
                 x: position,
                 mod: G.tick.getTickModNumber(tp, tick),
@@ -235,7 +242,7 @@ export default class WindowTimeRuler extends WindowBase {
             tp = nextPos.tp;
             tick = nextPos.tick;
             time = nextPos.l;
-            position = 300 + Math.floor(this.zoom * time);
+            position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
             this.timeLineObject.push({
                 x: position,
                 mod: G.tick.getTickModNumber(tp, tick),

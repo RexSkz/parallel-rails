@@ -11,14 +11,14 @@ export default class Debug {
     }
     text(om = G.rootStage, indent = 0) {
         const output = [
-            (om.id || 'Untitled').substr(0, 30),
+            (om.id || 'Untitled').substr(0, 25),
             '(' + Math.floor(om.x) + ',' + Math.floor(om.y) + ')',
             Math.floor(om.width) + 'x' + Math.floor(om.height)
         ];
         for (let i = 0; i < indent; i++) {
             output.unshift('');
         }
-        console.log(output.join(' '));
+        console.log('%c' + output.join(' '), 'white-space:nowrap');
         for (const child of om.children) {
             this.text(child, indent + 2);
         }

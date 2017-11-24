@@ -40,7 +40,7 @@ class ParallelRails {
         // make the renderer
         G.renderer = PIXI.autoDetectRenderer(0, 0, {
             antialias: false,
-            transparent: false,
+            transparent: true,
             resolution: window.devicePixelRatio || 1
         });
         // set renderer to fullscreen
