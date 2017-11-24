@@ -23,7 +23,7 @@ export default class Graphics {
             return false;
         }
         const sprite = new PIXI.Sprite(PIXI.loader.resources[src].texture);
-        sprite.id = 'IMG_' + src.split('/').pop();
+        sprite.id = 'IMG_' + src.split('/').pop() + '_' + parseInt(Math.random() * 1e5);
         this.setPosition(sprite, pos, global);
         return sprite;
     }
@@ -42,7 +42,7 @@ export default class Graphics {
             fill: style.color || G.constant.DEFAULT_COLOR,
             align: style.align || 'left'
         });
-        sprite.id = 'TXT_' + str.replace(/\W+/g, ' ').replace(/\s+/g, '_');
+        sprite.id = 'TXT_' + str.replace(/\W+/g, ' ').replace(/\s+/g, '_') + '_' + parseInt(Math.random() * 1e5);
         this.setPosition(sprite, pos, global);
         return sprite;
     }

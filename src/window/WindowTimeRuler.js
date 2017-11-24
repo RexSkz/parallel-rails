@@ -61,7 +61,7 @@ export default class WindowTimeRuler extends WindowBase {
         // current time line
         const currentTimeLine = new PIXI.Graphics();
         currentTimeLine.id = 'LINE_CURRENT_TIME';
-        currentTimeLine.lineStyle(3, 0xffffff, 1);
+        currentTimeLine.lineStyle(2, 0xffffff, 1);
         currentTimeLine.moveTo(0, 50);
         currentTimeLine.lineTo(0, TIME_RULER_WINDOW_HEIGHT);
         currentTimeLine.x = JUDGEMENT_LINE_LEFT;

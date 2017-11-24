@@ -116,10 +116,8 @@ export default class SceneEditor extends SceneBase {
             '      H: Toggle this window.',
             '      T: Timing current timing object\'s BPM.',
             '      `: Toggle timing point editing window.',
-            '      D: Add green note.',
-            'SHIFT+D: Add green slider start point / end point.',
-            '      F: Add orange note.',
-            'SHIFT+F: Add orange slider start point / end point.',
+            '   F, J: Add green note (SHIFT: add slider start / end).',
+            '   D, K: Add orange note (SHIFT: add slider start / end).',
             '    DEL: Delete current hit object.',
             '     UP: Add object to switch to upper rail.',
             '   DOWN: Add object to switch to lower rail.',
@@ -178,7 +176,6 @@ export default class SceneEditor extends SceneBase {
         this.updateInputs();
         this.updatePlayFromTime();
         this.updateTimingWindow();
-        this.updateEditor();
         this.hitObjectWindow.update(this.data.currentTime);
     }
     /**
@@ -327,6 +324,12 @@ export default class SceneEditor extends SceneBase {
             this.tpWindow.style.opacity = 0;
             G.audio.playSE('se/menu-back.mp3');
             G.scene = new SceneMusicSelect();
+        } else if (G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)) {
+            // D or K to insert a green note
+            this.hitObjectWindow.insertHitObject({ type: G.input.isPressed(G.input.SHIFT) ? 1 : 0, color: 0 });
+        } else if (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J)) {
+            // F or J to insert a orange note
+            this.hitObjectWindow.insertHitObject({ type: G.input.isPressed(G.input.SHIFT) ? 1 : 0, color: 1 });
         }
     }
     /**
@@ -371,11 +374,5 @@ export default class SceneEditor extends SceneBase {
         }
         this.data.playFromTime = time;
         this.data.currentTime = time;
-    }
-    /**
-     * Update all editor elements
-     */
-    updateEditor() {
-
     }
 }
