@@ -31,6 +31,8 @@ export default class WindowHitObject extends WindowBase {
         this.hitObjectSpriteList = [];
         // all CRUD is based on this index
         this.currentIndex = 0;
+        this.lastUpdated = 0;
+        this.currentTime = 0;
         const line = new PIXI.Graphics();
         line.lineStyle(3, 0xffffff, 1);
         line.moveTo(0, 0);
@@ -62,6 +64,7 @@ export default class WindowHitObject extends WindowBase {
             // type: circle
             if (obj.type === 0) {
                 const circle = G.graphics.createImage(colors[obj.color], (w, h, self) => ({
+                    bpm,
                     x: positionX - HITOBJ_CIRCLE_RADIUS,
                     // TODO: replace by specific rail's position
                     y: 0.5 * h - HITOBJ_CIRCLE_RADIUS,
@@ -80,7 +83,34 @@ export default class WindowHitObject extends WindowBase {
     /**
      * Update
      */
-    update() {
-        console.log('update hit objects...');
+    update(time) {
+        if (time > this.lastUpdated) {
+            // left pop
+            // right push
+            for (const index in this.hitObjects) {
+                this.updateObjectPosX(index, time);
+            }
+            this.lastUpdated = time;
+        } else if (time < this.lastUpdated) {
+            // left push
+            // right pop
+            for (const index in this.hitObjects) {
+                this.updateObjectPosX(index, time);
+            }
+            this.lastUpdated = time;
+        }
+    }
+    /**
+     * Update object's position x according to current time
+     * @param {number} index - Index of the object to change
+     * @param {number} time - Current time
+     */
+    updateObjectPosX(index, time) {
+        const obj = this.hitObjects[index];
+        const sprite = this.hitObjectSpriteList[index];
+        const positionX = sprite.bpm * (obj.pos1000 - time * 1000) / 1e6 * HITOBJ_MARGIN_SIZE + JUDGEMENT_LINE_LEFT;
+        G.graphics.setPosition(sprite, {
+            x: positionX - HITOBJ_CIRCLE_RADIUS
+        });
     }
 }

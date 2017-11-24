@@ -179,6 +179,7 @@ export default class SceneEditor extends SceneBase {
         this.updatePlayFromTime();
         this.updateTimingWindow();
         this.updateEditor();
+        this.hitObjectWindow.update(this.data.currentTime);
     }
     /**
      * Trigger before the scene is terminated
