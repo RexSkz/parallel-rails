@@ -134,28 +134,33 @@ export default class WindowHitObject extends WindowBase {
         }
     }
     /**
-     * Insert a hit object at current time index
+     * Find object by time
+     * @param {number} time1000 - Time, in millisecond unit
+     * @return {number} Found position, -1 if not exists
+     */
+    findObj(time1000) {
+        let l = 0;
+        let r = this.hitObjects.length - 1;
+        while (l <= r) {
+            let m = (l + r + 1) >> 1;
+            if (this.hitObjects[m].pos1000 > time1000) {
+                r = m - 1;
+            } else if (this.hitObjects[m].pos1000 < time1000) {
+                l = m + 1;
+            } else {
+                return m;
+            }
+        }
+        return -1;
+    }
+    /**
+     * Insert a hit object at current time
      * @param {object} obj - Hit object to insert
      */
     insertHitObject({ type, color, last }) {
         const obj = { type, pos1000: this.lastUpdated, color, last };
-        const findObj = time => {
-            let l = 0;
-            let r = this.hitObjects.length - 1;
-            while (l <= r) {
-                let m = (l + r + 1) >> 1;
-                if (this.hitObjects[m].pos1000 > time) {
-                    r = m - 1;
-                } else if (this.hitObjects[m].pos1000 < time) {
-                    l = m + 1;
-                } else {
-                    return true;
-                }
-            }
-            return false;
-        };
         // avoid insert at the same place
-        if (findObj(this.lastUpdated)) {
+        if (this.findObj(this.lastUpdated) >= 0) {
             return;
         }
         if (this.currentIndex === this.hitObjects.length - 1 && this.hitObjects[this.currentIndex].pos1000 < this.lastUpdated) {
@@ -182,6 +187,21 @@ export default class WindowHitObject extends WindowBase {
         this.hitObjectStage.children.unshift(this.hitObjectStage.children.pop());
         if (type === 2) {
             // TODO: if insert a switch, right objs' position y must be updated
+        }
+    }
+    /**
+     * Remove hit object at current time
+     */
+    removeHitObject() {
+        const pos = this.findObj(this.lastUpdated);
+        if (pos >= 0) {
+            const sprite = this.hitObjectSpriteList.filter(item => item.id === 'CIRCLE_' + this.lastUpdated);
+            if (sprite.length > 0) {
+                this.hitObjectStage.removeChild(sprite[0]);
+                sprite[0].destroy();
+            }
+            this.hitObjects.splice(pos, 1);
+            this.hitObjectSpriteList.splice(pos, 1);
         }
     }
     /**

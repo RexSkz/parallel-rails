@@ -330,6 +330,9 @@ export default class SceneEditor extends SceneBase {
         } else if (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J)) {
             // F or J to insert a orange note
             this.hitObjectWindow.insertHitObject({ type: G.input.isPressed(G.input.SHIFT) ? 1 : 0, color: 1 });
+        } else if (G.input.isPressed(G.input.DELETE)) {
+            // DELETE to delete an object
+            this.hitObjectWindow.removeHitObject();
         }
     }
     /**
