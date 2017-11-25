@@ -44,7 +44,8 @@ export default class DataConstants {
             // hit object window
             HITOBJ_WINDOW_PADDING: 20,
             HITOBJ_CIRCLE_RADIUS: 27,
-            HITOBJ_MARGIN_SIZE: 2.75
+            HITOBJ_MARGIN_SIZE: 2.75,
+            RAIL_MARGIN: 100
         };
     }
 }

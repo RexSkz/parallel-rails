@@ -58,16 +58,16 @@ export default class WindowHitObject extends WindowBase {
         this.hitObjectStage.id = 'SPRITE_HITOBJECTS';
         this.stage.addChild(this.hitObjectStage);
         let timingIndex = 0;
-        let bpm1000 = this.timingPoints[timingIndex].bpm1000;
-        this.hitObjects.map((obj, objIndex) => {
+        for (const objIndex in this.hitObjects) {
+            const obj = this.hitObjects[objIndex];
             while (timingIndex < this.timingPoints.length - 1 && obj.pos1000 > this.timingPoints[timingIndex + 1].pos1000) {
-                bpm1000 = this.timingPoints[++timingIndex];
+                ++timingIndex;
             }
-            const hitObj = this.createHitObj(obj, bpm1000);
+            const hitObj = this.createHitObj(obj, this.timingPoints[timingIndex].bpm1000);
             this.hitObjectSpriteList[objIndex] = hitObj;
             this.hitObjectStage.addChild(hitObj);
             this.hitObjectStage.children.unshift(this.hitObjectStage.children.pop());
-        });
+        }
     }
     /**
      * Update time
@@ -110,11 +110,28 @@ export default class WindowHitObject extends WindowBase {
         const obj = this.hitObjects[index];
         const sprite = this.hitObjectSpriteList[index];
         const positionX = sprite.bpm1000 * (obj.pos1000 - time1000) / 1e6 * HITOBJ_MARGIN_SIZE + JUDGEMENT_LINE_LEFT;
-        // TODO: replace by specific rail's position
-        G.graphics.setPosition(sprite, (w, h, self) => ({
-            x: positionX - HITOBJ_CIRCLE_RADIUS,
-            y: 0.5 * h - HITOBJ_CIRCLE_RADIUS
-        }));
+        // TODO: replace y by specific rail's position
+        if (positionX < JUDGEMENT_LINE_LEFT) {
+            // TODO: calculate scale and opacity!!!
+            const t = (JUDGEMENT_LINE_LEFT - positionX) / sprite.bpm1000 * 1e3;
+            if (t <= 1) {
+                const scale = G.animation.EASE_OUT_QUAD(this.circleDefaultScale, 3 * this.circleDefaultScale, t);
+                sprite.scale.set(scale, scale);
+                sprite.alpha = 1 - t;
+                sprite.x = JUDGEMENT_LINE_LEFT;
+                sprite.y = 0.5 * window.innerHeight;
+            } else {
+                sprite.visible = false;
+            }
+        } else {
+            G.graphics.setPosition(sprite, (w, h, self) => ({
+                x: positionX,
+                y: 0.5 * h
+            }));
+            sprite.scale.set(this.circleDefaultScale, this.circleDefaultScale);
+            sprite.alpha = 1;
+            sprite.visible = true;
+        }
     }
     /**
      * Insert a hit object at current time index
@@ -146,11 +163,12 @@ export default class WindowHitObject extends WindowBase {
         }
         this.hitObjects.splice(this.currentIndex, 0, obj);
         const findBPM = time => {
-            for (const index in this.timingPoints) {
+            for (let index in this.timingPoints) {
+                index = parseInt(index);
                 const item = this.timingPoints[index];
                 if (item.pos1000 <= time && (
                     index === this.timingPoints.length - 1 ||
-                    this.timingPoints[parseInt(index) + 1].pos1000 > time
+                    this.timingPoints[index + 1].pos1000 > time
                 )) {
                     return item.bpm1000;
                 }
@@ -191,16 +209,19 @@ export default class WindowHitObject extends WindowBase {
     createHitCircle(obj, bpm1000 = null) {
         const positionX = bpm1000 * (obj.pos1000 - this.lastUpdated) / 1e6 * HITOBJ_MARGIN_SIZE + JUDGEMENT_LINE_LEFT;
         const circle = G.graphics.createImage(this.colors[obj.color], (w, h, self) => ({
-            x: positionX - HITOBJ_CIRCLE_RADIUS,
+            x: positionX,
             // TODO: replace by specific rail's position
-            y: 0.5 * h - HITOBJ_CIRCLE_RADIUS
+            y: 0.5 * h
         }));
         circle.id = 'CIRCLE_' + obj.pos1000;
+        circle.anchor.x = 0.5;
+        circle.anchor.y = 0.5;
         if (bpm1000) {
             circle.bpm1000 = bpm1000;
         }
         circle.width = HITOBJ_CIRCLE_RADIUS * 2;
         circle.height = HITOBJ_CIRCLE_RADIUS * 2;
+        this.circleDefaultScale = circle.scale.x;
         return circle;
     }
 }

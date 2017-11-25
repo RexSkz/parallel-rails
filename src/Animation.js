@@ -21,8 +21,12 @@ export default class Animation {
      * Init all easing functions
      */
     initEasingFunctions() {
-        this.EASE_IN_EXPO = (l, r, x) => (l + (r - l) * Math.pow(2, (x - 1) * 7));
-        this.EASE_OUT_EXPO = (l, r, x) => (l + (r - l) * Math.log(x * 127 + 1) / Math.LN2 / 7);
+        this.EASE_IN_QUAD = (l, r, x) => l + (r - l) * Math.pow(x, 2);
+        this.EASE_OUT_QUAD = (l, r, x) => l + (r - l) * Math.pow(x, 1 / 2);
+        this.EASE_IN_CUBIC = (l, r, x) => l + (r - l) * Math.pow(x, 3);
+        this.EASE_OUT_CUBIC = (l, r, x) => l + (r - l) * Math.pow(x, 1 / 3);
+        this.EASE_IN_EXPO = (l, r, x) => l + (r - l) * Math.pow(2, (x - 1) * 7);
+        this.EASE_OUT_EXPO = (l, r, x) => l + (r - l) * Math.log(x * 127 + 1) / Math.LN2 / 7;
     }
     /**
      * Set a new animation
