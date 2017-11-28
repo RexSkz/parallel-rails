@@ -32,7 +32,6 @@ export default class WindowHitObject extends WindowBase {
         // all CRUD is based on this index
         this.currentIndex = 0;
         this.lastUpdated = 0;
-        this.currentTime = 0;
         this.colors = {
             0: 'graphics/hit-circle-green.png',
             1: 'graphics/hit-circle-orange.png'
