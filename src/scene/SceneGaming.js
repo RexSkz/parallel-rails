@@ -34,6 +34,7 @@ export default class SceneGaming extends SceneBase {
             playFromTime: -1,
             detail: 4
         };
+        this.hitIndex = 0;
         this.resourceToLoad = {
             audio: [
                 this.audioUrl
@@ -99,6 +100,7 @@ export default class SceneGaming extends SceneBase {
             // press ESC to back to title
             G.scene = new SceneMusicSelect();
         }
+        // some music may start too early, make some delay time
         let time = 0;
         if (this.countDownTime === null) {
             time = G.audio.getCurrentPlayTime(this.audio);
@@ -116,5 +118,46 @@ export default class SceneGaming extends SceneBase {
             }
         }
         this.hitObjectWindow.update(time);
+        // hit judgement
+        if (this.hitIndex >= this.data.hitObjects.length) {
+            // finished playing, jump to score scene
+        } else {
+            const pos1000 = this.data.hitObjects[this.hitIndex].pos1000;
+            const time1000 = time * 1000;
+            const delta = Math.floor(Math.abs(time1000 - pos1000));
+            const color = this.data.hitObjects[this.hitIndex].color || -1;
+            let hitJudgement = null;
+            if (delta > 150 && pos1000 < time1000) {
+                // really miss
+                hitJudgement = 0;
+                ++this.hitIndex;
+            } else if (delta <= 240) {
+                // wrong key pressed
+                if (
+                    (color === 0 && (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J))) ||
+                    (color === 1 && (G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)))
+                ) {
+                    hitJudgement = -1;
+                    ++this.hitIndex;
+                } else if (
+                    G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J) ||
+                    G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)
+                ) {
+                    if (delta <= 60) {
+                        hitJudgement = 300;
+                    } else if (delta <= 120) {
+                        hitJudgement = 100;
+                    } else if (delta <= 180) {
+                        hitJudgement = 50;
+                    } else {
+                        hitJudgement = 0;
+                    }
+                    ++this.hitIndex;
+                }
+            }
+            if (hitJudgement !== null) {
+                console.log(time1000 - pos1000, hitJudgement);
+            }
+        }
     }
 }
