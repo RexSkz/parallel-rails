@@ -32,7 +32,8 @@ export default class SceneGaming extends SceneBase {
             currentTime: 0,
             duration: 1,
             playFromTime: -1,
-            detail: 4
+            detail: 4,
+            isEditMode: false
         };
         this.hitIndex = 0;
         this.resourceToLoad = {
@@ -95,7 +96,6 @@ export default class SceneGaming extends SceneBase {
     update() {
         // deal with input
         if (G.input.isPressed(G.input.ESC)) {
-            this.audio.fadeOut(0.5);
             G.audio.playSE('se/menu-back.mp3');
             // press ESC to back to title
             G.scene = new SceneMusicSelect();
@@ -119,45 +119,53 @@ export default class SceneGaming extends SceneBase {
         }
         this.hitObjectWindow.update(time);
         // hit judgement
-        if (this.hitIndex >= this.data.hitObjects.length) {
-            // finished playing, jump to score scene
-        } else {
-            const pos1000 = this.data.hitObjects[this.hitIndex].pos1000;
+        const hitObject = this.data.hitObjects[this.hitIndex] || null;
+        if (hitObject !== null) {
+            const pos1000 = hitObject.pos1000;
             const time1000 = time * 1000;
             const delta = Math.floor(Math.abs(time1000 - pos1000));
-            const color = this.data.hitObjects[this.hitIndex].color || -1;
+            const color = hitObject.color === undefined ? -1 : hitObject.color;
             let hitJudgement = null;
             if (delta > 150 && pos1000 < time1000) {
                 // really miss
                 hitJudgement = 0;
-                ++this.hitIndex;
-            } else if (delta <= 240) {
-                // wrong key pressed
+            } else if (delta <= 200) {
                 if (
                     (color === 0 && (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J))) ||
                     (color === 1 && (G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)))
                 ) {
+                    // wrong key pressed
                     hitJudgement = -1;
-                    ++this.hitIndex;
                 } else if (
                     G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J) ||
                     G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)
                 ) {
-                    if (delta <= 60) {
+                    if (delta <= 50) {
                         hitJudgement = 300;
-                    } else if (delta <= 120) {
+                    } else if (delta <= 100) {
                         hitJudgement = 100;
-                    } else if (delta <= 180) {
+                    } else if (delta <= 150) {
                         hitJudgement = 50;
                     } else {
+                        // hit too early
                         hitJudgement = 0;
                     }
-                    ++this.hitIndex;
                 }
             }
-            if (hitJudgement !== null) {
-                console.log(time1000 - pos1000, hitJudgement);
+            if (hitJudgement !== null && this.hitIndex < this.data.hitObjects.length) {
+                this.hitObjectWindow.objectHit(this.hitIndex, hitJudgement);
+                ++this.hitIndex;
             }
+        } else {
+            // TODO: finish playing, jump to score scene
         }
+    }
+    /**
+     * Trigger before the scene is terminated
+     * @override
+     */
+    onTerminate() {
+        this.audio.fadeOut(0.5);
+        setTimeout(() => this.audio.pause(), 500);
     }
 }

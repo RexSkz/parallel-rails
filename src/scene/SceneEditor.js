@@ -39,7 +39,8 @@ export default class SceneEditor extends SceneBase {
             currentTime: 0,
             duration: 1,
             playFromTime: -1,
-            detail: 4
+            detail: 4,
+            isEditMode: true
         };
         this.storageKey = `${this.music.creator}-${this.music.artist}-${this.music.name}-${this.music.version}`;
         this.uncached = false;

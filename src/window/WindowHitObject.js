@@ -26,6 +26,7 @@ export default class WindowHitObject extends WindowBase {
      */
     constructor(data) {
         super();
+        this.isEditMode = data.isEditMode;
         this.hitObjects = data.hitObjects;
         this.timingPoints = data.timingPoints;
         this.hitObjectSpriteList = [];
@@ -109,9 +110,7 @@ export default class WindowHitObject extends WindowBase {
         const obj = this.hitObjects[index];
         const sprite = this.hitObjectSpriteList[index];
         const positionX = sprite.bpm1000 * (obj.pos1000 - time1000) / 1e6 * HITOBJ_MARGIN_SIZE + JUDGEMENT_LINE_LEFT;
-        // TODO: replace y by specific rail's position
-        if (positionX < JUDGEMENT_LINE_LEFT) {
-            // TODO: calculate scale and opacity!!!
+        if (positionX < JUDGEMENT_LINE_LEFT && this.isEditMode) {
             const t = (JUDGEMENT_LINE_LEFT - positionX) / sprite.bpm1000 * 1e3;
             if (t <= 1) {
                 const scale = G.animation.EASE_OUT_QUAD(this.circleDefaultScale, 3 * this.circleDefaultScale, t);
@@ -122,7 +121,8 @@ export default class WindowHitObject extends WindowBase {
             } else {
                 sprite.visible = false;
             }
-        } else {
+        } else if (!sprite.hitDone) {
+            // TODO: replace y by specific rail's position
             G.graphics.setPosition(sprite, (w, h, self) => ({
                 x: positionX,
                 y: 0.5 * h
@@ -130,6 +130,41 @@ export default class WindowHitObject extends WindowBase {
             sprite.scale.set(this.circleDefaultScale, this.circleDefaultScale);
             sprite.alpha = 1;
             sprite.visible = true;
+        }
+    }
+    /**
+     * Call after hitting an object
+     * @param {number} index - Index of hit object
+     * @param {number} hitJudgement - Hit judgement score or 0 or -1
+     */
+    objectHit(index, hitJudgement) {
+        const sprite = this.hitObjectSpriteList[index];
+        sprite.hitDone = true;
+        const currentX = sprite.x;
+        console.log(hitJudgement);
+        if (hitJudgement > 0) {
+            // normal score
+            sprite.transformScale = this.circleDefaultScale;
+            G.animation.set(sprite, (w, h, self) => ({
+                x: currentX,
+                y: 0.5 * h,
+                transformScale: 3 * this.circleDefaultScale,
+                alpha: 0
+            }), 20, G.animation.EASE_OUT_QUAD);
+        } else if (hitJudgement === 0) {
+            // miss
+            G.animation.set(sprite, (w, h, self) => ({
+                x: currentX - HITOBJ_CIRCLE_RADIUS * self.bpm1000 / 32000,
+                y: 0.5 * h,
+                alpha: 0
+            }), 20, G.animation.LINEAR);
+        } else if (hitJudgement === -1) {
+            // wrong key
+            G.animation.set(sprite, (w, h, self) => ({
+                x: currentX,
+                y: 0.5 * h + HITOBJ_CIRCLE_RADIUS * 1.5,
+                alpha: 0
+            }), 20, G.animation.LINEAR);
         }
     }
     /**

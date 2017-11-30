@@ -84,7 +84,11 @@ export default class Graphics {
         const renderer = () => {
             const result = this.painter(sprite, pos);
             for (const key in result) {
-                sprite[key] = result[key];
+                if (key === 'transformScale') {
+                    sprite.scale.set(result.transformScale, result.transformScale);
+                } else {
+                    sprite[key] = result[key];
+                }
             }
         };
         renderer.sprite = sprite;

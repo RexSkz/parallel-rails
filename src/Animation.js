@@ -21,6 +21,7 @@ export default class Animation {
      * Init all easing functions
      */
     initEasingFunctions() {
+        this.LINEAR = (l, r, x) => l + (r - l) * x;
         this.EASE_IN_QUAD = (l, r, x) => l + (r - l) * Math.pow(x, 2);
         this.EASE_OUT_QUAD = (l, r, x) => l + (r - l) * Math.pow(x, 1 / 2);
         this.EASE_IN_CUBIC = (l, r, x) => l + (r - l) * Math.pow(x, 3);
@@ -89,7 +90,12 @@ export default class Animation {
                 result = item.end;
             }
             for (const key in result) {
-                item.sprite[key] = item.func(item.start[key], result[key], item.currentFrames / item.totalFrames);
+                if (key === 'transformScale') {
+                    const scale = item.func(item.start[key], result[key], item.currentFrames / item.totalFrames);
+                    item.sprite.scale.set(scale, scale);
+                } else {
+                    item.sprite[key] = item.func(item.start[key], result[key], item.currentFrames / item.totalFrames);
+                }
             }
             // animation finished
             if (item.currentFrames >= item.totalFrames) {
