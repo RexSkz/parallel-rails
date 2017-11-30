@@ -1,12 +1,24 @@
 # Parallel Rails
 
-一个使用 Pixi.js 编写的，关于无限平行轨道音乐游戏。
+A music game about infinite parallel rails, written by Pixi.js.
 
-## 构建流程
+It's just a project for practice, all musics and pictures don't belong to me.
+
+## Build and run
 
 ```text
 $ yarn install
 $ yarn run build
 ```
 
-然后通过 `localhost` 或其它域名来访问 `game/index.html` 即可。
+Then open `http://localhost/game/index.html` in your browser. `localhost` can be any other domain you set.
+
+## Screenshots
+
+![0](https://raw.githubusercontent.com/RexSkz/parallel-rails/master/screenshots/0.png)
+
+![1](https://raw.githubusercontent.com/RexSkz/parallel-rails/master/screenshots/1.png)
+
+![2](https://raw.githubusercontent.com/RexSkz/parallel-rails/master/screenshots/2.png)
+
+![3](https://raw.githubusercontent.com/RexSkz/parallel-rails/master/screenshots/3.png)
