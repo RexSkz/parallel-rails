@@ -5,6 +5,7 @@
 
 import G from '../Global';
 import WindowHitObject from '../window/WindowHitObject';
+import WindowTiming from '../window/WindowTiming';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 
@@ -38,6 +39,8 @@ export default class SceneGaming extends SceneBase {
         this.hitIndex = 0;
         this.resourceToLoad = {
             audio: [
+                'se/hit-00.mp3',
+                'se/hit-01.mp3',
                 this.audioUrl
             ],
             graphics: [
@@ -68,6 +71,9 @@ export default class SceneGaming extends SceneBase {
             background: 0x000000,
             opacity: 0.3
         }));
+        // timing window
+        this.timingWindow = new WindowTiming(0, this.data.duration = this.audio.buffer.duration);
+        this.addWindow(this.timingWindow);
         // load pr file
         const res = await fetch(this.prUrl);
         if (res.ok) {
@@ -118,6 +124,12 @@ export default class SceneGaming extends SceneBase {
             }
         }
         this.hitObjectWindow.update(time);
+        // play hit se
+        if (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J)) {
+            G.audio.playSE('se/hit-00.mp3');
+        } else if (G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)) {
+            G.audio.playSE('se/hit-01.mp3');
+        }
         // hit judgement
         const hitObject = this.data.hitObjects[this.hitIndex] || null;
         if (hitObject !== null) {
@@ -126,10 +138,10 @@ export default class SceneGaming extends SceneBase {
             const delta = Math.floor(Math.abs(time1000 - pos1000));
             const color = hitObject.color === undefined ? -1 : hitObject.color;
             let hitJudgement = null;
-            if (delta > 150 && pos1000 < time1000) {
+            if (delta > 10 && pos1000 < time1000) {
                 // really miss
-                hitJudgement = 0;
-            } else if (delta <= 200) {
+                hitJudgement = -2;
+            } else if (delta <= 300) {
                 if (
                     (color === 0 && (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J))) ||
                     (color === 1 && (G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)))
@@ -140,11 +152,11 @@ export default class SceneGaming extends SceneBase {
                     G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J) ||
                     G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)
                 ) {
-                    if (delta <= 50) {
+                    if (delta <= 80) {
                         hitJudgement = 300;
-                    } else if (delta <= 100) {
-                        hitJudgement = 100;
                     } else if (delta <= 150) {
+                        hitJudgement = 100;
+                    } else if (delta <= 225) {
                         hitJudgement = 50;
                     } else {
                         // hit too early
@@ -158,6 +170,16 @@ export default class SceneGaming extends SceneBase {
             }
         } else {
             // TODO: finish playing, jump to score scene
+        }
+        this.updateTimingWindow();
+    }
+    /**
+     * Update timing window
+     */
+    updateTimingWindow() {
+        if (this.audio.playing) {
+            this.data.currentTime = G.audio.getCurrentPlayTime(this.audio);
+            this.timingWindow.update(this.data.currentTime);
         }
     }
     /**

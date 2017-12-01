@@ -38,7 +38,7 @@ export default class SceneEditor extends SceneBase {
             hitObjects: [],
             currentTime: 0,
             duration: 1,
-            playFromTime: -1,
+            playFromTime: 0,
             detail: 4,
             isEditMode: true
         };
@@ -49,6 +49,8 @@ export default class SceneEditor extends SceneBase {
         this.currentMode = 'hitObject';
         this.resourceToLoad = {
             audio: [
+                'se/hit-00.mp3',
+                'se/hit-01.mp3',
                 'se/metronome-1.mp3',
                 'se/metronome-2.mp3',
                 this.audioUrl
@@ -83,6 +85,9 @@ export default class SceneEditor extends SceneBase {
         }));
         // time ruler window
         this.addWindow(this.timeRulerWindow = new WindowTimeRuler());
+        // timing window
+        this.timingWindow = new WindowTiming(0, this.data.duration = this.audio.buffer.duration);
+        this.addWindow(this.timingWindow);
         // hint text
         this.stage.addChild(G.graphics.createText(
             `Editing [${this.music.artist} - ${this.music.name}]\nPress H for help.`,
@@ -229,10 +234,11 @@ export default class SceneEditor extends SceneBase {
                 time: dt,
                 data: this.data
             }));
-            this.uncached = false;
             alert(`Data has been cached in localStorage at ${dt}.`);
+            this.uncached = false;
         } else if (G.input.isPressed(G.input.F12)) {
             // F12 to export data
+            alert('Now I will show curren data in new window and assume you have saved them in .pr file.');
             const data = JSON.stringify({
                 timingPoints: this.data.timingPoints,
                 hitObjects: this.data.hitObjects
@@ -246,6 +252,7 @@ export default class SceneEditor extends SceneBase {
                 console.log(data); // eslint-disable-line no-console
                 alert('Failed to open window! Please allow popup window. Data has logged to console.');
             }
+            this.uncached = false;
         } else if (G.input.isPressed(G.input.SPACE)) {
             // SPACE to toggle play and pause
             if (this.audio) {
@@ -327,12 +334,17 @@ export default class SceneEditor extends SceneBase {
             G.scene = new SceneMusicSelect();
         } else if (G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)) {
             // D or K to insert a green note
+            this.uncached = true;
+            G.audio.playSE('se/hit-01.mp3');
             this.hitObjectWindow.insertHitObject({ type: G.input.isPressed(G.input.SHIFT) ? 1 : 0, color: 0 });
         } else if (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J)) {
             // F or J to insert a orange note
+            this.uncached = true;
+            G.audio.playSE('se/hit-00.mp3');
             this.hitObjectWindow.insertHitObject({ type: G.input.isPressed(G.input.SHIFT) ? 1 : 0, color: 1 });
         } else if (G.input.isPressed(G.input.DELETE)) {
             // DELETE to delete an object
+            this.uncached = true;
             this.hitObjectWindow.removeHitObject();
         }
     }
@@ -340,17 +352,10 @@ export default class SceneEditor extends SceneBase {
      * Update timing window
      */
     updateTimingWindow() {
-        if (this.timingWindow) {
-            if (this.audio.playing) {
-                this.data.currentTime = G.audio.getCurrentPlayTime(this.audio);
-            }
-            this.timingWindow.update(this.data.currentTime);
-        } else {
-            this.data.duration = this.audio.buffer.duration;
-            this.timingWindow = new WindowTiming(this.data.currentTime, this.data.duration);
-            this.audio.startOffset = 0;
-            this.stage.addChild(this.timingWindow.stage);
+        if (this.audio.playing) {
+            this.data.currentTime = G.audio.getCurrentPlayTime(this.audio);
         }
+        this.timingWindow.update(this.data.currentTime);
     }
     /**
      * Update play-from time

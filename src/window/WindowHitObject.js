@@ -151,7 +151,7 @@ export default class WindowHitObject extends WindowBase {
                 transformScale: 3 * this.circleDefaultScale,
                 alpha: 0
             }), 20, G.animation.EASE_OUT_QUAD);
-        } else if (hitJudgement === 0) {
+        } else if (hitJudgement === 0 || hitJudgement === -2) {
             // miss
             G.animation.set(sprite, (w, h, self) => ({
                 x: currentX - HITOBJ_CIRCLE_RADIUS * self.bpm1000 / 32000,

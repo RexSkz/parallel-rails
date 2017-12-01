@@ -34,4 +34,13 @@
     "bg": "black-cat-waltz/black-cat-waltz.jpg",
     "pr": "black-cat-waltz/black-cat-waltz.pr",
     "previewTime": 13079
+}, {
+    "name": "Yawaraka Sensha",
+    "creator": "skywalker_z",
+    "artist": "Taiko no Tatsujin",
+    "version": "Inner Oni",
+    "audio": "yawaraka/yawaraka.mp3",
+    "bg": "yawaraka/yawaraka.jpg",
+    "pr": "yawaraka/yawaraka.pr",
+    "previewTime": 19080
 }]

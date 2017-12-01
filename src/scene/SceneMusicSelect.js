@@ -10,6 +10,7 @@ import SceneEditor from './SceneEditor';
 import SceneGaming from './SceneGaming';
 
 const {
+    MUSIC_LIST_ITEM_WIDTH,
     MUSIC_LIST_ITEM_HEIGHT,
     MUSIC_LIST_ITEM_PADDING,
     MUSIC_LIST_ITEM_TITLE_SIZE,
@@ -168,7 +169,7 @@ export default class SceneMusicSelect extends SceneBase {
             // setup sprite
             this.musicListSprite.addChild(sprite);
             G.animation.set(sprite, (w, h, self) => ({
-                x: 0.5 * w + (Math.abs(offset) * 0.5 * w * MUSIC_LIST_ITEM_X_DELTA),
+                x: w - MUSIC_LIST_ITEM_WIDTH + (Math.pow(Math.abs(offset), 1.2) * MUSIC_LIST_ITEM_WIDTH * MUSIC_LIST_ITEM_X_DELTA),
                 y: 0.5 * h + MUSIC_LIST_ITEM_HEIGHT * (1 - MUSIC_LIST_ITEM_Y_DELTA) * (offset - 0.5)
             }), MUSIC_LIST_SWITCH_TIME * 3);
         }
@@ -178,7 +179,7 @@ export default class SceneMusicSelect extends SceneBase {
         for (const sprite of this.musicListSprite.children) {
             const offset = index++ - this.selected;
             G.animation.set(sprite, (w, h, self) => ({
-                x: 0.5 * w + (Math.abs(offset) * 0.5 * w * MUSIC_LIST_ITEM_X_DELTA),
+                x: w - MUSIC_LIST_ITEM_WIDTH + (Math.pow(Math.abs(offset), 1.2) * MUSIC_LIST_ITEM_WIDTH * MUSIC_LIST_ITEM_X_DELTA),
                 y: 0.5 * h + MUSIC_LIST_ITEM_HEIGHT * (1 - MUSIC_LIST_ITEM_Y_DELTA) * (offset - 0.5)
             }), MUSIC_LIST_SWITCH_TIME);
         }

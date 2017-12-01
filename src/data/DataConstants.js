@@ -12,6 +12,7 @@ export default class DataConstants {
             DEFAULT_COLOR: '#fff',
             JUDGEMENT_LINE_LEFT: 250,
             // music list
+            MUSIC_LIST_ITEM_WIDTH: 390,
             MUSIC_LIST_ITEM_HEIGHT: 75,
             MUSIC_LIST_ITEM_PADDING: 15,
             MUSIC_LIST_ITEM_TITLE_SIZE: 20,
