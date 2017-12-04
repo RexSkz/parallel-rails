@@ -6,6 +6,7 @@
 import G from '../Global';
 import WindowHitObject from '../window/WindowHitObject';
 import WindowTiming from '../window/WindowTiming';
+import WindowHitScore from '../window/WindowHitScore';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 
@@ -74,6 +75,8 @@ export default class SceneGaming extends SceneBase {
         // timing window
         this.timingWindow = new WindowTiming(0, this.data.duration = this.audio.buffer.duration);
         this.addWindow(this.timingWindow);
+        this.hitScoreWindow = new WindowHitScore();
+        this.addWindow(this.hitScoreWindow);
         // load pr file
         const res = await fetch(this.prUrl);
         if (res.ok) {
@@ -138,9 +141,10 @@ export default class SceneGaming extends SceneBase {
             const delta = Math.floor(Math.abs(time1000 - pos1000));
             const color = hitObject.color === undefined ? -1 : hitObject.color;
             let hitJudgement = null;
-            if (delta > 10 && pos1000 < time1000) {
+            if (delta > 200 && pos1000 < time1000) {
                 // really miss
                 hitJudgement = -2;
+                console.log(time1000 - pos1000);
             } else if (delta <= 300) {
                 if (
                     (color === 0 && (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J))) ||
@@ -166,12 +170,14 @@ export default class SceneGaming extends SceneBase {
             }
             if (hitJudgement !== null && this.hitIndex < this.data.hitObjects.length) {
                 this.hitObjectWindow.objectHit(this.hitIndex, hitJudgement);
+                this.hitScoreWindow.objectHit(hitJudgement);
                 ++this.hitIndex;
             }
         } else {
             // TODO: finish playing, jump to score scene
         }
         this.updateTimingWindow();
+        this.hitScoreWindow.update();
     }
     /**
      * Update timing window

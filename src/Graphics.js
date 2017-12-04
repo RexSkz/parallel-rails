@@ -36,10 +36,11 @@ export default class Graphics {
      * @return {Sprite} Text created by this function
      */
     createText(str, style = {}, pos, global = false) {
+        str = str.toString();
         const sprite = new PIXI.Text(str, {
             fontFamily: style.fontFamily || G.constant.DEFAULT_FONT,
             fontSize: style.fontSize || G.constant.MUSIC_LIST_ITEM_CREATOR_SIZE,
-            fill: style.color || G.constant.DEFAULT_COLOR,
+            fill: style.color || style.fill || G.constant.DEFAULT_COLOR,
             align: style.align || 'left'
         });
         sprite.id = 'TXT_' + str.replace(/\W+/g, ' ').replace(/\s+/g, '_') + '_' + parseInt(Math.random() * 1e5);

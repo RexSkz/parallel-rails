@@ -46,7 +46,12 @@ export default class DataConstants {
             HITOBJ_WINDOW_PADDING: 20,
             HITOBJ_CIRCLE_RADIUS: 27,
             HITOBJ_MARGIN_SIZE: 2.75,
-            RAIL_MARGIN: 100
+            RAIL_MARGIN: 100,
+            // hit score sprite
+            SCORE_SPRITE_HEIGHT: 20,
+            SCORE_SPRITE_FONT_SIZE: 24,
+            SCORE_SPRITE_EXPIRE_FRAMES: 20,
+            SCORE_SPRITE_DISAPPEAR_RATE: 2
         };
     }
 }
