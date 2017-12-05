@@ -4,14 +4,10 @@
  */
 
 import G from '../Global';
-import {
-    setPosition,
-    formatTime
-} from '../Functions';
+import { formatTime } from '../Functions';
 import WindowBase from './WindowBase';
 
 const {
-    DEFAULT_FONT,
     TIMING_WINDOW_WIDTH_PERCENT,
     TIMING_WINDOW_HEIGHT,
     TIMING_NUMBER_FONT_SIZE

@@ -22,7 +22,7 @@ module.exports = {
         'no-return-assign': 0,
         'space-before-function-paren': ['error', {
             'anonymous': 'always',
-            'named': 'ignore',
+            'named': 'never',
             'asyncArrow': 'always'
         }],
         'no-unused-expressions': ['error', {

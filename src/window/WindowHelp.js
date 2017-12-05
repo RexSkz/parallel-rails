@@ -4,13 +4,9 @@
  */
 
 import G from '../Global';
-import {
-    setPosition
-} from '../Functions';
 import WindowBase from './WindowBase';
 
 const {
-    DEFAULT_FONT,
     DEFAULT_FONT_SIZE,
     HELP_WINDOW_PADDING
 } = G.constant;

@@ -141,7 +141,6 @@ export default class WindowHitObject extends WindowBase {
         const sprite = this.hitObjectSpriteList[index];
         sprite.hitDone = true;
         const currentX = sprite.x;
-        console.log(hitJudgement);
         if (hitJudgement > 0) {
             // normal score
             sprite.transformScale = this.circleDefaultScale;

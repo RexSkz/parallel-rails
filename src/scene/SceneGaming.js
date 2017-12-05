@@ -138,14 +138,14 @@ export default class SceneGaming extends SceneBase {
         if (hitObject !== null) {
             const pos1000 = hitObject.pos1000;
             const time1000 = time * 1000;
-            const delta = Math.floor(Math.abs(time1000 - pos1000));
+            const delta = Math.floor(time1000 - pos1000);
+            const absDelta = Math.abs(delta);
             const color = hitObject.color === undefined ? -1 : hitObject.color;
             let hitJudgement = null;
-            if (delta > 200 && pos1000 < time1000) {
+            if (absDelta > 200 && pos1000 < time1000) {
                 // really miss
                 hitJudgement = -2;
-                console.log(time1000 - pos1000);
-            } else if (delta <= 300) {
+            } else if (absDelta <= 300) {
                 if (
                     (color === 0 && (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J))) ||
                     (color === 1 && (G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)))
@@ -156,11 +156,11 @@ export default class SceneGaming extends SceneBase {
                     G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J) ||
                     G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)
                 ) {
-                    if (delta <= 80) {
+                    if (absDelta <= 60) {
                         hitJudgement = 300;
-                    } else if (delta <= 150) {
+                    } else if (absDelta <= 120) {
                         hitJudgement = 100;
-                    } else if (delta <= 225) {
+                    } else if (absDelta <= 180) {
                         hitJudgement = 50;
                     } else {
                         // hit too early
@@ -169,6 +169,7 @@ export default class SceneGaming extends SceneBase {
                 }
             }
             if (hitJudgement !== null && this.hitIndex < this.data.hitObjects.length) {
+                console.log(hitJudgement, delta);
                 this.hitObjectWindow.objectHit(this.hitIndex, hitJudgement);
                 this.hitScoreWindow.objectHit(hitJudgement);
                 ++this.hitIndex;
