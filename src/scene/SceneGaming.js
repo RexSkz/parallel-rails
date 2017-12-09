@@ -9,6 +9,7 @@ import WindowTiming from '../window/WindowTiming';
 import WindowHitScore from '../window/WindowHitScore';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
+import SceneScore from './SceneScore';
 
 /**
  * Define gaming scene
@@ -38,6 +39,18 @@ export default class SceneGaming extends SceneBase {
             isEditMode: false
         };
         this.hitIndex = 0;
+        this.currentScore = 0;
+        this.currentCombo = 0;
+        this.maxCombo = 0;
+        this.scorePoints = {};
+        this.hitResults = {
+            '0': 0,
+            '50': 0,
+            '100': 0,
+            '200': 0,
+            '300': 0,
+            '300g': 0
+        };
         this.resourceToLoad = {
             audio: [
                 'se/hit-00.mp3',
@@ -142,9 +155,11 @@ export default class SceneGaming extends SceneBase {
             const absDelta = Math.abs(delta);
             const color = hitObject.color === undefined ? -1 : hitObject.color;
             let hitJudgement = null;
+            let hitJudgementType = '';
             if (absDelta > 200 && pos1000 < time1000) {
                 // really miss
                 hitJudgement = -2;
+                hitJudgementType = '0';
             } else if (absDelta <= 300) {
                 if (
                     (color === 0 && (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J))) ||
@@ -152,30 +167,44 @@ export default class SceneGaming extends SceneBase {
                 ) {
                     // wrong key pressed
                     hitJudgement = -1;
+                    hitJudgementType = '0';
                 } else if (
                     G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J) ||
                     G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)
                 ) {
-                    if (absDelta <= 60) {
+                    if (absDelta <= 20) {
                         hitJudgement = 300;
-                    } else if (absDelta <= 120) {
+                        hitJudgementType = '300g';
+                    } else if (absDelta <= 60) {
+                        hitJudgement = 300;
+                        hitJudgementType = '300';
+                    } else if (absDelta <= 100) {
+                        hitJudgement = 200;
+                        hitJudgementType = '200';
+                    } else if (absDelta <= 160) {
                         hitJudgement = 100;
-                    } else if (absDelta <= 180) {
+                        hitJudgementType = '100';
+                    } else if (absDelta <= 220) {
                         hitJudgement = 50;
+                        hitJudgementType = '50';
                     } else {
                         // hit too early
                         hitJudgement = 0;
+                        hitJudgementType = '0';
                     }
                 }
             }
             if (hitJudgement !== null && this.hitIndex < this.data.hitObjects.length) {
-                console.log(hitJudgement, delta);
                 this.hitObjectWindow.objectHit(this.hitIndex, hitJudgement);
                 this.hitScoreWindow.objectHit(hitJudgement);
+                this.updateRecords(Math.max(hitJudgement, 0), hitJudgementType, parseInt(time * 1000));
                 ++this.hitIndex;
             }
         } else {
-            // TODO: finish playing, jump to score scene
+            // 2s after the last hit object, jump to the score scene
+            if (time * 1000 > this.data.hitObjects[this.hitIndex - 1].pos1000 + 1000) {
+                G.scene = new SceneScore(this.bgUrl, this.scorePoints, this.hitResults, this.currentScore, this.maxCombo);
+            }
         }
         this.updateTimingWindow();
         this.hitScoreWindow.update();
@@ -187,6 +216,25 @@ export default class SceneGaming extends SceneBase {
         if (this.audio.playing) {
             this.data.currentTime = G.audio.getCurrentPlayTime(this.audio);
             this.timingWindow.update(this.data.currentTime);
+        }
+    }
+    /**
+     * Update records after hit a key
+     * @param {number} score - Current hit score
+     * @param {string} type - Current hit judgement type
+     * @param {number} currentTime - Current time
+     */
+    updateRecords(score, type, currentTime) {
+        this.scorePoints[currentTime] = score;
+        ++this.hitResults[type];
+        if (score > 0) {
+            if (++this.currentCombo > this.maxCombo) {
+                this.maxCombo = this.currentCombo;
+            }
+            // score addition grows after each 20 combos, max 3000
+            this.currentScore += Math.min(3000, score * (Math.floor(combo / 20) + 1));
+        } else {
+            this.currentCombo = 0;
         }
     }
     /**

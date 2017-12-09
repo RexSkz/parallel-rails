@@ -23,6 +23,7 @@ export default class WindowHitScore extends WindowBase {
             '0': 'Miss',
             '50': 'Normal',
             '100': 'Good',
+            '200': 'Great',
             '300': 'Perfect'
         };
         this.numberToColor = {
@@ -30,7 +31,8 @@ export default class WindowHitScore extends WindowBase {
             '-1': '#f44336',
             '0': '#f44336',
             '50': '#9e9e9e',
-            '100': '#009688',
+            '100': '#2196f3',
+            '200': '#009688',
             '300': '#ff9800'
         };
     }
