@@ -4,8 +4,8 @@
   "description": "A music game made with Pixi.js, about infinite parallel rails.",
   "main": "index.js",
   "scripts": {
-    "dev": "cross-env NODE_ENV=development webpack && serve game -o -n -p 3000",
-    "build": "cross-env NODE_ENV=production webpack",
+    "build": "webpack",
+    "serve": "serve game -o -n -p 3000",
     "lint": "eslint src/"
   },
   "repository": {

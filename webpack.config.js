@@ -6,6 +6,7 @@ const ROOT_PATH = path.resolve(__dirname);
 const APP_PATH = path.resolve(ROOT_PATH, 'src');
 const BUILD_PATH = path.resolve(ROOT_PATH, 'game/lib');
 
+console.log('Current environment:', process.env.NODE_ENV);
 const development = process.env.NODE_ENV === 'development';
 
 module.exports = {
@@ -33,7 +34,7 @@ module.exports = {
         }]
     },
     plugins: [
-        development && new webpack.optimize.UglifyJsPlugin({
+        development ? () => {} : new webpack.optimize.UglifyJsPlugin({
             compress: {
                 warnings: false
             }
