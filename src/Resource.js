@@ -30,7 +30,7 @@ export default class Resource {
         res.graphics = res.graphics ? res.graphics.filter(src => !PIXI.loader.resources[src]) : [];
         this.remains = res.audio.length + res.graphics.length;
         sounds.load(res.audio);
-        PIXI.loader.add(res.graphics).load();
+        PIXI.loader.reset().add(res.graphics).load();
     }
     /**
      * Update loader data
@@ -53,8 +53,7 @@ export default class Resource {
      * @param {string} resourceName - Resource name
      */
     graphics(resourceName) {
-        // TODO: replace PIXI.loader.resource with this.resource.graphics
-        const res = PIXI.loader.resources[resourceName];
+        const res = PIXI.Texture.fromImage(resourceName);
         return res ? res.texture : null;
     }
     /**
@@ -62,7 +61,6 @@ export default class Resource {
      * @param {string} resourceName - Resource name
      */
     audio(resourceName) {
-        // TODO: replace sounds with this.resource.audio
         const res = sounds[resourceName];
         return (res && res.hasLoaded) ? res : null;
     }
