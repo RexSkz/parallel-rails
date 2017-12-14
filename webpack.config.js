@@ -1,12 +1,15 @@
-var path = require('path');
-var autoprefixer = require('autoprefixer');
+const webpack = require('webpack');
+const path = require('path');
+const autoprefixer = require('autoprefixer');
 
-var ROOT_PATH = path.resolve(__dirname);
-var APP_PATH = path.resolve(ROOT_PATH, 'src');
-var BUILD_PATH = path.resolve(ROOT_PATH, 'dist');
+const ROOT_PATH = path.resolve(__dirname);
+const APP_PATH = path.resolve(ROOT_PATH, 'src');
+const BUILD_PATH = path.resolve(ROOT_PATH, 'game/lib');
+
+const development = process.env.NODE_ENV === 'development';
 
 module.exports = {
-    devtool: 'source-map',
+    devtool: development ? 'cheap-module-eval-source-map' : 'cheap-module-source-map',
     entry: ['whatwg-fetch', 'moment', './src/Main.js'],
     output: {
         path: BUILD_PATH,
@@ -14,9 +17,6 @@ module.exports = {
         library: 'ParallelRails',
         libraryTarget: 'umd',
         umdNamedDefine: true
-    },
-    devServer: {
-        publicPath: '/dist/'
     },
     module: {
         loaders: [{
@@ -32,12 +32,12 @@ module.exports = {
             include: APP_PATH
         }]
     },
-    // plugins: [
-    //     new webpack.optimize.UglifyJsPlugin({
-    //         compress: {
-    //             warnings: false
-    //         }
-    //     })
-    // ],
+    plugins: [
+        development && new webpack.optimize.UglifyJsPlugin({
+            compress: {
+                warnings: false
+            }
+        })
+    ],
     postcss: [autoprefixer({ browsers: ['last 10 versions'] })]
 };
