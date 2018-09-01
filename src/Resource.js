@@ -54,7 +54,7 @@ export default class Resource {
      */
     graphics(resourceName) {
         const res = PIXI.Texture.fromImage(resourceName);
-        return res ? res.texture : null;
+        return res || null;
     }
     /**
      * Get audio by name

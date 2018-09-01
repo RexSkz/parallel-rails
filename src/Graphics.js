@@ -18,17 +18,19 @@ export default class Graphics {
      * @return {Sprite} Graphics created by this function
      */
     createImage(src, pos, global = false) {
-        if (!PIXI.loader.resources[src]) {
+        const t = G.resource.graphics(src);
+        if (!t) {
             console.error(`Resource ${src} not loaded!`);
             return false;
         }
-        const sprite = new PIXI.Sprite(PIXI.loader.resources[src].texture);
+        const sprite = new PIXI.Sprite(G.resource.graphics(src));
         sprite.id = 'IMG_' + src.split('/').pop() + '_' + parseInt(Math.random() * 1e5);
         this.setPosition(sprite, pos, global);
         return sprite;
     }
     /**
      * Create a responsive text
+     * TODO: make this responsive
      * @param {string} str - String to draw
      * @param {object} style - PIXI font style
      * @param {function or object} pos - Used by `setPosition`

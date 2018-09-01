@@ -32,12 +32,6 @@ export default class SceneScore extends SceneBase {
         console.log(this.hitResults);
         console.log(this.score);
         console.log(this.combo);
-        this.resourceToLoad = {
-            audio: [],
-            graphics: [
-                this.bgUrl
-            ]
-        };
     }
     /**
      * Trigger when scene is initialized
@@ -56,6 +50,17 @@ export default class SceneScore extends SceneBase {
             width: 9999,
             height: 9999,
             background: 0x000000,
+            opacity: 0.5
+        }));
+        // rect
+        this.stage.addChild(G.graphics.createRect({
+            top: window.innerHeight * 0.5 - 250,
+            left: window.innerWidth * 0.5 - 350,
+            width: 700,
+            height: 500,
+            background: 0x000000,
+            borderWidth: 1,
+            borderColor: 0xffffff,
             opacity: 0.5
         }));
     }

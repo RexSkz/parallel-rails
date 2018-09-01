@@ -232,7 +232,7 @@ export default class SceneGaming extends SceneBase {
                 this.maxCombo = this.currentCombo;
             }
             // score addition grows after each 20 combos, max 3000
-            this.currentScore += Math.min(3000, score * (Math.floor(combo / 20) + 1));
+            this.currentScore += Math.min(3000, score * (Math.floor(this.currentCombo / 20) + 1));
         } else {
             this.currentCombo = 0;
         }
