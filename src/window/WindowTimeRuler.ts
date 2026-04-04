@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Time ruler window in editor
  * @author Rex Zeng
@@ -6,9 +5,8 @@
 
 import { Container, Graphics } from 'pixi.js';
 import G from '../Global';
-import {
-    setPosition
-} from '../Functions';
+import { setPosition } from '../Functions';
+import type { TimelineTick } from '../types';
 import WindowBase from './WindowBase';
 
 const {
@@ -19,71 +17,51 @@ const {
     JUDGEMENT_LINE_LEFT
 } = G.constant;
 
-/**
- * Window that shows time ruler at top
- * @class
- */
 export default class WindowTimeRuler extends WindowBase {
-    /**
-     * @constructor
-     */
+    zoom: number;
+    timeLineObject: TimelineTick[];
+    shadow: Graphics;
+    shadowBorder: Graphics;
+    timeLinesInner: Container;
+
     constructor() {
         super();
         this.zoom = 0.2;
-        // timeline cache array
         this.timeLineObject = [];
-        // shadow
         this.shadow = new Graphics();
-        this.shadow.id = 'RECT_SHADOW';
+        this.shadow.label = 'RECT_SHADOW';
         this.shadow.rect(0, 0, 10000, TIME_RULER_WINDOW_HEIGHT).fill(0x000000);
-        this.shadow.x = 0;
-        this.shadow.y = 0;
         this.shadow.alpha = 0.3;
         this.stage.addChild(this.shadow);
-        // shadow border-bottom
         this.shadowBorder = new Graphics();
-        this.shadowBorder.id = 'LINE_SHADOW_BORDER_BOTTOM';
+        this.shadowBorder.label = 'LINE_SHADOW_BORDER_BOTTOM';
         this.shadowBorder.moveTo(0, TIME_RULER_WINDOW_HEIGHT);
         this.shadowBorder.lineTo(10000, TIME_RULER_WINDOW_HEIGHT);
         this.shadowBorder.stroke({ width: 1, color: 0xffffff, alpha: 1 });
-        this.shadowBorder.x = 0;
-        this.shadowBorder.y = 0;
         this.stage.addChild(this.shadowBorder);
-        // time lines
         this.timeLinesInner = new Container();
-        this.timeLinesInner.id = 'SPRITE_TIME_LINES_INNER';
-        this.timeLinesInner.y = 0;
+        this.timeLinesInner.label = 'SPRITE_TIME_LINES_INNER';
         this.timeLinesInner.width = 1000;
         this.timeLinesInner.height = TIME_RULER_LINE_HEIGHT;
-        setPosition(this.timeLinesInner, () => {
-            this.timeLinesInner.x = JUDGEMENT_LINE_LEFT;
-        }, true);
-        // current time line
+        setPosition(this.timeLinesInner, () => ({ x: JUDGEMENT_LINE_LEFT }), true);
         const currentTimeLine = new Graphics();
-        currentTimeLine.id = 'LINE_CURRENT_TIME';
+        currentTimeLine.label = 'LINE_CURRENT_TIME';
         currentTimeLine.moveTo(0, 50);
         currentTimeLine.lineTo(0, TIME_RULER_WINDOW_HEIGHT);
         currentTimeLine.stroke({ width: 2, color: 0xffffff, alpha: 1 });
         currentTimeLine.x = JUDGEMENT_LINE_LEFT;
         currentTimeLine.y = -80;
         const timeLines = new Container();
-        timeLines.id = 'SPRITE_TIME_LINES_CONTAINER';
+        timeLines.label = 'SPRITE_TIME_LINES_CONTAINER';
         timeLines.addChild(this.timeLinesInner);
         timeLines.addChild(currentTimeLine);
-        timeLines.x = 0;
         timeLines.y = TIME_RULER_LINE_TOP;
         this.stage.addChild(timeLines);
     }
-    /**
-     * Delta paint to the left(<-) direction
-     * @param {number} relativeTime - Current time
-     */
-    paintTpLeftTo(relativeTime) {
-        setPosition(this.timeLinesInner, () => {
-            this.timeLinesInner.x = Math.floor(-relativeTime * this.zoom);
-        }, true);
+
+    paintTpLeftTo(relativeTime: number) {
+        setPosition(this.timeLinesInner, () => ({ x: Math.floor(-relativeTime * this.zoom) }), true);
         let position = -Infinity;
-        // deque right
         while (this.timeLineObject.length > 0) {
             position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * this.timeLineObject[this.timeLineObject.length - 1].time);
             if (Math.floor(-relativeTime * this.zoom) + position > window.innerWidth) {
@@ -93,11 +71,11 @@ export default class WindowTimeRuler extends WindowBase {
                 break;
             }
         }
-        // enque left
         const first = this.timeLineObject[0];
         let prevPos = {
             tp: first.tp,
             tick: first.tick,
+            l: first.time,
             time: first.time
         };
         let { tp, tick, time } = prevPos;
@@ -108,27 +86,15 @@ export default class WindowTimeRuler extends WindowBase {
             tick = prevPos.tick;
             time = prevPos.l;
             position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
-            const o = {
-                x: position,
-                mod: G.tick.getTickModNumber(tp, tick),
-                tp: tp,
-                tick: tick,
-                time: time
-            };
+            const o = { x: position, mod: G.tick.getTickModNumber(tp, tick), tp, tick, time };
             this.timeLineObject.unshift(o);
             this.timeLinesInner.addChildAt(this.getLineByObj(o), 0);
         }
     }
-    /**
-     * Delta paint to the right(->) direction
-     * @param {number} relativeTime - Current time
-     */
-    paintTpRightTo(relativeTime) {
-        setPosition(this.timeLinesInner, () => {
-            this.timeLinesInner.x = Math.floor(-relativeTime * this.zoom);
-        }, true);
+
+    paintTpRightTo(relativeTime: number) {
+        setPosition(this.timeLinesInner, () => ({ x: Math.floor(-relativeTime * this.zoom) }), true);
         let position = -Infinity;
-        // deque left
         while (this.timeLineObject.length > 0) {
             position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * this.timeLineObject[0].time);
             if (Math.floor(-relativeTime * this.zoom) + position < 0) {
@@ -138,11 +104,11 @@ export default class WindowTimeRuler extends WindowBase {
                 break;
             }
         }
-        // enque right
         const last = this.timeLineObject[this.timeLineObject.length - 1];
         let nextPos = {
             tp: last.tp,
             tick: last.tick,
+            l: last.time,
             time: last.time
         };
         let { tp, tick, time } = nextPos;
@@ -153,105 +119,58 @@ export default class WindowTimeRuler extends WindowBase {
             tick = nextPos.tick;
             time = nextPos.l;
             position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
-            const o = {
-                x: position,
-                mod: G.tick.getTickModNumber(tp, tick),
-                tp: tp,
-                tick: tick,
-                time: time
-            };
+            const o = { x: position, mod: G.tick.getTickModNumber(tp, tick), tp, tick, time };
             this.timeLineObject.push(o);
             this.timeLinesInner.addChild(this.getLineByObj(o));
         }
     }
-    /**
-     * Convert time line object to real PIXI graphics
-     * @param {object} item - Object we want to convert
-     */
-    getLineByObj(item) {
+
+    getLineByObj(item: TimelineTick) {
         let height = 0;
-        let color = TIME_RULER_COLORS[G.tick.divisor][Math.abs(item.mod.divisor)];
+        const color = TIME_RULER_COLORS[G.tick.divisor][Math.abs(item.mod.divisor)];
         if (item.mod.divisor === 0) {
-            if (item.mod.tick === 0) {
-                height = 20;
-            } else {
-                height = 10;
-            }
+            height = item.mod.tick === 0 ? 20 : 10;
         } else {
             height = 5;
         }
         const line = new Graphics();
-        line.id = 'LINE_TICK_' + item.mod.tick + '_' + item.mod.divisor + '_' + item.time;
+        line.label = 'LINE_TICK_' + item.mod.tick + '_' + item.mod.divisor + '_' + item.time;
         line.moveTo(item.x, 0);
         line.lineTo(item.x, height);
         line.stroke({ width: 1, color, alpha: 1 });
         line.y = 20 - height;
         return line;
     }
-    /**
-     * Re-paint timing points
-     * @param {number} relativeTime - Relative time, will be painted at zero point
-     */
-    repaintAllTimingPoints(relativeTime) {
+
+    repaintAllTimingPoints(relativeTime: number) {
         this.timeLinesInner.removeChildren();
-        setPosition(this.timeLinesInner, () => {
-            this.timeLinesInner.x = Math.floor(-relativeTime * this.zoom);
-        }, true);
+        setPosition(this.timeLinesInner, () => ({ x: Math.floor(-relativeTime * this.zoom) }), true);
         const pos = G.tick.findPositionByTime(relativeTime);
-        let tp, tick, time, position;
-        // draw current tick first
-        tp = pos.tp;
-        tick = pos.tick;
-        time = pos.l;
-        position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
-        this.timeLineObject = [{
-            x: position,
-            mod: G.tick.getTickModNumber(tp, tick),
-            tp: tp,
-            tick: tick,
-            time: time
-        }];
-        // draw previous ticks
+        let tp = pos.tp;
+        let tick = pos.tick;
+        let time = pos.l;
+        let position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
+        this.timeLineObject = [{ x: position, mod: G.tick.getTickModNumber(tp, tick), tp, tick, time }];
         position = Infinity;
-        let prevPos = {
-            tp: pos.tp,
-            tick: pos.tick
-        };
+        let prevPos = { tp: pos.tp, tick: pos.tick, l: pos.l };
         while (Math.floor(-relativeTime * this.zoom) + position >= -JUDGEMENT_LINE_LEFT) {
             prevPos = G.tick.prev(prevPos.tp, prevPos.tick, true);
             tp = prevPos.tp;
             tick = prevPos.tick;
             time = prevPos.l;
             position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
-            this.timeLineObject.unshift({
-                x: position,
-                mod: G.tick.getTickModNumber(tp, tick),
-                tp: tp,
-                tick: tick,
-                time: time
-            });
+            this.timeLineObject.unshift({ x: position, mod: G.tick.getTickModNumber(tp, tick), tp, tick, time });
         }
-        // draw next ticks
         position = -Infinity;
-        let nextPos = {
-            tp: pos.tp,
-            tick: pos.tick
-        };
+        let nextPos = { tp: pos.tp, tick: pos.tick, l: pos.l };
         while (Math.floor(-relativeTime * this.zoom) + position <= window.innerWidth) {
             nextPos = G.tick.next(nextPos.tp, nextPos.tick);
             tp = nextPos.tp;
             tick = nextPos.tick;
             time = nextPos.l;
             position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
-            this.timeLineObject.push({
-                x: position,
-                mod: G.tick.getTickModNumber(tp, tick),
-                tp: tp,
-                tick: tick,
-                time: time
-            });
+            this.timeLineObject.push({ x: position, mod: G.tick.getTickModNumber(tp, tick), tp, tick, time });
         }
-        // draw
         for (const item of this.timeLineObject) {
             this.timeLinesInner.addChild(this.getLineByObj(item));
         }

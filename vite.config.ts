@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  publicDir: 'public',
+  publicDir: 'game',
   build: {
     target: 'es2022',
     sourcemap: false,

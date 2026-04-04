@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Title scene
  * @author Rex Zeng
@@ -13,16 +12,13 @@ import SceneMusicSelect from './SceneMusicSelect';
  * @class
  */
 export default class SceneScore extends SceneBase {
-    /**
-     * Constructor
-     * @constructor
-     * @param {string} bgUrl - URL of current playing song
-     * @param {array} scorePoints - Show score for each time
-     * @param {array} hitResults - Show hit results for each time
-     * @param {number} score - Total score gains
-     * @param {number} combo - Max combo
-     */
-    constructor(bgUrl, scorePoints, hitResults, score, combo) {
+    bgUrl: string;
+    scorePoints: Record<number, number>;
+    hitResults: Record<string, number>;
+    score: number;
+    combo: number;
+
+    constructor(bgUrl: string, scorePoints: Record<number, number>, hitResults: Record<string, number>, score: number, combo: number) {
         super();
         this.bgUrl = bgUrl;
         this.scorePoints = scorePoints;
@@ -40,7 +36,7 @@ export default class SceneScore extends SceneBase {
      */
     async onInitialize() {
         // background
-        this.stage.addChild(G.graphics.createImage(this.bgUrl, (w, h, self) => ({
+        this.stage.addChild(G.graphics.createImage(this.bgUrl, (_w: number, _h: number, _self: any) => ({
             position: 'center',
             size: 'cover'
         })));

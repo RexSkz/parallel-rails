@@ -1,119 +1,83 @@
-// @ts-nocheck
-/**
- * Graphics control
- * @author Rex Zeng
- */
-
-import { Container, Graphics as PixiGraphics, Sprite, Text } from 'pixi.js';
+import { Container, Graphics as PixiGraphics, Sprite, Text, type TextStyle } from 'pixi.js';
 import G from './Global';
-
-/**
- * Graphics class
- * @class
- */
+import type { AnimatableSprite, PaintResult, PositionSpec, RepaintRenderer } from './types';
 export default class Graphics {
-    /**
-     * Create a responsive image
-     * @param {string} src - Image src
-     * @param {function or object} pos - Used by `setPosition`
-     * @param {boolean} global - Whether draw a global image, MUST BE DELETED MANUALLY
-     * @return {Sprite} Graphics created by this function
-     */
-    createImage(src, pos, global = false) {
+    private makeLabel(prefix: string, suffix: string): string {
+        return `${prefix}_${suffix}_${Math.trunc(Math.random() * 1e5)}`;
+    }
+
+    createImage(src: string, pos: PositionSpec<Sprite>, global = false): Sprite | false {
         const t = G.resource.graphics(src);
         if (!t) {
             console.error(`Resource ${src} not loaded!`);
             return false;
         }
         const sprite = new Sprite(G.resource.graphics(src));
-        sprite.id = 'IMG_' + src.split('/').pop() + '_' + parseInt(Math.random() * 1e5);
+        sprite.label = this.makeLabel('IMG', src.split('/').pop() || 'unknown');
         this.setPosition(sprite, pos, global);
         return sprite;
     }
-    /**
-     * Create a responsive text
-     * TODO: make this responsive
-     * @param {string} str - String to draw
-     * @param {object} style - PIXI font style
-     * @param {function or object} pos - Used by `setPosition`
-     * @param {boolean} global - Whether draw a global text, MUST BE DELETED MANUALLY
-     * @return {Sprite} Text created by this function
-     */
-    createText(str, style = {}, pos, global = false) {
-        str = str.toString();
+    createText(str: string | number, style: Partial<TextStyle> = {}, pos: PositionSpec<Text>, global = false): Text {
+        const text = String(str);
         const sprite = new Text({
-            text: str,
+            text,
             style: {
                 fontFamily: style.fontFamily || G.constant.DEFAULT_FONT,
                 fontSize: style.fontSize || G.constant.MUSIC_LIST_ITEM_CREATOR_SIZE,
-                fill: style.color || style.fill || G.constant.DEFAULT_COLOR,
+                fill: style.fill || G.constant.DEFAULT_COLOR,
                 align: style.align || 'left'
             }
         });
-        sprite.id = 'TXT_' + str.replace(/\W+/g, ' ').replace(/\s+/g, '_') + '_' + parseInt(Math.random() * 1e5);
+        sprite.label = this.makeLabel('TXT', text.replace(/\W+/g, ' ').replace(/\s+/g, '_'));
         this.setPosition(sprite, pos, global);
         return sprite;
     }
-    /**
-     * Create a responsive spirit
-     * @param {function or object} pos - Used by `setPosition`
-     * @param {boolean} global - Whether draw a global text, MUST BE DELETED MANUALLY
-     * @return {Sprite} Spirit created by this function
-     */
-    createSprite(pos, global = false) {
+    createSprite(pos: PositionSpec<Container>, global = false): Container {
         const sprite = new Container();
-        sprite.id = 'SPRITE_' + parseInt(Math.random() * 1e5);
+        sprite.label = this.makeLabel('SPRITE', 'container');
         this.setPosition(sprite, pos, global);
         return sprite;
     }
-    /**
-     * Create a rect, not responsive
-     * @param {object} style - Style info
-     */
-    createRect(style) {
+    createRect(style: {
+        left?: number;
+        top?: number;
+        width: number;
+        height: number;
+        background: number;
+        borderWidth?: number;
+        borderColor?: number;
+        opacity?: number;
+    }): PixiGraphics {
         const rect = new PixiGraphics();
-        rect.id = 'RECT_' + parseInt(Math.random() * 1e5);
+        rect.label = this.makeLabel('RECT', 'shape');
         rect.rect(style.left || 0, style.top || 0, style.width, style.height);
         rect.fill(style.background);
         if (style.borderWidth) {
             rect.stroke({ width: style.borderWidth, color: style.borderColor, alpha: 1 });
         }
-        rect.alpha = style.opacity;
+        rect.alpha = style.opacity ?? 1;
         return rect;
     }
-    /**
-     * Set sprite position with percent data provided
-     * @param {Sprite} sprite - The sprite we want to move
-     * @param {function or object} pos - Position information
-     * @param {boolean} global - Whether set a global sprite, MUST BE DELETED MANUALLY
-     */
-    setPosition(sprite, pos, global = false) {
-        const renderer = () => {
+    setPosition<T extends AnimatableSprite>(sprite: T, pos: PositionSpec<T>, global = false): void {
+        const renderer: RepaintRenderer<T> = Object.assign(() => {
             const result = this.painter(sprite, pos);
             for (const key in result) {
                 if (key === 'transformScale') {
-                    sprite.scale.set(result.transformScale, result.transformScale);
+                    sprite.scale.set(result.transformScale || 0, result.transformScale || 0);
                 } else {
-                    sprite[key] = result[key];
+                    Reflect.set(sprite, key, result[key]);
                 }
             }
-        };
-        renderer.sprite = sprite;
-        renderer.sceneName = G.sceneName;
+        }, { sprite, sceneName: G.sceneName });
         // add to repaint list
-        G.repaintList[sprite.id] = renderer;
+        G.repaintList[sprite.label] = renderer;
         // paint once
         renderer();
     }
-    /**
-     * Convert responsive data to fixed pixel
-     * @param {Sprite} sprite - The sprite we want to move
-     * @param {function or object} pos - Position information
-     */
-    painter(sprite, pos) {
+    painter<T extends Container>(sprite: T, pos: PositionSpec<T>): PaintResult {
         const w = window.innerWidth;
         const h = window.innerHeight;
-        let result = {};
+        let result: PaintResult = {};
         if (typeof pos === 'function') {
             result = pos(w, h, sprite);
         } else if (typeof pos === 'object') {
@@ -138,5 +102,5 @@ export default class Graphics {
             result.y = 0.5 * (h - (result.height || sprite.height));
         }
         return result;
-    };
+    }
 }

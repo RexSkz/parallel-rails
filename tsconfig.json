@@ -11,7 +11,8 @@
     "isolatedModules": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "strict": false
+    "strict": true,
+    "noImplicitAny": true
   },
-  "include": ["src/**/*.ts", "vite.config.ts"]
+  "include": ["src/**/*", "vite.config.ts"]
 }

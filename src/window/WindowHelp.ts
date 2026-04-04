@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Timing window in editor
  * @author Rex Zeng
@@ -12,17 +11,8 @@ const {
     HELP_WINDOW_PADDING
 } = G.constant;
 
-/**
- * Window that shows help text
- * @class
- */
 export default class WindowHelp extends WindowBase {
-    /**
-     * @constructor
-     * @param {array} helpTexts - Help text to show, each line is a string
-     * @param {string} align - Text align
-     */
-    constructor(helpTexts, align = 'left') {
+    constructor(helpTexts: string[], align = 'left') {
         super();
         // shadow
         this.stage.addChild(G.graphics.createRect({

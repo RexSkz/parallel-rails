@@ -1,16 +1,7 @@
-// @ts-nocheck
-/**
- * Help calculate positions
- * @author Rex Zeng
- */
-
 import G from './Global';
+import type { AnimatableSprite, PositionSpec, RepaintRenderer, TimingEditorWindow, TimingPoint } from './types';
 
-/**
- * Make a render loop
- * @param {func} func - Function to loop, return false to stop loop
- */
-export function renderLoop(func) {
+export function renderLoop(func: () => boolean | void) {
     const l = () => {
         G.input.update();
         G.audio.update();
@@ -23,39 +14,26 @@ export function renderLoop(func) {
     l();
 }
 
-/**
- * Set sprite position with percent data provided
- * @param {Sprite} sprite - The sprite we want to move
- * @param {function} func - Function with two numbers output
- * @param {boolean} forceUpdate - Whether force update the render function
- * @param {boolean} global - Whether set a global sprite, MUST BE DELETED MANUALLY
- */
-export function setPosition(sprite, func, forceUpdate = false, global = false) {
-    if (sprite.id && !forceUpdate) {
+export function setPosition<T extends AnimatableSprite>(sprite: T, func: PositionSpec<T>, forceUpdate = false, global = false) {
+    if (sprite.label && !forceUpdate) {
         // avoid adding to queue again
         return;
     }
-    const painter = () => {
-        const result = func(window.innerWidth, window.innerHeight, sprite);
+    const painter: RepaintRenderer<T> = Object.assign(() => {
+        const result = typeof func === 'function' ? func(window.innerWidth, window.innerHeight, sprite) : func;
         if (result) {
             for (const key in result) {
-                sprite[key] = result[key];
+                Reflect.set(sprite, key, result[key]);
             }
         }
-    };
-    painter.sprite = sprite;
-    painter.sceneName = G.sceneName;
+    }, { sprite, sceneName: G.sceneName });
     // add to repaint list
-    G.repaintList[sprite.id] = painter;
+    G.repaintList[sprite.label] = painter;
     // paint once
     painter();
 }
 
-/**
- * Get music pr data
- * @param {string} url - Url of the `.pr` file
- */
-export function getPr(url) {
+export function getPr(url: string) {
     fetch(url).then(res => {
         if (res.ok) {
             res.json().then(data => {
@@ -67,39 +45,30 @@ export function getPr(url) {
     });
 }
 
-/**
- * Time formatting
- * @param {number} time - Seconds
- */
-export function formatTime(time) {
-    let minute = Math.floor(time / 60);
-    if (minute < 10) {
-        minute = '0' + minute;
-    }
+export function formatTime(time: number): string {
+    const minuteNum = Math.floor(time / 60);
+    let minute = String(minuteNum);
+    if (minuteNum < 10) minute = '0' + minute;
     time %= 60;
-    let second = Math.floor(time);
-    if (second < 10) {
-        second = '0' + second;
-    }
+    const secondNum = Math.floor(time);
+    let second = String(secondNum);
+    if (secondNum < 10) second = '0' + second;
     // fix float error
-    time = (time * 1000 - second * 1000) / 1000;
-    let millsec = Math.floor(time * 1000);
-    if (millsec < 10) {
+    time = (time * 1000 - secondNum * 1000) / 1000;
+    const millsecNum = Math.floor(time * 1000);
+    let millsec = String(millsecNum);
+    if (millsecNum < 10) {
         millsec = '00' + millsec;
-    } else if (millsec < 100) {
+    } else if (millsecNum < 100) {
         millsec = '0' + millsec;
     }
     return `${minute}:${second}:${millsec}`;
 }
 
-/**
- * Append timing point editing window
- * @param {function} timFunc - Function used to pass timing data
- * @param {function} divFunc - Function used to pass divisor data
- */
-export function appendTimingPointEditingWindow(timFunc, divFunc) {
-    const w = document.createElement('div');
+export function appendTimingPointEditingWindow(timFunc: (timingPoints: TimingPoint[]) => void, divFunc: (divisor: number) => void): TimingEditorWindow {
+    const w = document.createElement('div') as TimingEditorWindow;
     w.className = 'timing-editor-wrapper';
+    w.timingPoints = [];
     w.innerHTML = `
         <fieldset>
             <legend>Timing point list</legend>
@@ -148,24 +117,25 @@ export function appendTimingPointEditingWindow(timFunc, divFunc) {
         timFunc(w.timingPoints);
     };
     w.addEventListener('keydown', listener);
-    const divisor = w.querySelector('#divisor');
-    const divisorShow = w.querySelector('#divisor-show');
+    const divisor = w.querySelector('#divisor') as HTMLInputElement;
+    const divisorShow = w.querySelector('#divisor-show') as HTMLSpanElement;
     const changeDivisor = () => {
         let value = 1;
-        if (divisor.value <= 1.5) {
+        const currentValue = Number(divisor.value);
+        if (currentValue <= 1.5) {
             value = 1;
-        } else if (divisor.value <= 3) {
+        } else if (currentValue <= 3) {
             value = 2;
-        } else if (divisor.value <= 5) {
+        } else if (currentValue <= 5) {
             value = 4;
-        } else if (divisor.value <= 7) {
+        } else if (currentValue <= 7) {
             value = 6;
-        } else if (divisor.value <= 10) {
+        } else if (currentValue <= 10) {
             value = 8;
         } else {
             value = 12;
         }
-        divisorShow.innerText = value;
+        divisorShow.innerText = String(value);
         divFunc(value);
     };
     divisor.addEventListener('input', changeDivisor);
@@ -176,7 +146,7 @@ export function appendTimingPointEditingWindow(timFunc, divFunc) {
     };
     const controls = w.querySelectorAll('input, select, button');
     for (let i = 0; i < controls.length; i++) {
-        const control = controls[i];
+        const control = controls[i] as HTMLInputElement | HTMLSelectElement | HTMLButtonElement;
         control.onfocus = () => G.nativeInputFocused = true;
         control.onblur = () => G.nativeInputFocused = false;
     }

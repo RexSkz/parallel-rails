@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Gaming scene
  * @author Rex Zeng
@@ -11,16 +10,32 @@ import WindowHitScore from '../window/WindowHitScore';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 import SceneScore from './SceneScore';
+import type { BeatmapData, SoundHandle } from '../types';
 
 /**
  * Define gaming scene
  * @class
  */
 export default class SceneGaming extends SceneBase {
-    /**
-     * @constructor
-     */
-    constructor(musicId) {
+    musicId: number;
+    music: any;
+    audio!: SoundHandle;
+    audioUrl: string;
+    bgUrl: string;
+    prUrl: string;
+    data: BeatmapData;
+    hitIndex: number;
+    currentScore: number;
+    currentCombo: number;
+    maxCombo: number;
+    scorePoints: Record<number, number>;
+    hitResults: Record<string, number>;
+    timingWindow!: WindowTiming;
+    hitScoreWindow!: WindowHitScore;
+    hitObjectWindow!: WindowHitObject;
+    countDownTime!: number | null;
+
+    constructor(musicId: number) {
         super();
         this.musicId = musicId;
         this.music = G.musics[musicId];
@@ -73,7 +88,7 @@ export default class SceneGaming extends SceneBase {
         G.audio.pauseBGM();
         this.audio = G.resource.audio(this.audioUrl);
         // background
-        this.stage.addChild(G.graphics.createImage(this.bgUrl, (w, h, self) => ({
+        this.stage.addChild(G.graphics.createImage(this.bgUrl, (_w: number, _h: number, _self: any) => ({
             position: 'center',
             size: 'cover'
         })));
@@ -198,7 +213,7 @@ export default class SceneGaming extends SceneBase {
             if (hitJudgement !== null && this.hitIndex < this.data.hitObjects.length) {
                 this.hitObjectWindow.objectHit(this.hitIndex, hitJudgement);
                 this.hitScoreWindow.objectHit(hitJudgement);
-                this.updateRecords(Math.max(hitJudgement, 0), hitJudgementType, parseInt(time * 1000));
+                this.updateRecords(Math.max(hitJudgement, 0), hitJudgementType, Math.trunc(time * 1000));
                 ++this.hitIndex;
             }
         } else {
@@ -219,13 +234,7 @@ export default class SceneGaming extends SceneBase {
             this.timingWindow.update(this.data.currentTime);
         }
     }
-    /**
-     * Update records after hit a key
-     * @param {number} score - Current hit score
-     * @param {string} type - Current hit judgement type
-     * @param {number} currentTime - Current time
-     */
-    updateRecords(score, type, currentTime) {
+    updateRecords(score: number, type: string, currentTime: number) {
         this.scorePoints[currentTime] = score;
         ++this.hitResults[type];
         if (score > 0) {

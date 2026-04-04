@@ -1,18 +1,13 @@
-// @ts-nocheck
-/**
- * Some debug functions
- * @author Rex Zeng
- */
-
 import G from './Global';
+import type { Container } from 'pixi.js';
 
 export default class Debug {
     constructor() {
-        G.rootStage.id = 'ROOT';
+        G.rootStage.label = 'ROOT';
     }
-    text(om = G.rootStage, indent = 0) {
+    text(om: Container = G.rootStage, indent = 0) {
         const output = [
-            (om.id || 'Untitled').substr(0, 25),
+            (om.label || 'Untitled').substr(0, 25),
             '(' + Math.floor(om.x) + ',' + Math.floor(om.y) + ')',
             Math.floor(om.width) + 'x' + Math.floor(om.height)
         ];
@@ -25,9 +20,17 @@ export default class Debug {
         }
         return true;
     }
-    object(om = G.rootStage) {
-        let output = {
-            id: (om.id || 'Untitled').substr(0, 30),
+    object(om: Container = G.rootStage) {
+        const output: {
+            id: string;
+            x: number;
+            y: number;
+            width: number;
+            height: number;
+            sprite: Container;
+            children?: ReturnType<Debug['object']>[];
+        } = {
+            id: (om.label || 'Untitled').substr(0, 30),
             x: Math.floor(om.x),
             y: Math.floor(om.y),
             width: Math.floor(om.width),

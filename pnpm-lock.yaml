@@ -15,6 +15,9 @@ importers:
         specifier: ^8.13.2
         version: 8.17.1
     devDependencies:
+      '@types/luxon':
+        specifier: ^3.7.1
+        version: 3.7.1
       oxlint:
         specifier: ^1.58.0
         version: 1.58.0
@@ -452,6 +455,9 @@ packages:
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  '@types/luxon@3.7.1':
+    resolution: {integrity: sha512-H3iskjFIAn5SlJU7OuxUmTEpebK6TKB8rxZShDslBMZJ5u9S//KM1sbdAisiSrqwLQncVjnpi2OK2J51h+4lsg==}
+
   '@webgpu/types@0.1.69':
     resolution: {integrity: sha512-RPmm6kgRbI8e98zSD3RVACvnuktIja5+yLgDAkTmxLr90BEwdTXRQWNLF3ETTTyH/8mKhznZuN5AveXYFEsMGQ==}
 
@@ -808,6 +814,8 @@ snapshots:
   '@types/earcut@3.0.0': {}
 
   '@types/estree@1.0.8': {}
+
+  '@types/luxon@3.7.1': {}
 
   '@webgpu/types@0.1.69': {}
 

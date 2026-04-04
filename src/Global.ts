@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * All global vars such as Data, Scene and something else
  * Required by nearly every single file
@@ -18,7 +17,7 @@ import { Container } from 'pixi.js';
 if (!window._G) {
     window._G = {
         // data structure objects
-        constant: new DataConstants(),
+        constant: DataConstants,
         // animation controller
         animation: new Animation(),
         // input state
@@ -53,7 +52,11 @@ if (!window._G) {
         // last selected music
         lastSelectMusic: -1,
         // game mode
-        mode: 'play'
+        mode: 'play',
+        // current scene name
+        sceneName: '',
+        // whether a native input element is focused
+        nativeInputFocused: false
     };
 }
 

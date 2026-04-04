@@ -1,32 +1,24 @@
-// @ts-nocheck
-/**
- * Super class for all scenes
- * @author Rex Zeng
- */
-
 import { Container } from 'pixi.js';
 import G from '../Global';
 import { renderLoop } from '../Functions';
+import type { RepaintRenderer } from '../types';
 
-/**
- * Define base scene
- * @class
- */
 export default class SceneBase {
-    /**
-     * @constructor
-     */
+    stage: Container;
+    fadeInTime: number;
+    fadeOutTime: number;
+    loadingRemains: number;
+    resourceToLoad: { audio: string[]; graphics: string[] };
+    loadingBar!: ReturnType<typeof G.graphics.createText>;
+
     constructor(fadeInTime = G.constant.SCENE_SWITCH_TIME, fadeOutTime = G.constant.SCENE_SWITCH_TIME) {
         if (fadeInTime < 1) fadeInTime = 1;
         if (fadeOutTime < 1) fadeOutTime = 1;
-        // for repaint sprite GC
         G.sceneName = this.constructor.name;
-        // each scene has a stage
         this.stage = new Container();
-        this.stage.id = this.constructor.name;
+        this.stage.label = this.constructor.name;
         this.stage.alpha = 0;
         G.rootStage.addChild(this.stage);
-        // set some variables
         this.fadeInTime = fadeInTime;
         this.fadeOutTime = fadeOutTime;
         this.loadingRemains = -1;
@@ -36,9 +28,7 @@ export default class SceneBase {
         };
         setTimeout(() => this.work(), 0);
     }
-    /**
-     * A series of work
-     */
+
     async work() {
         await this.waitLoading();
         this.onInitialize();
@@ -48,13 +38,11 @@ export default class SceneBase {
         this.onTerminate();
         this.repaintListGC();
     }
-    /**
-     * Wait for resource loading finished
-     */
+
     waitLoading() {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve) => {
             const loadingText = 'Loading resources...\nReceiving file...';
-            G.rootStage.addChild(this.loadingBar = G.graphics.createText(loadingText, {}, (w, h, self) => ({
+            G.rootStage.addChild(this.loadingBar = G.graphics.createText(loadingText, {}, (w: number, h: number, self: any) => ({
                 x: 10,
                 y: h - self.height - 10
             })));
@@ -69,16 +57,11 @@ export default class SceneBase {
             });
         });
     }
-    /**
-     * Trigger when scene is initialized
-     * @override
-     */
+
     onInitialize() {}
-    /**
-     * Fade in from black screen
-     */
+
     fadeIn() {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve) => {
             let timer = 0;
             renderLoop(() => {
                 if (timer >= this.fadeInTime) {
@@ -92,13 +75,10 @@ export default class SceneBase {
             });
         });
     }
-    /**
-     * Mainloop for current scene
-     */
+
     mainLoop() {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve) => {
             renderLoop(() => {
-                // switch to another scene
                 if (G.scene !== this) {
                     G.lock.sceneSwitch = true;
                     resolve();
@@ -109,11 +89,9 @@ export default class SceneBase {
             });
         });
     }
-    /**
-     * Fade out to black screen
-     */
+
     fadeOut() {
-        return new Promise((resolve, reject) => {
+        return new Promise<void>((resolve) => {
             let timer = this.fadeOutTime;
             renderLoop(() => {
                 if (timer <= 0) {
@@ -126,78 +104,50 @@ export default class SceneBase {
             });
         });
     }
-    /**
-     * Trigger before the scene is terminated
-     * @override
-     */
+
     onTerminate() {}
-    /**
-     * Do calculations only, DO NOT do any paint in this function
-     * @override
-     */
+
     update() {}
-    /**
-     * Recalculate items in repaint list
-     */
+
     calcRepaintItems() {
         if (G.windowResized) {
             for (const id in G.repaintList) {
                 const item = G.repaintList[id];
-                // don't recalculate the invisible item
                 if (!item.sprite.visible) {
                     continue;
                 }
-                item();
+                (item as RepaintRenderer)();
             }
             G.windowResized = false;
         }
     }
-    /**
-     * Garbage collect for window resize repaint list
-     */
+
     repaintListGC() {
         for (const id in G.repaintList) {
             const item = G.repaintList[id];
-            // remove items that is not belongs to current scene
             if (item.sceneName !== G.sceneName) {
-                // G.repaintList[id].sprite.destroy();
                 delete G.repaintList[id];
             }
         }
         G.rootStage.removeChild(this.stage);
-        // this.stage.destroy();
     }
-    /**
-     * Set resource to load
-     * @param {object} res - Contains `audio` and `graphics` array
-     */
-    loadResource(res) {
+
+    loadResource(res: { audio?: string[]; graphics?: string[] }) {
         if (res.audio) {
-            this.resourceToLoad.audio = [
-                ...this.resourceToLoad.audio,
-                ...res.audio
-            ];
+            this.resourceToLoad.audio = [...this.resourceToLoad.audio, ...res.audio];
         }
         if (res.graphics) {
-            this.resourceToLoad.graphics = [
-                ...this.resourceToLoad.graphics,
-                ...res.graphics
-            ];
+            this.resourceToLoad.graphics = [...this.resourceToLoad.graphics, ...res.graphics];
         }
     }
-    /**
-     * Update resource loading bar text
-     */
+
     updateLoadingBar() {
         if (this.loadingRemains !== G.resource.remains) {
             this.loadingBar.text = `${G.resource.remains} resource(s) to load...\nReceived file '${G.resource.currentLoad}'.`;
         }
     }
-    /**
-     * Add a window to current stage
-     * @param {Window} wnd - Window variable
-     */
-    addWindow(wnd) {
+
+    addWindow(wnd: { stage: Container }) {
         this.stage.addChild(wnd.stage);
     }
 }

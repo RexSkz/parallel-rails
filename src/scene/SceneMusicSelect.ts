@@ -1,6 +1,5 @@
-// @ts-nocheck
 /**
- * Title scene
+ * Music select scene
  * @author Rex Zeng
  */
 
@@ -22,14 +21,11 @@ const {
     MUSIC_LIST_SWITCH_TIME
 } = G.constant;
 
-/**
- * Define music select scene
- * @class
- */
 export default class SceneMusicSelect extends SceneBase {
-    /**
-     * @constructor
-     */
+    selected: number;
+    loadingTextSprite!: ReturnType<typeof G.graphics.createText>;
+    musicListSprite!: ReturnType<typeof G.graphics.createSprite>;
+
     constructor() {
         super();
         this.selected = 0;
@@ -45,18 +41,13 @@ export default class SceneMusicSelect extends SceneBase {
             ]
         });
     }
-    /**
-     * Trigger when scene is initialized
-     * @override
-     */
+
     async onInitialize() {
         G.audio.playBGM('bgm/voltexes-ii.mp3');
-        // backgrounds
         this.stage.addChild(G.graphics.createImage('graphics/music-select-bg.jpg', {
             position: 'center',
             size: 'cover'
         }));
-        // darken shadow
         this.stage.addChild(G.graphics.createRect({
             top: 0,
             left: 0,
@@ -66,10 +57,9 @@ export default class SceneMusicSelect extends SceneBase {
             opacity: 0.5
         }));
         if (!G.musics) {
-            // loading text
             this.stage.addChild(this.loadingTextSprite = G.graphics.createText('Loading music list...', {
                 fontSize: 24
-            }, (w, h, self) => ({
+            }, (w: number, h: number, self: any) => ({
                 x: 0.5 * (w - self.width),
                 y: 0.5 * (h - self.height)
             })));
@@ -78,47 +68,36 @@ export default class SceneMusicSelect extends SceneBase {
                 G.musics = await res.json();
                 this.stage.removeChild(this.loadingTextSprite);
             } else {
-                console.error(`Get music info failed, code ${res.status}.`); // eslint-disable-line no-console
+                console.error(`Get music info failed, code ${res.status}.`);
             }
         }
-        // mode text
-        const modeText = {
-            'play': 'Choose a song to play!',
-            'edit': 'Use your imagination!'
+        const modeText: Record<string, string> = {
+            play: 'Choose a song to play!',
+            edit: 'Use your imagination!'
         };
         this.stage.addChild(G.graphics.createText(`Mode: ${G.mode}\n${modeText[G.mode]}`, {}, { x: 20, y: 20 }));
-        // music list sprite
         this.stage.addChild(this.musicListSprite = G.graphics.createSprite({ x: 0, y: 0 }));
-        // load last select music
         if (G.lastSelectMusic !== -1) {
             this.selected = G.lastSelectMusic;
         }
         this.buildMusicSprites();
     }
-    /**
-     * Do calculations only, DO NOT do any paint in this function
-     * @override
-     */
+
     update() {
-        // deal with input
         if (G.input.isPressed(G.input.ESC)) {
             G.audio.playSE('se/menu-back.mp3');
-            // press ESC to back to title
             G.scene = new SceneTitle();
             G.lastSelectMusic = this.selected;
         } else if (G.input.isPressed(G.input.UP) || G.input.isPressed(G.input.LEFT)) {
-            // press UP or LEFT to select music above
             this.selected = (this.selected - 1 + G.musics.length) % G.musics.length;
             G.audio.playSE('se/menu-cursor.mp3');
             this.animateMusicSprites();
         } else if (G.input.isPressed(G.input.DOWN) || G.input.isPressed(G.input.RIGHT)) {
-            // press DOWN or RIGHT to select music below
             this.selected = (this.selected + 1) % G.musics.length;
             G.audio.playSE('se/menu-cursor.mp3');
             this.animateMusicSprites();
         } else if (G.input.isPressed(G.input.ENTER)) {
             G.audio.playSE('se/menu-click.mp3');
-            // press ENTER to enter playfield or editor
             G.lastSelectMusic = this.selected;
             switch (G.mode) {
                 case 'play':
@@ -132,20 +111,17 @@ export default class SceneMusicSelect extends SceneBase {
             }
         }
     }
-    /**
-     * Build music sprites if we have music list
-     */
+
     buildMusicSprites() {
         let index = 0;
         for (const music of G.musics) {
             const offset = index++ - this.selected;
-            const sprite = G.graphics.createSprite((w, h, self) => ({
+            const sprite = G.graphics.createSprite((w: number, h: number, _self: any) => ({
                 x: w,
                 y: 0.3 * h + MUSIC_LIST_ITEM_HEIGHT * (1 - MUSIC_LIST_ITEM_Y_DELTA) * (offset - 0.5)
             }));
             sprite.width = 9999;
             sprite.height = MUSIC_LIST_ITEM_HEIGHT;
-            // draw background
             sprite.addChild(G.graphics.createRect({
                 top: 0,
                 left: 0,
@@ -156,7 +132,6 @@ export default class SceneMusicSelect extends SceneBase {
                 borderWidth: 1,
                 opacity: 1
             }));
-            // draw inner text
             sprite.addChild(G.graphics.createText(`${music.artist} - ${music.name}`, {}, () => ({
                 x: MUSIC_LIST_ITEM_PADDING,
                 y: MUSIC_LIST_ITEM_PADDING
@@ -167,19 +142,19 @@ export default class SceneMusicSelect extends SceneBase {
                 x: MUSIC_LIST_ITEM_PADDING,
                 y: MUSIC_LIST_ITEM_PADDING + MUSIC_LIST_ITEM_TITLE_SIZE + MUSIC_LIST_ITEM_TITLE_MARGIN_BOTTOM
             })));
-            // setup sprite
             this.musicListSprite.addChild(sprite);
-            G.animation.set(sprite, (w, h, self) => ({
+            G.animation.set(sprite, (w: number, h: number, _self: any) => ({
                 x: w - MUSIC_LIST_ITEM_WIDTH + (Math.pow(Math.abs(offset), 1.2) * MUSIC_LIST_ITEM_WIDTH * MUSIC_LIST_ITEM_X_DELTA),
                 y: 0.5 * h + MUSIC_LIST_ITEM_HEIGHT * (1 - MUSIC_LIST_ITEM_Y_DELTA) * (offset - 0.5)
             }), MUSIC_LIST_SWITCH_TIME * 3);
         }
     }
+
     animateMusicSprites() {
         let index = 0;
         for (const sprite of this.musicListSprite.children) {
             const offset = index++ - this.selected;
-            G.animation.set(sprite, (w, h, self) => ({
+            G.animation.set(sprite, (w: number, h: number, _self: any) => ({
                 x: w - MUSIC_LIST_ITEM_WIDTH + (Math.pow(Math.abs(offset), 1.2) * MUSIC_LIST_ITEM_WIDTH * MUSIC_LIST_ITEM_X_DELTA),
                 y: 0.5 * h + MUSIC_LIST_ITEM_HEIGHT * (1 - MUSIC_LIST_ITEM_Y_DELTA) * (offset - 0.5)
             }), MUSIC_LIST_SWITCH_TIME);

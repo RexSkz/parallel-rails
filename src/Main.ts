@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Game Bootstrap file
  * @author Rex Zeng
@@ -10,16 +9,8 @@ import SceneTitle from './scene/SceneTitle';
 
 import Debug from './Debug';
 
-/**
- * Game main class
- * @class
- */
 class ParallelRails {
-    /**
-     * @constructor
-     * @param {object} opt - Options
-     */
-    constructor(opt) {
+    constructor(opt: { el: HTMLElement }) {
         // check if parameter is valid
         if (!(opt && opt.el && opt.el.nodeName)) {
             console.error('Parameter el must be an html element'); // eslint-disable-line no-console
@@ -28,7 +19,7 @@ class ParallelRails {
         void this.init(opt.el);
     }
 
-    async init(target) {
+    async init(target: HTMLElement) {
         await this.setupRender(target);
         try {
             G.scene = new SceneTitle();
@@ -38,11 +29,7 @@ class ParallelRails {
         }
     }
 
-    /**
-     * Setup the renderer
-     * @param {HTMLElement} target - Setup the renderer
-     */
-    async setupRender(target) {
+    async setupRender(target: HTMLElement) {
         G.renderer = await autoDetectRenderer({
             width: window.innerWidth,
             height: window.innerHeight,

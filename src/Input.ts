@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Keyboard input event getter and setter
  * @author Rex Zeng
@@ -6,25 +5,29 @@
 
 import G from './Global';
 
-/**
- * Input class
- * @class
- */
+type KeyState = {
+    isPressed: boolean;
+    isReleased: boolean;
+    isRepeated: boolean;
+};
+
 export default class Input {
-    /**
-     * @constructor
-     */
+    A!: number; B!: number; C!: number; D!: number; E!: number; F!: number; G!: number; H!: number; I!: number; J!: number; K!: number; L!: number; M!: number; N!: number; O!: number; P!: number; Q!: number; R!: number; S!: number; T!: number; U!: number; V!: number; W!: number; X!: number; Y!: number; Z!: number;
+    LEFT!: number; UP!: number; RIGHT!: number; DOWN!: number;
+    APOSTROPHE!: number;
+    F1!: number; F2!: number; F3!: number; F4!: number; F5!: number; F6!: number; F7!: number; F8!: number; F9!: number; F10!: number; F11!: number; F12!: number;
+    CTRL!: number; SHIFT!: number; ESC!: number; SPACE!: number; ENTER!: number; BACKSPACE!: number; DELETE!: number; HOME!: number; END!: number; PAGEUP!: number; PAGEDN!: number;
+    keyState!: KeyState[];
+    pressedKey!: number;
+    releasedKey!: number;
+
     constructor() {
         this.setKeyAlias();
         this.initKeyState();
         this.addEventListeners();
     }
-    /**
-     * Make it look like array
-     */
+
     setKeyAlias() {
-        // Not all keys are needed by my game, such as ALT
-        // You can easily extend this object to support more keys
         this.A = 65;
         this.B = 66;
         this.C = 67;
@@ -80,22 +83,20 @@ export default class Input {
         this.PAGEUP = 33;
         this.PAGEDN = 34;
     }
-    /**
-     * All keys are not pressed, released and repeated at first
-     */
+
     initKeyState() {
         this.keyState = [];
+        this.pressedKey = 0;
+        this.releasedKey = 0;
         for (let keyCode = 1; keyCode < 256; keyCode++) {
             this.keyState[keyCode] = {
-                isPressed: false, // nearly pressed down
-                isReleased: false, // nearly released up
-                isRepeated: false // continuously pressed down
+                isPressed: false,
+                isReleased: false,
+                isRepeated: false
             };
         }
     }
-    /**
-     * Add keydown and keyup for window for updating key state
-     */
+
     addEventListeners() {
         window.addEventListener('keydown', e => {
             if (!G.nativeInputFocused) {
@@ -110,9 +111,7 @@ export default class Input {
             }
         });
     }
-    /**
-     * Update input signal
-     */
+
     update() {
         if (this.pressedKey) {
             const key = this.keyState[this.pressedKey];
@@ -143,35 +142,26 @@ export default class Input {
             }
         }
     }
-    /**
-     * Judge if the key is just pressed down
-     * @param {number} keyCode - The code of the key to judge
-     */
-    isPressed(keyCode) {
+
+    isPressed(keyCode: number) {
         if (!this.keyState[keyCode]) {
-            console.error('Key code error!'); // eslint-disable-line no-console
+            console.error('Key code error!');
             return null;
         }
         return this.keyState[keyCode].isPressed;
     }
-    /**
-     * Judge if the key is just released up
-     * @param {number} keyCode - The code of the key to judge
-     */
-    isReleased(keyCode) {
+
+    isReleased(keyCode: number) {
         if (!this.keyState[keyCode]) {
-            console.error('Key code error!'); // eslint-disable-line no-console
+            console.error('Key code error!');
             return null;
         }
         return this.keyState[keyCode].isReleased;
     }
-    /**
-     * Judge if the key is continuously pressed down
-     * @param {number} keyCode - The code of the key to judge
-     */
-    isRepeated(keyCode) {
+
+    isRepeated(keyCode: number) {
         if (!this.keyState[keyCode]) {
-            console.error('Key code error!'); // eslint-disable-line no-console
+            console.error('Key code error!');
             return null;
         }
         return this.keyState[keyCode].isRepeated;

@@ -1,20 +1,17 @@
-// @ts-nocheck
 /**
- * Hit score window in editor
+ * Hit score window
  * @author Rex Zeng
  */
 
 import G from '../Global';
+import type { ScoreTextSprite } from '../types';
 import WindowBase from './WindowBase';
 
-/**
- * Window that shows hit score at middle
- * @class
- */
 export default class WindowHitScore extends WindowBase {
-    /**
-     * @constructor
-     */
+    sprites: ScoreTextSprite[];
+    numberToText: Record<number, string>;
+    numberToColor: Record<number, string>;
+
     constructor() {
         super();
         this.sprites = [];
@@ -37,26 +34,21 @@ export default class WindowHitScore extends WindowBase {
             '300': '#ff9800'
         };
     }
-    /**
-     * Call after hitting an object
-     * @param {number} hitJudgement - Hit judgement score or 0 or -1
-     */
-    objectHit(hitJudgement) {
+
+    objectHit(hitJudgement: number) {
         const hitText = this.numberToText[hitJudgement];
         const sprite = G.graphics.createText(hitText, {
             fontSize: G.constant.SCORE_SPRITE_FONT_SIZE,
             color: this.numberToColor[hitJudgement]
-        }, (w, h, self) => ({
+        }, (_w: number, h: number, self: any) => ({
             x: G.constant.JUDGEMENT_LINE_LEFT - self.width * 0.5,
             y: h * 0.5 - G.constant.SCORE_SPRITE_HEIGHT * 1.5
-        }));
+        })) as ScoreTextSprite;
         sprite.expireFrames = G.constant.SCORE_SPRITE_EXPIRE_FRAMES;
         this.sprites.push(sprite);
         this.stage.addChild(sprite);
     }
-    /**
-     * Update all score sprites
-     */
+
     update() {
         for (const sprite of this.sprites) {
             --sprite.expireFrames;
