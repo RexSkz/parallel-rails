@@ -7,11 +7,12 @@ It's just a project for practice, all musics and pictures don't belong to me.
 ## Build and run
 
 ```text
-$ yarn install
-$ yarn run build
+$ pnpm install
+$ pnpm build
+$ pnpm serve
 ```
 
-Then open `http://localhost/game/index.html` in your browser. `localhost` can be any other domain you set.
+Then open `http://localhost:3000` in your browser.
 
 ## Screenshots
 

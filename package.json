@@ -2,44 +2,24 @@
   "name": "parallel-rails",
   "version": "0.1.0",
   "description": "A music game made with Pixi.js, about infinite parallel rails.",
-  "main": "index.js",
   "scripts": {
-    "build": "webpack",
-    "serve": "serve game -o -n -p 3000",
-    "lint": "eslint src/"
+    "build": "vite build",
+    "serve": "vite --host 127.0.0.1 --port 3000",
+    "lint": "oxlint \"src/**/*.ts\" vite.config.ts"
   },
   "repository": {
     "type": "git",
-    "url": "git@git.coding.net:rexskz/parallel-rails.git"
+    "url": "git@github.com:RexSkz/parallel-rails.git"
   },
   "author": "Rex Zeng",
   "license": "SATA",
   "dependencies": {
-    "babel-eslint": "^8.0.3",
-    "moment": "^2.17.1",
-    "pixi.js": "^4.4.1",
-    "whatwg-fetch": "^2.0.3"
+    "luxon": "^3.7.2",
+    "pixi.js": "^8.13.2"
   },
   "devDependencies": {
-    "autoprefixer": "^6.4.0",
-    "babel-core": "^6.22.1",
-    "babel-loader": "^6.2.10",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-preset-env": "^1.6.1",
-    "css-loader": "^0.25.0",
-    "eslint": "^3.17.1",
-    "eslint-config-standard": "^10.2.1",
-    "eslint-plugin-import": "^2.8.0",
-    "eslint-plugin-node": "^5.2.1",
-    "eslint-plugin-promise": "^3.6.0",
-    "eslint-plugin-standard": "^3.0.1",
-    "exports-loader": "^0.6.3",
-    "file-loader": "^0.10.0",
-    "postcss-loader": "^1.0.0",
-    "serve": "^6.4.1",
-    "style-loader": "^0.13.1",
-    "url-loader": "^0.5.7",
-    "webpack": "^1.13.1",
-    "webpack-dev-server": "^1.14.1"
+    "oxlint": "^1.58.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.1.7"
   }
 }
