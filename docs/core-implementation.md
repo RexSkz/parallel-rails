@@ -61,9 +61,9 @@ timePerTick = 60000000 / (bpm1000 * divisor)
 time = pos1000 + floor(timePerTick * tick)
 ```
 
-### 2.2 位置查找
+### 2.2 Cursor 查找
 
-`findPositionByTime(time)` 的工作分两步：
+`createCursorByTime(time)` 的工作分两步：
 
 1. 二分找到 time 属于哪个 timing point 区段
 2. 在该区段内计算当前 tick 序号
@@ -72,7 +72,21 @@ time = pos1000 + floor(timePerTick * tick)
 
 ### 2.3 跨 timing point 前后移动
 
-`prev()` / `next()` 会在 tick 跨越 timing point 边界时自动切段，避免把不同 BPM 段当成连续等距时间轴。
+`prevCursor()` / `nextCursor()` 会在 tick 跨越 timing point 边界时自动切段，避免把不同 BPM 段当成连续等距时间轴。
+
+### 2.4 Cursor 语义
+
+上层主要消费 `TickCursor`。
+
+`TickCursor` 至少包含：
+
+- `timingPointIndex`
+- `tickIndex`
+- `startTime`
+- `endTime`
+- `mod`
+
+这样 editor、gameplay、debug 都可以用同一套 timing 语言。
 
 ## 3. 编辑器时间尺与节拍线
 
@@ -106,7 +120,7 @@ x = -relativeTime * zoom
 
 ### 3.3 刻度语义
 
-通过 `G.tick.getTickModNumber()` 区分：
+通过 `G.tick.getTickMod()` 区分：
 
 - 小节线
 - 拍线
@@ -126,7 +140,7 @@ x = -relativeTime * zoom
 
 ## 4. Hit Object 的位置计算
 
-相关文件：`src/window/WindowHitObject.ts`
+相关文件：`src/window/WindowHitObject.ts`、`src/window/WindowHitObjectRenderer.ts`
 
 这是当前项目最关键的视觉计算之一。
 
@@ -162,7 +176,7 @@ positionX = bpm1000 * (obj.pos1000 - time1000) / 1e6 * HITOBJ_MARGIN_SIZE + JUDG
 y = 0.5 * h
 ```
 
-代码里已经有 TODO，未来可继续扩展为：
+当前渲染入口已经允许继续扩展为：
 
 - 多轨道 Y 分层
 - 切轨物件
@@ -244,7 +258,7 @@ currentScore += min(3000, score * (floor(currentCombo / 20) + 1))
 - 每 20 combo 提升一个倍率档位
 - 单 note 最高加分封顶 3000
 
-这是一种很典型的“基础判定分 + 连击成长”的早期原型实现。
+这是当前使用的“基础判定分 + 连击成长”实现。
 
 ## 7. 命中反馈动画
 
@@ -287,5 +301,7 @@ currentScore += min(3000, score * (floor(currentCombo / 20) + 1))
 - 启动时检测缓存，可选择恢复或删除
 - `F12`：把当前谱面 JSON 弹到新窗口，方便复制保存
 - HTML timing 编辑面板：用于查看和编辑 timing point
+- hit object 与 timing point 的主要增删改都已进入命令系统
+- editor 现在支持 `Ctrl + Z` / `Ctrl + Y` 做撤销与重做
 
-这套机制说明当前编辑器主要目标还是“可用原型”和“便于人工调试”，还不是正式的完整谱面编辑器。
+这套机制让编辑器保持在“可用、可调试、可维护”的范围内。

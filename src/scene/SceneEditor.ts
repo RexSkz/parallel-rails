@@ -3,7 +3,6 @@
  * @author Rex Zeng
  */
 
-import { DateTime } from 'luxon';
 import G from '../Global';
 import { appendTimingPointEditingWindow } from '../Functions';
 import WindowHelp from '../window/WindowHelp';
@@ -11,13 +10,29 @@ import WindowHitObject from '../window/WindowHitObject';
 import WindowTimeRuler from '../window/WindowTimeRuler';
 import WindowTiming from '../window/WindowTiming';
 import SceneBase from './SceneBase';
-import SceneMusicSelect from './SceneMusicSelect';
-import type { BeatmapData, SoundHandle, TickPosition, TimingEditorWindow } from '../types';
+import type { BeatmapData, MusicMeta, SceneDebugSnapshot, SoundHandle, TickCursor, TimingEditorWindow, TimingPoint } from '../types';
+import SceneEditorCommandHistory from './SceneEditorCommandHistory';
+import { runSceneEditorCommands } from './SceneEditorCommands';
+
+function formatTimingPointRows(timingPoints: TimingPoint[]) {
+    return timingPoints.map((item) => {
+        const kiai = item.kiai ? 'Yes' : '';
+        return [
+            '<tr>',
+            '<td><button id="timing-point-remove">Remove</button></td>',
+            `<td>${item.pos1000 / 1000}</td>`,
+            `<td>${item.bpm1000 / 1000}</td>`,
+            `<td>${item.metronome}/4</td>`,
+            `<td>${kiai}</td>`,
+            '</tr>'
+        ].join('');
+    }).join('');
+}
 
 export default class SceneEditor extends SceneBase {
     name: string;
     musicId: number;
-    music: any;
+    music: MusicMeta;
     audio!: SoundHandle;
     audioUrl: string;
     bgUrl: string;
@@ -32,13 +47,14 @@ export default class SceneEditor extends SceneBase {
     tpWindow!: TimingEditorWindow;
     hitObjectWindow!: WindowHitObject;
     helpWindow!: WindowHelp;
-    pos!: TickPosition;
+    pos!: TickCursor;
+    commandHistory: SceneEditorCommandHistory;
 
     constructor(musicId: number) {
         super();
         this.name = 'editor';
         this.musicId = musicId;
-        this.music = G.musics[musicId];
+        this.music = G.musics[musicId] as MusicMeta;
         this.audioUrl = `songs/${this.music.audio}`;
         this.bgUrl = `songs/${this.music.bg}`;
         this.prUrl = `songs/${this.music.pr}`;
@@ -58,6 +74,7 @@ export default class SceneEditor extends SceneBase {
         this.uncached = false;
         this.atEdge = false;
         this.currentMode = 'hitObject';
+        this.commandHistory = new SceneEditorCommandHistory();
         this.resourceToLoad = {
             audio: [
                 'se/hit-00.mp3',
@@ -100,8 +117,13 @@ export default class SceneEditor extends SceneBase {
             this.data.hitObjects = data.hitObjects;
         } else {
             console.error(`Get PR file '${this.data.artist} - ${this.data.name}' failed, code ${res.status}`);
+            window.Debug?.log('editor', 'Failed to load beatmap file', {
+                artist: this.data.artist,
+                name: this.data.name,
+                status: res.status
+            });
         }
-        const updateTimingPoint = (t: any[]) => { this.data.timingPoints = t; };
+        const updateTimingPoint = (t: TimingPoint[]) => { this.data.timingPoints = t; };
         const updateDivisor = (t: number) => {
             if (G.tick.divisor !== t) {
                 G.tick.divisor = t;
@@ -117,9 +139,13 @@ export default class SceneEditor extends SceneBase {
             '      H: Toggle this window.',
             '      T: Timing current timing object\'s BPM.',
             '      `: Toggle timing point editing window.',
+            ' Timing panel Add/Remove buttons are undoable.',
+            ' Timing panel Apply button is undoable.',
             '   F, J: Add green note (SHIFT: add slider start / end).',
             '   D, K: Add orange note (SHIFT: add slider start / end).',
             '    DEL: Delete current hit object.',
+            ' Ctrl+Z: Undo last beatmap command.',
+            ' Ctrl+Y: Redo last undone beatmap command.',
             '     UP: Add object to switch to upper rail.',
             '   DOWN: Add object to switch to lower rail.',
             '   LEFT: Time back (SHIFT: 10x, CTRL: in millisecond unit).',
@@ -127,6 +153,8 @@ export default class SceneEditor extends SceneBase {
             '   HOME: Jump to music start.',
             '    END: Jump to music end.',
             '  SPACE: Toggle play / pause.',
+            'Ctrl+Shift+D: Toggle debug HUD.',
+            'Ctrl+Shift+J: Open runtime debug snapshot.',
             '    ESC: Return to music select scene or cancel slider edition.'
         ]);
         this.addWindow(this.helpWindow);
@@ -137,9 +165,11 @@ export default class SceneEditor extends SceneBase {
                 this.data = parsed.data;
                 this.updateFromCachedData();
                 localStorage.removeItem(this.storageKey);
+                window.Debug?.log('editor', 'Restored beatmap from local cache', { storageKey: this.storageKey });
                 alert('Data loaded, cache has been erased, you have to press Ctrl+S to cache it again.');
             } else if (confirm('Would you like to erase this cache?')) {
                 localStorage.removeItem(this.storageKey);
+                window.Debug?.log('editor', 'Removed local beatmap cache', { storageKey: this.storageKey });
                 alert('Cached data has been erased.');
             }
         } else {
@@ -152,10 +182,10 @@ export default class SceneEditor extends SceneBase {
             this.audio.pause();
             this.data.currentTime = this.data.duration;
         }
-        if (this.audio.playing && this.data.currentTime * 1000 >= this.pos.r) {
-            this.pos = G.tick.next(this.pos.tp, this.pos.tick);
+        if (this.audio.playing && this.data.currentTime * 1000 >= this.pos.endTime) {
+            this.pos = G.tick.nextCursor(this.pos, Boolean(G.input.isRepeated(G.input.CTRL)));
             if (this.tpWindow.style.opacity === '1') {
-                const index = G.tick.getTickModNumber(this.pos.tp, this.pos.tick, G.input.isRepeated(G.input.CTRL));
+                const index = this.pos.mod;
                 if (index.divisor === 0) {
                     const soundName = (index.tick === 0) ? 2 : 1;
                     G.audio.playSE(`se/metronome-${soundName}.mp3`);
@@ -179,136 +209,20 @@ export default class SceneEditor extends SceneBase {
 
     updateFromCachedData() {
         G.tick.tp = this.data.timingPoints;
-        this.pos = G.tick.findPositionByTime(this.data.currentTime * 1000, 0);
+        this.pos = G.tick.createCursorByTime(this.data.currentTime * 1000, 0);
         this.timeRulerWindow.repaintAllTimingPoints(0);
         this.tpWindow.timingPoints = this.data.timingPoints;
-        (this.tpWindow.querySelector('#bpm') as HTMLInputElement).value = String(this.data.timingPoints[0].bpm1000);
-        (this.tpWindow.querySelector('#pos') as HTMLInputElement).value = String(this.data.timingPoints[0].pos1000);
-        (this.tpWindow.querySelector('tbody') as HTMLTableSectionElement).innerHTML = this.data.timingPoints.map((item: any) => {
-            const kiai = item.kiai ? 'Yes' : '';
-            return [
-                '<tr>',
-                '<td><button id="timing-point-remove">Remove</button></td>',
-                `<td>${item.pos1000 / 1000}</td>`,
-                `<td>${item.bpm1000 / 1000}</td>`,
-                `<td>${item.metronome}/4</td>`,
-                `<td>${kiai}</td>`,
-                '</tr>'
-            ].join('');
-        }).join('');
+        this.tpWindow.selectedTimingPointIndex = Math.min(this.tpWindow.selectedTimingPointIndex ?? 0, Math.max(this.data.timingPoints.length - 1, 0));
+        const selectedTimingPoint = this.data.timingPoints[this.tpWindow.selectedTimingPointIndex] || this.data.timingPoints[0];
+        (this.tpWindow.querySelector('#bpm') as HTMLInputElement).value = String(selectedTimingPoint.bpm1000);
+        (this.tpWindow.querySelector('#pos') as HTMLInputElement).value = String(selectedTimingPoint.pos1000);
+        (this.tpWindow.querySelector('#metronome') as HTMLInputElement).value = String(selectedTimingPoint.metronome);
+        (this.tpWindow.querySelector('#kiai-time') as HTMLInputElement).checked = Boolean(selectedTimingPoint.kiai);
+        (this.tpWindow.querySelector('tbody') as HTMLTableSectionElement).innerHTML = formatTimingPointRows(this.data.timingPoints);
     }
 
     updateInputs() {
-        if (G.input.isPressed(G.input.H)) {
-            this.helpWindow.stage.visible = !this.helpWindow.stage.visible;
-            this.tpWindow.style.display = this.helpWindow.stage.visible ? 'none' : 'block';
-        } else if (G.input.isPressed(G.input.APOSTROPHE)) {
-            this.hitObjectWindow.stage.visible = !this.hitObjectWindow.stage.visible;
-            this.tpWindow.style.opacity = String(1 - Number(this.tpWindow.style.opacity));
-            this.tpWindow.style.visibility = Number(this.tpWindow.style.opacity) ? 'visible' : 'hidden';
-        } else if (G.input.isRepeated(G.input.CTRL) && G.input.isRepeated(G.input.S)) {
-            const dt = DateTime.now().toFormat('yyyy-M-d H:m:s');
-            localStorage.setItem(this.storageKey, JSON.stringify({ time: dt, data: this.data }));
-            alert(`Data has been cached in localStorage at ${dt}.`);
-            this.uncached = false;
-        } else if (G.input.isPressed(G.input.F12)) {
-            alert('Now I will show curren data in new window and assume you have saved them in .pr file.');
-            const data = JSON.stringify({ timingPoints: this.data.timingPoints, hitObjects: this.data.hitObjects });
-            const newWindow = window.open('', '', 'height=500,width=500,top=20,left=20,menubar=no,scrollbars=yes,resizable=yes');
-            if (newWindow) {
-                newWindow.document.title = `Content of beatmap '${this.storageKey}'`;
-                newWindow.document.body.innerHTML = '<pre style="white-space:pre-wrap;word-break:break-all"></pre>';
-                (newWindow.document.querySelector('pre') as HTMLElement).innerText = data;
-            } else {
-                console.log(data);
-                alert('Failed to open window! Please allow popup window. Data has logged to console.');
-            }
-            this.uncached = false;
-        } else if (G.input.isPressed(G.input.SPACE)) {
-            if (this.audio) {
-                if (this.audio.playing) {
-                    this.audio.pause();
-                } else if (this.data.currentTime < this.data.duration) {
-                    if (this.data.playFromTime >= 0) {
-                        this.audio.playFrom(this.data.playFromTime);
-                        this.data.playFromTime = -1;
-                    } else {
-                        this.audio.play();
-                    }
-                    this.audio.fadeIn(0);
-                }
-            }
-        } else if (G.input.isPressed(G.input.LEFT)) {
-            if (this.data.currentTime === 0) return;
-            if (G.input.isRepeated(G.input.CTRL)) {
-                const count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
-                this.setPlayFrom(this.data.currentTime - 0.001 * count);
-                this.timeRulerWindow.paintTpLeftTo(this.data.currentTime * 1000);
-                return;
-            }
-            if (this.data.timingPoints.length !== 0) {
-                let count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
-                let currentTime = 0;
-                while (count--) {
-                    this.pos = G.tick.prev(this.pos.tp, this.pos.tick, this.atEdge);
-                    currentTime = this.pos.l;
-                }
-                this.atEdge = true;
-                this.setPlayFrom(currentTime / 1000);
-                this.timeRulerWindow.paintTpLeftTo(this.data.currentTime * 1000);
-            }
-        } else if (G.input.isPressed(G.input.RIGHT)) {
-            if (this.data.currentTime === this.data.duration) return;
-            if (G.input.isRepeated(G.input.CTRL)) {
-                const count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
-                this.setPlayFrom(this.data.currentTime + 0.001 * count);
-                this.timeRulerWindow.paintTpRightTo(this.data.currentTime * 1000);
-                return;
-            }
-            if (this.data.timingPoints.length !== 0) {
-                let count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
-                let currentTime = 0;
-                while (count--) {
-                    this.pos = G.tick.next(this.pos.tp, this.pos.tick);
-                    currentTime = this.pos.l;
-                }
-                this.atEdge = true;
-                this.setPlayFrom(currentTime / 1000);
-                this.timeRulerWindow.paintTpRightTo(this.data.currentTime * 1000);
-            }
-        } else if (G.input.isPressed(G.input.HOME)) {
-            this.pos = G.tick.findPositionByTime(0);
-            this.pos.metronome = G.tick.tp[this.pos.tp].metronome;
-            this.pos.divisor = G.tick.divisor;
-            this.atEdge = false;
-            this.setPlayFrom(0);
-            this.timeRulerWindow.repaintAllTimingPoints(0);
-        } else if (G.input.isPressed(G.input.END)) {
-            this.pos = G.tick.findPositionByTime(this.data.duration * 1000);
-            this.pos.metronome = G.tick.tp[this.pos.tp].metronome;
-            this.pos.divisor = G.tick.divisor;
-            this.atEdge = false;
-            this.setPlayFrom(this.data.duration);
-            this.timeRulerWindow.repaintAllTimingPoints(this.data.duration * 1000);
-        } else if (G.input.isPressed(G.input.ESC)) {
-            if (this.uncached && !confirm('Your work has not been cached, quit by force?')) {
-                return;
-            }
-            this.tpWindow.style.opacity = '0';
-            G.audio.playSE('se/menu-back.mp3');
-            G.scene = new SceneMusicSelect();
-        } else if (G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)) {
-            this.uncached = true;
-            G.audio.playSE('se/hit-01.mp3');
-            this.hitObjectWindow.insertHitObject({ type: G.input.isPressed(G.input.SHIFT) ? 1 : 0, color: 0 });
-        } else if (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J)) {
-            this.uncached = true;
-            G.audio.playSE('se/hit-00.mp3');
-            this.hitObjectWindow.insertHitObject({ type: G.input.isPressed(G.input.SHIFT) ? 1 : 0, color: 1 });
-        } else if (G.input.isPressed(G.input.DELETE)) {
-            this.uncached = true;
-            this.hitObjectWindow.removeHitObject();
-        }
+        runSceneEditorCommands(this);
     }
 
     updateTimingWindow() {
@@ -337,5 +251,56 @@ export default class SceneEditor extends SceneBase {
         }
         this.data.playFromTime = time;
         this.data.currentTime = time;
+    }
+
+    debugSnapshot(): SceneDebugSnapshot {
+        return {
+            ...super.debugSnapshot(),
+            scene: this.constructor.name,
+            summary: this.debugSummary(),
+            beatmap: {
+                artist: this.data.artist,
+                name: this.data.name,
+                timingPoints: this.data.timingPoints.length,
+                hitObjects: this.data.hitObjects.length,
+                uncached: this.uncached,
+                timingPointPreview: this.data.timingPoints.slice(0, 5).map(item => ({
+                    pos1000: item.pos1000,
+                    bpm1000: item.bpm1000,
+                    metronome: item.metronome,
+                    kiai: Boolean(item.kiai)
+                }))
+            },
+            playback: {
+                currentTime: Number(this.data.currentTime.toFixed(3)),
+                duration: Number(this.data.duration.toFixed(3)),
+                playFromTime: Number(this.data.playFromTime.toFixed(3)),
+                audioPlaying: Boolean(this.audio?.playing)
+            },
+            cursor: this.pos ? {
+                timingPointIndex: this.pos.timingPointIndex,
+                tickIndex: this.pos.tickIndex,
+                leftEdge: this.pos.startTime,
+                rightEdge: this.pos.endTime,
+                metronome: this.pos.metronome,
+                divisor: this.pos.divisor,
+                mod: this.pos.mod
+            } : null,
+            ui: {
+                helpVisible: Boolean(this.helpWindow?.stage.visible),
+                timingPanelVisible: this.tpWindow?.style.visibility === 'visible',
+                currentMode: this.currentMode,
+                commandHistory: this.commandHistory.snapshot(10)
+            }
+        };
+    }
+
+    protected debugSummary(): string[] {
+        return [
+            `time=${this.data.currentTime.toFixed(3)} / ${this.data.duration.toFixed(3)}`,
+            `hitObjects=${this.data.hitObjects.length}, timingPoints=${this.data.timingPoints.length}`,
+            `cursor=tp${this.pos?.timingPointIndex ?? '-'} tick${this.pos?.tickIndex ?? '-'}`,
+            `audioPlaying=${Boolean(this.audio?.playing)}, uncached=${this.uncached}`
+        ];
     }
 }

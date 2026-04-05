@@ -6,6 +6,7 @@
 import G from '../Global';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
+import type { SceneDebugSnapshot } from '../types';
 
 export default class SceneTitle extends SceneBase {
     titleTextTimer: number;
@@ -92,5 +93,26 @@ export default class SceneTitle extends SceneBase {
         } else if (this.titleTextTimer >= 120) {
             this.titleTextTimer = 0;
         }
+    }
+
+    debugSnapshot(): SceneDebugSnapshot {
+        return {
+            ...super.debugSnapshot(),
+            scene: this.constructor.name,
+            summary: this.debugSummary(),
+            title: {
+                timer: this.titleTextTimer,
+                text: this.titleText,
+                randomCharPosition: this.randomChr.pos
+            }
+        };
+    }
+
+    protected debugSummary(): string[] {
+        return [
+            `titleTimer=${this.titleTextTimer}`,
+            `titleText=${this.titleText}`,
+            'shortcuts=P(play), E(edit)'
+        ];
     }
 }

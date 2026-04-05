@@ -61,9 +61,9 @@ Absolute time of a tick:
 time = pos1000 + floor(timePerTick * tick)
 ```
 
-### 2.2 Position lookup
+### 2.2 Cursor lookup
 
-`findPositionByTime(time)` works in two phases:
+`createCursorByTime(time)` works in two phases:
 
 1. binary-search the timing-point segment containing the requested time
 2. compute the tick index inside that segment
@@ -72,7 +72,21 @@ This is the shared basis for editor scrubbing, ruler drawing, and beat snapping.
 
 ### 2.3 Moving across timing points
 
-`prev()` and `next()` step across timing-point boundaries correctly, instead of treating all BPM regions as one evenly spaced grid.
+`prevCursor()` and `nextCursor()` step across timing-point boundaries correctly, instead of treating all BPM regions as one evenly spaced grid.
+
+### 2.4 Cursor semantics
+
+Upper layers mainly consume `TickCursor`.
+
+`TickCursor` includes at least:
+
+- `timingPointIndex`
+- `tickIndex`
+- `startTime`
+- `endTime`
+- `mod`
+
+That gives the editor, gameplay, and debug tooling one shared timing vocabulary.
 
 ## 3. Editor ruler and beat lines
 
@@ -106,7 +120,7 @@ This keeps the playback/scrub update cost manageable.
 
 ### 3.3 Tick semantics
 
-`G.tick.getTickModNumber()` distinguishes:
+`G.tick.getTickMod()` distinguishes:
 
 - bar lines
 - beat lines
@@ -126,7 +140,7 @@ This keeps the playback/scrub update cost manageable.
 
 ## 4. Hit object positioning
 
-Related file: `src/window/WindowHitObject.ts`
+Related files: `src/window/WindowHitObject.ts`, `src/window/WindowHitObjectRenderer.ts`
 
 This is one of the most important visual calculations in the project.
 
@@ -162,7 +176,7 @@ At the moment all objects are rendered at screen center:
 y = 0.5 * h
 ```
 
-The code already marks future extensions such as:
+The renderer entry already leaves room for extensions such as:
 
 - multi-lane Y placement
 - switch objects
@@ -244,7 +258,7 @@ Meaning:
 - the multiplier steps up every 20 combo
 - per-note gain is capped at 3000
 
-This is a straightforward prototype formula built from judgement value plus combo growth.
+This is the current judgement-value-plus-combo-growth formula.
 
 ## 7. Hit feedback animation
 
@@ -287,5 +301,7 @@ The editor currently includes a few important support features beyond note displ
 - startup cache detection with restore / erase prompt
 - `F12`: dump current chart JSON into a new popup window
 - HTML timing editor controls for timing-point inspection and editing
+- core hit object and timing-point edits now go through the command system
+- the editor now supports `Ctrl + Z` / `Ctrl + Y` for undo / redo
 
-This shows the editor is currently optimized more for practical prototyping and manual debugging than for being a fully polished chart authoring tool.
+This keeps the editor in a practical, debuggable, maintainable state.

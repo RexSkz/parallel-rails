@@ -1,7 +1,7 @@
 import { Container } from 'pixi.js';
 import G from '../Global';
 import { renderLoop } from '../Functions';
-import type { RepaintRenderer } from '../types';
+import type { RepaintRenderer, SceneDebugSnapshot } from '../types';
 
 export default class SceneBase {
     stage: Container;
@@ -26,6 +26,7 @@ export default class SceneBase {
             audio: [],
             graphics: []
         };
+        window.Debug?.log('scene', 'Constructed scene', { scene: this.constructor.name });
         setTimeout(() => this.work(), 0);
     }
 
@@ -47,9 +48,15 @@ export default class SceneBase {
                 y: h - self.height - 10
             })));
             G.resource.load(this.resourceToLoad);
+            window.Debug?.log('resource', 'Started scene resource load', {
+                scene: this.constructor.name,
+                audio: this.resourceToLoad.audio.length,
+                graphics: this.resourceToLoad.graphics.length
+            });
             renderLoop(() => {
                 if (G.resource.remains <= 0) {
                     G.rootStage.removeChild(this.loadingBar);
+                    window.Debug?.log('resource', 'Finished scene resource load', { scene: this.constructor.name });
                     resolve();
                     return false;
                 }
@@ -81,6 +88,10 @@ export default class SceneBase {
             renderLoop(() => {
                 if (G.scene !== this) {
                     G.lock.sceneSwitch = true;
+                    window.Debug?.log('scene', 'Leaving scene loop', {
+                        from: this.constructor.name,
+                        to: G.scene?.constructor?.name || 'UnknownScene'
+                    });
                     resolve();
                     return false;
                 }
@@ -108,6 +119,32 @@ export default class SceneBase {
     onTerminate() {}
 
     update() {}
+
+    debugSnapshot(): SceneDebugSnapshot {
+        return {
+            scene: this.constructor.name,
+            summary: this.debugSummary(),
+            stage: {
+                alpha: Number(this.stage.alpha.toFixed(3)),
+                visible: this.stage.visible,
+                childCount: this.stage.children.length
+            },
+            resources: {
+                audio: this.resourceToLoad.audio.length,
+                graphics: this.resourceToLoad.graphics.length,
+                loadingRemains: this.loadingRemains
+            }
+        };
+    }
+
+    protected debugSummary(): string[] {
+        return [
+            `stageChildren=${this.stage.children.length}`,
+            `stageAlpha=${Number(this.stage.alpha.toFixed(3))}`,
+            `resourceAudio=${this.resourceToLoad.audio.length}`,
+            `resourceGraphics=${this.resourceToLoad.graphics.length}`
+        ];
+    }
 
     calcRepaintItems() {
         if (G.windowResized) {

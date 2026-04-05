@@ -1,5 +1,16 @@
 import type { Container, Sprite, Text } from 'pixi.js';
 
+export type MusicMeta = {
+    artist: string;
+    name: string;
+    creator: string;
+    audio: string;
+    bg: string;
+    pr: string;
+    version?: string;
+    [key: string]: unknown;
+};
+
 export type TimingPoint = {
     bpm1000: number;
     pos1000: number;
@@ -12,6 +23,28 @@ export type HitObject = {
     pos1000: number;
     color?: number;
     last?: number;
+};
+
+export type HitInputState = {
+    greenPressed: boolean;
+    orangePressed: boolean;
+    anyPressed: boolean;
+};
+
+export type HitJudgementResult = {
+    judgement: number;
+    type: string;
+};
+
+export type HitJudgeContext = {
+    objectTime1000: number;
+    currentTime1000: number;
+    delta1000: number;
+    absDelta1000: number;
+};
+
+export type HitJudgeDecision = HitJudgementResult & {
+    context: HitJudgeContext;
 };
 
 export type BeatmapData = {
@@ -27,25 +60,53 @@ export type BeatmapData = {
     isEditMode: boolean;
 };
 
+export type EditorCommandResult = {
+    changed: boolean;
+    description: string;
+};
+
+export type EditorCommandSummary = {
+    description: string;
+    kind: string;
+    payload?: Record<string, unknown>;
+};
+
+export type TimingPointDraft = {
+    index: number;
+    bpm1000: number;
+    pos1000: number;
+    metronome: number;
+    kiai: boolean;
+};
+
+export type EditorCommand = {
+    summary: EditorCommandSummary;
+    description: string;
+    execute: () => EditorCommandResult;
+    undo: () => EditorCommandResult;
+};
+
 export type TickMod = {
     tick: number;
     divisor: number;
 };
 
-export type TickPosition = {
-    tp: number;
-    tick: number;
-    l: number;
-    r: number;
-    metronome?: number;
-    divisor?: number;
+export type TickCursor = {
+    time: number;
+    startTime: number;
+    endTime: number;
+    timingPointIndex: number;
+    tickIndex: number;
+    metronome: number;
+    divisor: number;
+    mod: TickMod;
 };
 
 export type TimelineTick = {
     x: number;
     mod: TickMod;
-    tp: number;
-    tick: number;
+    timingPointIndex: number;
+    tickIndex: number;
     time: number;
 };
 
@@ -90,6 +151,7 @@ export type ScoreTextSprite = Text & {
 
 export type TimingEditorWindow = HTMLDivElement & {
     timingPoints: TimingPoint[];
+    selectedTimingPointIndex?: number;
     destroy: () => void;
 };
 
@@ -113,4 +175,72 @@ export type SoundHandle = {
     playFrom: (time: number) => void;
     play: () => void;
     pause: () => void;
+};
+
+export type GameplayScoreState = {
+    scorePoints: Record<number, number>;
+    hitResults: Record<string, number>;
+    currentScore: number;
+    currentCombo: number;
+    maxCombo: number;
+};
+
+export type StageTreeNode = {
+    label: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    visible: boolean;
+    alpha: number;
+    childCount: number;
+    children?: StageTreeNode[];
+};
+
+export type DebugEvent = {
+    time: string;
+    scene: string;
+    scope: string;
+    message: string;
+    data?: unknown;
+};
+
+export type SceneDebugSnapshot = {
+    scene: string;
+    summary?: string[];
+    [key: string]: unknown;
+};
+
+export type RuntimeDebugSnapshot = {
+    app: {
+        sceneName: string;
+        mode: string;
+        window: {
+            width: number;
+            height: number;
+        };
+        rootChildren: number;
+        repaintItemCount: number;
+        resource: {
+            remains: number;
+            currentLoad: string;
+        };
+    };
+    scene: SceneDebugSnapshot | null;
+    stageTree: StageTreeNode;
+    repaintList: string[];
+    recentEvents: DebugEvent[];
+};
+
+export type DebugApi = {
+    text: (om?: Container, indent?: number) => string;
+    tree: (om?: Container) => string;
+    object: (om?: Container) => StageTreeNode;
+    scene: () => SceneDebugSnapshot | null;
+    snapshot: () => RuntimeDebugSnapshot;
+    log: (scope: string, message: string, data?: unknown) => DebugEvent;
+    getEvents: (limit?: number) => DebugEvent[];
+    toggleHud: (force?: boolean) => boolean;
+    openSnapshotWindow: () => string;
+    openJsonWindow: (title: string, data: unknown) => string;
 };

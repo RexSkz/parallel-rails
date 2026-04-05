@@ -72,21 +72,18 @@ export default class WindowTimeRuler extends WindowBase {
             }
         }
         const first = this.timeLineObject[0];
-        let prevPos = {
-            tp: first.tp,
-            tick: first.tick,
-            l: first.time,
-            time: first.time
-        };
-        let { tp, tick, time } = prevPos;
+        let prevPos = G.tick.createCursor(first.timingPointIndex, first.tickIndex);
+        let timingPointIndex = prevPos.timingPointIndex;
+        let tickIndex = prevPos.tickIndex;
+        let time = prevPos.time;
         position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
         while (Math.floor(-relativeTime * this.zoom) + position >= 0) {
-            prevPos = G.tick.prev(prevPos.tp, prevPos.tick, true);
-            tp = prevPos.tp;
-            tick = prevPos.tick;
-            time = prevPos.l;
+            prevPos = G.tick.prevCursor(prevPos, true);
+            timingPointIndex = prevPos.timingPointIndex;
+            tickIndex = prevPos.tickIndex;
+            time = prevPos.time;
             position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
-            const o = { x: position, mod: G.tick.getTickModNumber(tp, tick), tp, tick, time };
+            const o = { x: position, mod: prevPos.mod, timingPointIndex, tickIndex, time };
             this.timeLineObject.unshift(o);
             this.timeLinesInner.addChildAt(this.getLineByObj(o), 0);
         }
@@ -105,21 +102,18 @@ export default class WindowTimeRuler extends WindowBase {
             }
         }
         const last = this.timeLineObject[this.timeLineObject.length - 1];
-        let nextPos = {
-            tp: last.tp,
-            tick: last.tick,
-            l: last.time,
-            time: last.time
-        };
-        let { tp, tick, time } = nextPos;
+        let nextPos = G.tick.createCursor(last.timingPointIndex, last.tickIndex);
+        let timingPointIndex = nextPos.timingPointIndex;
+        let tickIndex = nextPos.tickIndex;
+        let time = nextPos.time;
         position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
         while (Math.floor(-relativeTime * this.zoom) + position <= window.innerWidth) {
-            nextPos = G.tick.next(nextPos.tp, nextPos.tick);
-            tp = nextPos.tp;
-            tick = nextPos.tick;
-            time = nextPos.l;
+            nextPos = G.tick.nextCursor(nextPos);
+            timingPointIndex = nextPos.timingPointIndex;
+            tickIndex = nextPos.tickIndex;
+            time = nextPos.time;
             position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
-            const o = { x: position, mod: G.tick.getTickModNumber(tp, tick), tp, tick, time };
+            const o = { x: position, mod: nextPos.mod, timingPointIndex, tickIndex, time };
             this.timeLineObject.push(o);
             this.timeLinesInner.addChild(this.getLineByObj(o));
         }
@@ -145,31 +139,31 @@ export default class WindowTimeRuler extends WindowBase {
     repaintAllTimingPoints(relativeTime: number) {
         this.timeLinesInner.removeChildren();
         setPosition(this.timeLinesInner, () => ({ x: Math.floor(-relativeTime * this.zoom) }), true);
-        const pos = G.tick.findPositionByTime(relativeTime);
-        let tp = pos.tp;
-        let tick = pos.tick;
-        let time = pos.l;
+        const pos = G.tick.createCursorByTime(relativeTime);
+        let timingPointIndex = pos.timingPointIndex;
+        let tickIndex = pos.tickIndex;
+        let time = pos.time;
         let position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
-        this.timeLineObject = [{ x: position, mod: G.tick.getTickModNumber(tp, tick), tp, tick, time }];
+        this.timeLineObject = [{ x: position, mod: pos.mod, timingPointIndex, tickIndex, time }];
         position = Infinity;
-        let prevPos = { tp: pos.tp, tick: pos.tick, l: pos.l };
+        let prevPos = pos;
         while (Math.floor(-relativeTime * this.zoom) + position >= -JUDGEMENT_LINE_LEFT) {
-            prevPos = G.tick.prev(prevPos.tp, prevPos.tick, true);
-            tp = prevPos.tp;
-            tick = prevPos.tick;
-            time = prevPos.l;
+            prevPos = G.tick.prevCursor(prevPos, true);
+            timingPointIndex = prevPos.timingPointIndex;
+            tickIndex = prevPos.tickIndex;
+            time = prevPos.time;
             position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
-            this.timeLineObject.unshift({ x: position, mod: G.tick.getTickModNumber(tp, tick), tp, tick, time });
+            this.timeLineObject.unshift({ x: position, mod: prevPos.mod, timingPointIndex, tickIndex, time });
         }
         position = -Infinity;
-        let nextPos = { tp: pos.tp, tick: pos.tick, l: pos.l };
+        let nextPos = pos;
         while (Math.floor(-relativeTime * this.zoom) + position <= window.innerWidth) {
-            nextPos = G.tick.next(nextPos.tp, nextPos.tick);
-            tp = nextPos.tp;
-            tick = nextPos.tick;
-            time = nextPos.l;
+            nextPos = G.tick.nextCursor(nextPos);
+            timingPointIndex = nextPos.timingPointIndex;
+            tickIndex = nextPos.tickIndex;
+            time = nextPos.time;
             position = JUDGEMENT_LINE_LEFT + Math.floor(this.zoom * time);
-            this.timeLineObject.push({ x: position, mod: G.tick.getTickModNumber(tp, tick), tp, tick, time });
+            this.timeLineObject.push({ x: position, mod: nextPos.mod, timingPointIndex, tickIndex, time });
         }
         for (const item of this.timeLineObject) {
             this.timeLinesInner.addChild(this.getLineByObj(item));

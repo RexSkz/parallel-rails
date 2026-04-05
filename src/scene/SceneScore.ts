@@ -6,6 +6,7 @@
 import G from '../Global';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
+import type { SceneDebugSnapshot } from '../types';
 
 /**
  * Define playing score scene
@@ -71,5 +72,27 @@ export default class SceneScore extends SceneBase {
             G.mode = 'play';
             G.scene = new SceneMusicSelect();
         }
+    }
+
+    debugSnapshot(): SceneDebugSnapshot {
+        return {
+            ...super.debugSnapshot(),
+            scene: this.constructor.name,
+            summary: this.debugSummary(),
+            result: {
+                score: this.score,
+                combo: this.combo,
+                hitResults: this.hitResults,
+                scorePointCount: Object.keys(this.scorePoints).length
+            }
+        };
+    }
+
+    protected debugSummary(): string[] {
+        return [
+            `score=${this.score}`,
+            `combo=${this.combo}`,
+            `resultBuckets=${Object.keys(this.hitResults).length}`
+        ];
     }
 }

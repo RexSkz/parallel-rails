@@ -105,6 +105,7 @@ export function appendTimingPointEditingWindow(timFunc: (timingPoints: TimingPoi
                     <span>It's kiai time!</span>
                 </label>
             </fieldset>
+            <p><button id="timing-point-apply">Apply timing point changes</button></p>
         </fieldset>
         <fieldset>
             <legend>Beat snap divisor (1/<span id="divisor-show">4</span>)</legend>
@@ -139,6 +140,7 @@ export function appendTimingPointEditingWindow(timFunc: (timingPoints: TimingPoi
         divFunc(value);
     };
     divisor.addEventListener('input', changeDivisor);
+    w.selectedTimingPointIndex = 0;
     w.destroy = () => {
         divisor.removeEventListener('input', changeDivisor);
         w.removeEventListener('keydown', listener);

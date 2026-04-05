@@ -18,7 +18,11 @@ window.Debug = new Debug();
 
 ```js
 Debug.text()
+Debug.tree()
 Debug.object()
+Debug.scene()
+Debug.snapshot()
+Debug.getEvents()
 ```
 
 ### 1.2 `Debug.text()`
@@ -45,6 +49,37 @@ Debug.object()
 - 观察 children 层级
 - 定位具体 sprite
 
+### 1.4 `Debug.scene()` / `Debug.snapshot()`
+
+- `Debug.scene()` 返回当前场景的结构化摘要。
+- `Debug.snapshot()` 返回更完整的运行时快照，包含：
+  - 当前 scene / mode
+  - 窗口大小
+  - `repaintList`
+  - 资源加载状态
+  - 最近事件日志
+  - Pixi stage 树
+
+这两个接口比单纯看 console 更适合：
+
+- 给 AI 粘贴当前运行态
+- 报 issue 时附带现场信息
+- 比较 editor / gameplay 的状态差异
+
+### 1.5 调试 HUD 与快捷键
+
+- `Ctrl + Shift + D`：显示或隐藏调试 HUD。
+- `Ctrl + Shift + J`：弹出当前运行时快照 JSON。
+
+HUD 会显示：
+
+- 当前场景
+- 窗口尺寸
+- repaint 项数量
+- 资源加载剩余数量
+- 当前场景摘要
+- 最近几条调试事件
+
 ## 2. 编辑器调试能力
 
 相关文件：`src/scene/SceneEditor.ts`
@@ -65,12 +100,31 @@ Debug.object()
 
 - 会弹出一个新窗口
 - 窗口里显示当前谱面 JSON
+- 底层复用了统一的 JSON 调试窗口逻辑
 
 这相当于一个临时导出器，适合：
 
 - 检查数据结构
 - 手工复制到 `.pr` 文件
 - 快速确认 hit object / timing point 是否正确生成
+
+### 2.3 命令历史与撤销/重做
+
+编辑器当前已经支持：
+
+- `Ctrl + Z`：撤销最近的编辑命令
+- `Ctrl + Y`：重做最近撤销的编辑命令
+
+目前进入命令系统的主要动作包括：
+
+- hit object 的插入 / 删除
+- timing point 的新增 / 删除
+- timing point detail 的 Apply 修改
+
+如果要确认某次编辑到底改了什么，可以看：
+
+- `Debug.scene()` 里的 `ui.commandHistory`
+- `Debug.getEvents()` 里的 `editor-command` 事件
 
 ## 3. 常见排查路径
 
@@ -82,6 +136,8 @@ Debug.object()
 - `G.repaintList`
 - `window.innerWidth / innerHeight`
 - 对应对象是否通过 `Graphics.setPosition()` 或 `Functions.setPosition()` 注册了 painter
+- `Debug.snapshot().stageTree`
+- `Debug.snapshot().repaintList`
 
 相关文件：`src/Graphics.ts`、`src/Functions.ts`、`src/scene/SceneBase.ts`
 
@@ -92,6 +148,8 @@ Debug.object()
 - `G.nativeInputFocused` 是否被原生输入框占用
 - `G.input.isPressed()` / `isRepeated()` 的返回值
 - 当前场景 `update()` 是否实际执行到对应分支
+- `Debug.scene()` 里的场景摘要
+- `Debug.getEvents()` 里的最近输入/切场景记录
 
 相关文件：`src/Input.ts`、`src/scene/SceneEditor.ts`、`src/scene/SceneGaming.ts`
 
@@ -113,7 +171,7 @@ Debug.object()
 
 - `G.tick.tp`
 - `G.tick.divisor`
-- `findPositionByTime()`、`prev()`、`next()` 的结果
+- `createCursorByTime()`、`prevCursor()`、`nextCursor()` 的结果
 - `WindowTimeRuler.timeLineObject`
 
 相关文件：`src/Tick.ts`、`src/window/WindowTimeRuler.ts`
@@ -172,11 +230,3 @@ http://127.0.0.1:3000
 - Luxon 使用官方类型定义。
 - Pixi 对象识别统一使用 `label`。
 - `game/` 目录作为 Vite public 资源目录提供静态资源。
-
-### 6.2 TODO
-
-- 减少剩余显式 `any`
-- 补完整体类型模型，尤其是歌曲元数据和 `window._G`
-- 补全长条、切轨等未实现物件
-- 复查游玩判定中的颜色映射一致性
-- 为结算页补正式展示与统计图形

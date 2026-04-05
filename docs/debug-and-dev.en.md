@@ -164,19 +164,9 @@ Runtime code therefore uses direct public paths such as:
 - `se/menu-click.mp3`
 - `songs/...`
 
-## 6. Current status and TODO
-
-### 6.1 Current status
+## 6. Current status
 
 - TypeScript runs with `strict: true` and `noImplicitAny: true`.
 - Luxon uses its official type definitions.
 - Pixi objects are identified with `label`.
 - The `game/` directory is treated as the Vite public asset tree.
-
-### 6.2 TODO
-
-- reduce the remaining explicit `any` usage
-- strengthen the overall type model, especially song metadata and `window._G`
-- finish hold and switch object implementations
-- review gameplay color-mapping consistency
-- build a fuller score/result presentation

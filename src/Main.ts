@@ -21,6 +21,8 @@ class ParallelRails {
 
     async init(target: HTMLElement) {
         await this.setupRender(target);
+        this.setupDebugShortcuts();
+        window.Debug?.log('boot', 'Renderer initialized');
         try {
             G.scene = new SceneTitle();
         } catch (e) {
@@ -51,6 +53,25 @@ class ParallelRails {
         });
         // append the canvas of renverer's view to page
         target.appendChild(canvas);
+    }
+
+    setupDebugShortcuts() {
+        window.addEventListener('keydown', (event) => {
+            if (G.nativeInputFocused || !event.ctrlKey || !event.shiftKey) {
+                return;
+            }
+            if (event.code === 'KeyD') {
+                event.preventDefault();
+                const visible = window.Debug?.toggleHud();
+                window.Debug?.log('debug', `Debug HUD ${visible ? 'enabled' : 'disabled'}`);
+            } else if (event.code === 'KeyJ') {
+                event.preventDefault();
+                const json = window.Debug?.openSnapshotWindow();
+                if (json) {
+                    window.Debug?.log('debug', 'Opened runtime snapshot window');
+                }
+            }
+        });
     }
 }
 

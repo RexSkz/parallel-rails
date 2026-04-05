@@ -8,6 +8,7 @@ import SceneBase from './SceneBase';
 import SceneTitle from './SceneTitle';
 import SceneEditor from './SceneEditor';
 import SceneGaming from './SceneGaming';
+import type { MusicMeta, SceneDebugSnapshot } from '../types';
 
 const {
     MUSIC_LIST_ITEM_WIDTH,
@@ -67,8 +68,10 @@ export default class SceneMusicSelect extends SceneBase {
             if (res.ok) {
                 G.musics = await res.json();
                 this.stage.removeChild(this.loadingTextSprite);
+                window.Debug?.log('music-select', 'Loaded music list', { total: G.musics.length });
             } else {
                 console.error(`Get music info failed, code ${res.status}.`);
+                window.Debug?.log('music-select', 'Failed to load music list', { status: res.status });
             }
         }
         const modeText: Record<string, string> = {
@@ -159,5 +162,30 @@ export default class SceneMusicSelect extends SceneBase {
                 y: 0.5 * h + MUSIC_LIST_ITEM_HEIGHT * (1 - MUSIC_LIST_ITEM_Y_DELTA) * (offset - 0.5)
             }), MUSIC_LIST_SWITCH_TIME);
         }
+    }
+
+    debugSnapshot(): SceneDebugSnapshot {
+        const current = G.musics?.[this.selected] as MusicMeta | undefined;
+        return {
+            ...super.debugSnapshot(),
+            scene: this.constructor.name,
+            summary: this.debugSummary(),
+            selected: {
+                index: this.selected,
+                total: G.musics?.length || 0,
+                artist: current?.artist || '',
+                name: current?.name || '',
+                creator: current?.creator || ''
+            }
+        };
+    }
+
+    protected debugSummary(): string[] {
+        const current = G.musics?.[this.selected] as MusicMeta | undefined;
+        return [
+            `selected=${this.selected}/${Math.max((G.musics?.length || 1) - 1, 0)}`,
+            `mode=${G.mode}`,
+            `music=${current ? `${current.artist} - ${current.name}` : 'loading'}`
+        ];
     }
 }

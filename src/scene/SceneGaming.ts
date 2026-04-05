@@ -10,7 +10,9 @@ import WindowHitScore from '../window/WindowHitScore';
 import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 import SceneScore from './SceneScore';
-import type { BeatmapData, SoundHandle } from '../types';
+import type { BeatmapData, GameplayScoreState, HitInputState, MusicMeta, SceneDebugSnapshot, SoundHandle, TickCursor } from '../types';
+import { judgeHit } from '../gameplay/GameHitJudge';
+import { applyScore, createScoreState } from '../gameplay/GameScoreTracker';
 
 /**
  * Define gaming scene
@@ -18,27 +20,24 @@ import type { BeatmapData, SoundHandle } from '../types';
  */
 export default class SceneGaming extends SceneBase {
     musicId: number;
-    music: any;
+    music: MusicMeta;
     audio!: SoundHandle;
     audioUrl: string;
     bgUrl: string;
     prUrl: string;
     data: BeatmapData;
     hitIndex: number;
-    currentScore: number;
-    currentCombo: number;
-    maxCombo: number;
-    scorePoints: Record<number, number>;
-    hitResults: Record<string, number>;
+    scoreState: GameplayScoreState;
     timingWindow!: WindowTiming;
     hitScoreWindow!: WindowHitScore;
     hitObjectWindow!: WindowHitObject;
     countDownTime!: number | null;
+    timingCursor: TickCursor | null;
 
     constructor(musicId: number) {
         super();
         this.musicId = musicId;
-        this.music = G.musics[musicId];
+        this.music = G.musics[musicId] as MusicMeta;
         this.audioUrl = `songs/${this.music.audio}`;
         this.bgUrl = `songs/${this.music.bg}`;
         this.prUrl = `songs/${this.music.pr}`;
@@ -55,18 +54,8 @@ export default class SceneGaming extends SceneBase {
             isEditMode: false
         };
         this.hitIndex = 0;
-        this.currentScore = 0;
-        this.currentCombo = 0;
-        this.maxCombo = 0;
-        this.scorePoints = {};
-        this.hitResults = {
-            '0': 0,
-            '50': 0,
-            '100': 0,
-            '200': 0,
-            '300': 0,
-            '300g': 0
-        };
+        this.scoreState = createScoreState();
+        this.timingCursor = null;
         this.resourceToLoad = {
             audio: [
                 'se/hit-00.mp3',
@@ -112,8 +101,17 @@ export default class SceneGaming extends SceneBase {
             const data = await res.json();
             this.data.timingPoints = data.timingPoints;
             this.data.hitObjects = data.hitObjects;
+            if (this.data.timingPoints.length > 0) {
+                G.tick.tp = this.data.timingPoints;
+                this.timingCursor = G.tick.createCursorByTime(0, 0);
+            }
         } else {
             console.error(`Get PR file '${this.data.artist} - ${this.data.name}' failed, code ${res.status}`); // eslint-disable-line no-console
+            window.Debug?.log('gameplay', 'Failed to load beatmap file', {
+                artist: this.data.artist,
+                name: this.data.name,
+                status: res.status
+            });
         }
         // hit object window
         this.hitObjectWindow = new WindowHitObject(this.data);
@@ -136,16 +134,19 @@ export default class SceneGaming extends SceneBase {
         if (G.input.isPressed(G.input.ESC)) {
             G.audio.playSE('se/menu-back.mp3');
             // press ESC to back to title
+            window.Debug?.log('gameplay', 'Exit gameplay scene via ESC', { musicId: this.musicId });
             G.scene = new SceneMusicSelect();
         }
         // some music may start too early, make some delay time
         let time = 0;
         if (this.countDownTime === null) {
             time = G.audio.getCurrentPlayTime(this.audio);
+            this.updateTimingCursor(time * 1000);
         } else if (this.countDownTime >= 0) {
             this.audio.playFrom(0);
             this.audio.fadeIn(0);
             this.countDownTime = null;
+            this.updateTimingCursor(0);
         } else if (this.countDownTime < 0) {
             time = this.countDownTime;
             this.countDownTime += 1 / 60;
@@ -156,70 +157,47 @@ export default class SceneGaming extends SceneBase {
             }
         }
         this.hitObjectWindow.update(time);
-        // play hit se
-        if (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J)) {
+        const hitInput = this.getHitInputState();
+        if (hitInput.greenPressed) {
             G.audio.playSE('se/hit-00.mp3');
-        } else if (G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)) {
+        } else if (hitInput.orangePressed) {
             G.audio.playSE('se/hit-01.mp3');
         }
-        // hit judgement
         const hitObject = this.data.hitObjects[this.hitIndex] || null;
-        if (hitObject !== null) {
-            const pos1000 = hitObject.pos1000;
-            const time1000 = time * 1000;
-            const delta = Math.floor(time1000 - pos1000);
-            const absDelta = Math.abs(delta);
-            const color = hitObject.color === undefined ? -1 : hitObject.color;
-            let hitJudgement = null;
-            let hitJudgementType = '';
-            if (absDelta > 200 && pos1000 < time1000) {
-                // really miss
-                hitJudgement = -2;
-                hitJudgementType = '0';
-            } else if (absDelta <= 300) {
-                if (
-                    (color === 0 && (G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J))) ||
-                    (color === 1 && (G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)))
-                ) {
-                    // wrong key pressed
-                    hitJudgement = -1;
-                    hitJudgementType = '0';
-                } else if (
-                    G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J) ||
-                    G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K)
-                ) {
-                    if (absDelta <= 20) {
-                        hitJudgement = 300;
-                        hitJudgementType = '300g';
-                    } else if (absDelta <= 60) {
-                        hitJudgement = 300;
-                        hitJudgementType = '300';
-                    } else if (absDelta <= 100) {
-                        hitJudgement = 200;
-                        hitJudgementType = '200';
-                    } else if (absDelta <= 160) {
-                        hitJudgement = 100;
-                        hitJudgementType = '100';
-                    } else if (absDelta <= 220) {
-                        hitJudgement = 50;
-                        hitJudgementType = '50';
-                    } else {
-                        // hit too early
-                        hitJudgement = 0;
-                        hitJudgementType = '0';
-                    }
-                }
-            }
-            if (hitJudgement !== null && this.hitIndex < this.data.hitObjects.length) {
-                this.hitObjectWindow.objectHit(this.hitIndex, hitJudgement);
-                this.hitScoreWindow.objectHit(hitJudgement);
-                this.updateRecords(Math.max(hitJudgement, 0), hitJudgementType, Math.trunc(time * 1000));
-                ++this.hitIndex;
-            }
-        } else {
+        const result = judgeHit(hitObject, time, hitInput);
+        if (hitObject && result && this.hitIndex < this.data.hitObjects.length) {
+            window.Debug?.log('gameplay-hit', `Judged ${result.type}`, {
+                objectIndex: this.hitIndex,
+                judgement: result.judgement,
+                type: result.type,
+                timing: result.context,
+                cursor: this.timingCursor ? {
+                    timingPointIndex: this.timingCursor.timingPointIndex,
+                    tickIndex: this.timingCursor.tickIndex,
+                    startTime: this.timingCursor.startTime,
+                    endTime: this.timingCursor.endTime,
+                    mod: this.timingCursor.mod
+                } : null
+            });
+            this.hitObjectWindow.objectHit(this.hitIndex, result.judgement);
+            this.hitScoreWindow.objectHit(result.judgement);
+            this.updateRecords(Math.max(result.judgement, 0), result.type, Math.trunc(time * 1000));
+            ++this.hitIndex;
+        } else if (!hitObject) {
             // 2s after the last hit object, jump to the score scene
             if (time * 1000 > this.data.hitObjects[this.hitIndex - 1].pos1000 + 1000) {
-                G.scene = new SceneScore(this.bgUrl, this.scorePoints, this.hitResults, this.currentScore, this.maxCombo);
+                window.Debug?.log('gameplay', 'Finished song and entering result scene', {
+                    score: this.scoreState.currentScore,
+                    maxCombo: this.scoreState.maxCombo,
+                    timingCursor: this.timingCursor ? {
+                        timingPointIndex: this.timingCursor.timingPointIndex,
+                        tickIndex: this.timingCursor.tickIndex,
+                        startTime: this.timingCursor.startTime,
+                        endTime: this.timingCursor.endTime,
+                        mod: this.timingCursor.mod
+                    } : null
+                });
+                G.scene = new SceneScore(this.bgUrl, this.scoreState.scorePoints, this.scoreState.hitResults, this.scoreState.currentScore, this.scoreState.maxCombo);
             }
         }
         this.updateTimingWindow();
@@ -235,17 +213,34 @@ export default class SceneGaming extends SceneBase {
         }
     }
     updateRecords(score: number, type: string, currentTime: number) {
-        this.scorePoints[currentTime] = score;
-        ++this.hitResults[type];
-        if (score > 0) {
-            if (++this.currentCombo > this.maxCombo) {
-                this.maxCombo = this.currentCombo;
-            }
-            // score addition grows after each 20 combos, max 3000
-            this.currentScore += Math.min(3000, score * (Math.floor(this.currentCombo / 20) + 1));
-        } else {
-            this.currentCombo = 0;
+        applyScore(this.scoreState, score, type, currentTime);
+    }
+
+    updateTimingCursor(currentTime1000: number) {
+        if (!this.data.timingPoints.length) {
+            this.timingCursor = null;
+            return;
         }
+        if (!this.timingCursor) {
+            this.timingCursor = G.tick.createCursorByTime(currentTime1000, 0);
+            return;
+        }
+        while (currentTime1000 >= this.timingCursor.endTime) {
+            this.timingCursor = G.tick.nextCursor(this.timingCursor);
+        }
+        while (currentTime1000 < this.timingCursor.startTime) {
+            this.timingCursor = G.tick.prevCursor(this.timingCursor, true);
+        }
+    }
+
+    getHitInputState(): HitInputState {
+        const greenPressed = Boolean(G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J));
+        const orangePressed = Boolean(G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K));
+        return {
+            greenPressed,
+            orangePressed,
+            anyPressed: greenPressed || orangePressed
+        };
     }
     /**
      * Trigger before the scene is terminated
@@ -254,5 +249,54 @@ export default class SceneGaming extends SceneBase {
     onTerminate() {
         this.audio.fadeOut(0.5);
         setTimeout(() => this.audio.pause(), 500);
+    }
+
+    debugSnapshot(): SceneDebugSnapshot {
+        return {
+            ...super.debugSnapshot(),
+            scene: this.constructor.name,
+            summary: this.debugSummary(),
+            beatmap: {
+                artist: this.data.artist,
+                name: this.data.name,
+                hitObjects: this.data.hitObjects.length,
+                timingPoints: this.data.timingPoints.length
+            },
+            playback: {
+                currentTime: Number(this.data.currentTime.toFixed(3)),
+                duration: Number(this.data.duration.toFixed(3)),
+                audioPlaying: Boolean(this.audio?.playing),
+                countDownTime: this.countDownTime === null ? null : Number(this.countDownTime.toFixed(3))
+            },
+            timing: this.timingCursor ? {
+                cursor: {
+                    timingPointIndex: this.timingCursor.timingPointIndex,
+                    tickIndex: this.timingCursor.tickIndex,
+                    startTime: this.timingCursor.startTime,
+                    endTime: this.timingCursor.endTime,
+                    metronome: this.timingCursor.metronome,
+                    divisor: this.timingCursor.divisor,
+                    mod: this.timingCursor.mod
+                }
+            } : null,
+            scoring: {
+                hitIndex: this.hitIndex,
+                score: this.scoreState.currentScore,
+                combo: this.scoreState.currentCombo,
+                maxCombo: this.scoreState.maxCombo,
+                hitResults: this.scoreState.hitResults
+            },
+            nextObject: this.data.hitObjects[this.hitIndex] || null
+        };
+    }
+
+    protected debugSummary(): string[] {
+        return [
+            `time=${this.data.currentTime.toFixed(3)} / ${this.data.duration.toFixed(3)}`,
+            `hitIndex=${this.hitIndex}/${this.data.hitObjects.length}`,
+            `score=${this.scoreState.currentScore}, combo=${this.scoreState.currentCombo}, maxCombo=${this.scoreState.maxCombo}`,
+            `audioPlaying=${Boolean(this.audio?.playing)}, countDown=${this.countDownTime === null ? 'started' : this.countDownTime.toFixed(3)}`,
+            `timingCursor=tp${this.timingCursor?.timingPointIndex ?? '-'} tick${this.timingCursor?.tickIndex ?? '-'}`
+        ];
     }
 }
