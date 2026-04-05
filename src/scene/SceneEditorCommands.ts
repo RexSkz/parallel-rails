@@ -23,6 +23,12 @@ export type SceneEditorCommandTarget = {
     hitObjectWindow: WindowHitObject;
     helpWindow: WindowHelp;
     commandHistory: SceneEditorCommandHistory;
+    leftScrubStartedAt: number;
+    leftScrubLastStepAt: number;
+    rightScrubStartedAt: number;
+    rightScrubLastStepAt: number;
+    sliderAdjustStartedAt: number;
+    sliderAdjustLastStepAt: number;
     setPlayFrom: (time: number) => void;
     updateFromCachedData: () => void;
 };

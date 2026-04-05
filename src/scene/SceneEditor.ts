@@ -5,8 +5,10 @@
 
 import G from '../Global';
 import { appendTimingPointEditingWindow } from '../Functions';
+import { sanitizeBeatmapData } from '../gameplay/BeatmapSanitizer';
 import WindowHelp from '../window/WindowHelp';
 import WindowHitObject from '../window/WindowHitObject';
+import WindowKeyState from '../window/WindowKeyState';
 import WindowTimeRuler from '../window/WindowTimeRuler';
 import WindowTiming from '../window/WindowTiming';
 import SceneBase from './SceneBase';
@@ -47,8 +49,15 @@ export default class SceneEditor extends SceneBase {
     tpWindow!: TimingEditorWindow;
     hitObjectWindow!: WindowHitObject;
     helpWindow!: WindowHelp;
+    keyStateWindow!: WindowKeyState;
     pos!: TickCursor;
     commandHistory: SceneEditorCommandHistory;
+    leftScrubStartedAt: number;
+    leftScrubLastStepAt: number;
+    rightScrubStartedAt: number;
+    rightScrubLastStepAt: number;
+    sliderAdjustStartedAt: number;
+    sliderAdjustLastStepAt: number;
 
     constructor(musicId: number) {
         super();
@@ -75,6 +84,12 @@ export default class SceneEditor extends SceneBase {
         this.atEdge = false;
         this.currentMode = 'hitObject';
         this.commandHistory = new SceneEditorCommandHistory();
+        this.leftScrubStartedAt = 0;
+        this.leftScrubLastStepAt = 0;
+        this.rightScrubStartedAt = 0;
+        this.rightScrubLastStepAt = 0;
+        this.sliderAdjustStartedAt = 0;
+        this.sliderAdjustLastStepAt = 0;
         this.resourceToLoad = {
             audio: [
                 'se/hit-00.mp3',
@@ -94,6 +109,11 @@ export default class SceneEditor extends SceneBase {
     async onInitialize() {
         G.audio.pauseBGM();
         this.audio = G.resource.audio(this.audioUrl);
+        if (!this.audio) {
+            window.Debug?.log('editor', 'Audio resource missing, aborting editor', { audioUrl: this.audioUrl });
+            G.scene = new SceneMusicSelect();
+            return;
+        }
         this.stage.addChild(G.graphics.createImage(this.bgUrl, (_w: number, _h: number, _self: any) => ({
             position: 'center',
             size: 'cover'
@@ -112,9 +132,14 @@ export default class SceneEditor extends SceneBase {
         this.stage.addChild(G.graphics.createText(`Editing [${this.music.artist} - ${this.music.name}]\nPress H for help.`, {}, { x: 20, y: 20 }));
         const res = await fetch(this.prUrl);
         if (res.ok) {
-            const data = await res.json();
-            this.data.timingPoints = data.timingPoints;
-            this.data.hitObjects = data.hitObjects;
+            const rawData = await res.json();
+            const sanitized = sanitizeBeatmapData({
+                ...this.data,
+                timingPoints: rawData.timingPoints,
+                hitObjects: rawData.hitObjects,
+                duration: this.audio.buffer.duration
+            });
+            this.data = sanitized;
         } else {
             console.error(`Get PR file '${this.data.artist} - ${this.data.name}' failed, code ${res.status}`);
             window.Debug?.log('editor', 'Failed to load beatmap file', {
@@ -135,19 +160,23 @@ export default class SceneEditor extends SceneBase {
         this.tpWindow.style.visibility = 'hidden';
         this.hitObjectWindow = new WindowHitObject(this.data);
         this.addWindow(this.hitObjectWindow);
+        this.keyStateWindow = new WindowKeyState();
+        this.addWindow(this.keyStateWindow);
         this.helpWindow = new WindowHelp([
             '      H: Toggle this window.',
             '      T: Timing current timing object\'s BPM.',
             '      `: Toggle timing point editing window.',
             ' Timing panel Add/Remove buttons are undoable.',
             ' Timing panel Apply button is undoable.',
-            '   F, J: Add green note (SHIFT: add slider start / end).',
-            '   D, K: Add orange note (SHIFT: add slider start / end).',
+            ' F/J or D/K + arrow: Add slider on current rail.',
+            '   F, J: Add green note.',
+            '   D, K: Add orange note.',
+            'Ctrl+SPACE: Add bonus switch object.',
+            'Alt+LEFT/RIGHT: normal note -> slider, or adjust slider/bonus duration.',
+            'Alt+UP/DOWN: adjust bonus delta.',
             '    DEL: Delete current hit object.',
             ' Ctrl+Z: Undo last beatmap command.',
             ' Ctrl+Y: Redo last undone beatmap command.',
-            '     UP: Add object to switch to upper rail.',
-            '   DOWN: Add object to switch to lower rail.',
             '   LEFT: Time back (SHIFT: 10x, CTRL: in millisecond unit).',
             '  RIGHT: Time move (SHIFT: 10x, CTRL: in millisecond unit).',
             '   HOME: Jump to music start.',
@@ -162,7 +191,7 @@ export default class SceneEditor extends SceneBase {
         if (savedData) {
             const parsed = JSON.parse(savedData) as { time: string; data: any };
             if (confirm(`Found cached data at ${parsed.time}, would you like to load it?`)) {
-                this.data = parsed.data;
+                this.data = sanitizeBeatmapData({ ...parsed.data, duration: this.audio.buffer.duration, isEditMode: true });
                 this.updateFromCachedData();
                 localStorage.removeItem(this.storageKey);
                 window.Debug?.log('editor', 'Restored beatmap from local cache', { storageKey: this.storageKey });
@@ -195,25 +224,37 @@ export default class SceneEditor extends SceneBase {
         if (this.audio.playing) {
             this.timeRulerWindow.paintTpRightTo(this.data.currentTime * 1000);
         }
+        if (!this.pos) {
+            this.updateTimingWindow();
+            this.keyStateWindow.update();
+            return;
+        }
         this.updateInputs();
         this.updatePlayFromTime();
         this.updateTimingWindow();
         this.hitObjectWindow.update(this.data.currentTime);
+        this.keyStateWindow.update();
     }
 
     onTerminate() {
-        this.audio.fadeOut(0.5);
-        this.tpWindow.destroy();
-        setTimeout(() => this.audio.pause(), 500);
+        if (this.audio) {
+            this.audio.fadeOut(0.5);
+        }
+        this.tpWindow?.destroy();
+        setTimeout(() => this.audio?.pause(), 500);
     }
 
     updateFromCachedData() {
+        this.data = sanitizeBeatmapData({ ...this.data, duration: this.audio.buffer.duration, isEditMode: true });
         G.tick.tp = this.data.timingPoints;
         this.pos = G.tick.createCursorByTime(this.data.currentTime * 1000, 0);
         this.timeRulerWindow.repaintAllTimingPoints(0);
         this.tpWindow.timingPoints = this.data.timingPoints;
         this.tpWindow.selectedTimingPointIndex = Math.min(this.tpWindow.selectedTimingPointIndex ?? 0, Math.max(this.data.timingPoints.length - 1, 0));
         const selectedTimingPoint = this.data.timingPoints[this.tpWindow.selectedTimingPointIndex] || this.data.timingPoints[0];
+        if (!selectedTimingPoint) {
+            return;
+        }
         (this.tpWindow.querySelector('#bpm') as HTMLInputElement).value = String(selectedTimingPoint.bpm1000);
         (this.tpWindow.querySelector('#pos') as HTMLInputElement).value = String(selectedTimingPoint.pos1000);
         (this.tpWindow.querySelector('#metronome') as HTMLInputElement).value = String(selectedTimingPoint.metronome);
@@ -226,15 +267,19 @@ export default class SceneEditor extends SceneBase {
     }
 
     updateTimingWindow() {
-        if (this.audio.playing) {
+        if (this.audio?.playing) {
             this.data.currentTime = G.audio.getCurrentPlayTime(this.audio);
         }
         this.timingWindow.update(this.data.currentTime);
     }
 
     updatePlayFromTime() {
+        if (!this.audio) {
+            this.data.playFromTime = -1;
+            return;
+        }
         if (this.data.playFromTime >= 0) {
-            const wasPlaying = this.audio.playing;
+            const wasPlaying = Boolean(this.audio?.playing);
             this.audio.pause();
             if (wasPlaying && this.data.currentTime < this.data.duration) {
                 this.audio.playFrom(this.data.playFromTime);

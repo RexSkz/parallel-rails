@@ -22,7 +22,8 @@ export default class WindowHitScore extends WindowBase {
             '50': 'Normal',
             '100': 'Good',
             '200': 'Great',
-            '300': 'Perfect'
+            '300': 'Perfect',
+            bonus: 'Bonus'
         };
         this.numberToColor = {
             '-2': '#f44336',
@@ -31,15 +32,17 @@ export default class WindowHitScore extends WindowBase {
             '50': '#9e9e9e',
             '100': '#2196f3',
             '200': '#009688',
-            '300': '#ff9800'
+            '300': '#ff9800',
+            bonus: '#27c469'
         };
     }
 
-    objectHit(hitJudgement: number) {
-        const hitText = this.numberToText[hitJudgement];
+    objectHit(hitJudgement: number, textKey?: string) {
+        const key = textKey || String(hitJudgement);
+        const hitText = this.numberToText[key] || this.numberToText[hitJudgement];
         const sprite = G.graphics.createText(hitText, {
             fontSize: G.constant.SCORE_SPRITE_FONT_SIZE,
-            color: this.numberToColor[hitJudgement]
+            fill: this.numberToColor[key] || this.numberToColor[hitJudgement]
         }, (_w: number, h: number, self: any) => ({
             x: G.constant.JUDGEMENT_LINE_LEFT - self.width * 0.5,
             y: h * 0.5 - G.constant.SCORE_SPRITE_HEIGHT * 1.5

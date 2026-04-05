@@ -17,7 +17,7 @@ export function createScoreState(): GameplayScoreState {
     };
 }
 
-export function applyScore(state: GameplayScoreState, score: number, type: string, currentTime: number) {
+export function applyScore(state: GameplayScoreState, score: number, type: string, currentTime: number, preserveCombo = false) {
     state.scorePoints[currentTime] = score;
     ++state.hitResults[type];
     if (score > 0) {
@@ -25,7 +25,7 @@ export function applyScore(state: GameplayScoreState, score: number, type: strin
             state.maxCombo = state.currentCombo;
         }
         state.currentScore += Math.min(3000, score * (Math.floor(state.currentCombo / 20) + 1));
-    } else {
+    } else if (!preserveCombo) {
         state.currentCombo = 0;
     }
 }

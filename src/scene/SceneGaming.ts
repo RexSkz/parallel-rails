@@ -11,7 +11,8 @@ import SceneBase from './SceneBase';
 import SceneMusicSelect from './SceneMusicSelect';
 import SceneScore from './SceneScore';
 import type { BeatmapData, GameplayScoreState, HitInputState, MusicMeta, SceneDebugSnapshot, SoundHandle, TickCursor } from '../types';
-import { judgeHit } from '../gameplay/GameHitJudge';
+import { getHitObjectEndTime1000, sanitizeBeatmapData } from '../gameplay/BeatmapSanitizer';
+import { judgeHit, judgeSliderTail } from '../gameplay/GameHitJudge';
 import { applyScore, createScoreState } from '../gameplay/GameScoreTracker';
 
 /**
@@ -33,6 +34,7 @@ export default class SceneGaming extends SceneBase {
     hitObjectWindow!: WindowHitObject;
     countDownTime!: number | null;
     timingCursor: TickCursor | null;
+    activeSliderIndex: number | null;
 
     constructor(musicId: number) {
         super();
@@ -56,6 +58,7 @@ export default class SceneGaming extends SceneBase {
         this.hitIndex = 0;
         this.scoreState = createScoreState();
         this.timingCursor = null;
+        this.activeSliderIndex = null;
         this.resourceToLoad = {
             audio: [
                 'se/hit-00.mp3',
@@ -76,6 +79,11 @@ export default class SceneGaming extends SceneBase {
     async onInitialize() {
         G.audio.pauseBGM();
         this.audio = G.resource.audio(this.audioUrl);
+        if (!this.audio) {
+            window.Debug?.log('gameplay', 'Audio resource missing, aborting gameplay', { audioUrl: this.audioUrl });
+            G.scene = new SceneMusicSelect();
+            return;
+        }
         // background
         this.stage.addChild(G.graphics.createImage(this.bgUrl, (_w: number, _h: number, _self: any) => ({
             position: 'center',
@@ -98,9 +106,15 @@ export default class SceneGaming extends SceneBase {
         // load pr file
         const res = await fetch(this.prUrl);
         if (res.ok) {
-            const data = await res.json();
-            this.data.timingPoints = data.timingPoints;
-            this.data.hitObjects = data.hitObjects;
+            const rawData = await res.json();
+            const sanitized = sanitizeBeatmapData({
+                ...this.data,
+                timingPoints: rawData.timingPoints,
+                hitObjects: rawData.hitObjects,
+                duration: this.audio.buffer.duration
+            });
+            this.data.timingPoints = sanitized.timingPoints;
+            this.data.hitObjects = sanitized.hitObjects;
             if (this.data.timingPoints.length > 0) {
                 G.tick.tp = this.data.timingPoints;
                 this.timingCursor = G.tick.createCursorByTime(0, 0);
@@ -117,8 +131,9 @@ export default class SceneGaming extends SceneBase {
         this.hitObjectWindow = new WindowHitObject(this.data);
         this.addWindow(this.hitObjectWindow);
         // make sure all hit objects' start position greater than 2000
-        if (this.data.hitObjects[0].pos1000 < 2000) {
-            this.countDownTime = (this.data.hitObjects[0].pos1000 - 2000) / 1000;
+        const firstHitObject = this.data.hitObjects[0] || null;
+        if (firstHitObject && firstHitObject.pos1000 < 2000) {
+            this.countDownTime = (firstHitObject.pos1000 - 2000) / 1000;
             this.hitObjectWindow.hitObjectStage.alpha = 0;
         } else {
             this.countDownTime = 1;
@@ -157,14 +172,61 @@ export default class SceneGaming extends SceneBase {
             }
         }
         this.hitObjectWindow.update(time);
+        const gameplayInputEnabled = this.hitObjectWindow.canAcceptGameplayInput(time * 1000);
         const hitInput = this.getHitInputState();
-        if (hitInput.greenPressed) {
+        if (gameplayInputEnabled && hitInput.greenPressed) {
             G.audio.playSE('se/hit-00.mp3');
-        } else if (hitInput.orangePressed) {
+        } else if (gameplayInputEnabled && hitInput.orangePressed) {
             G.audio.playSE('se/hit-01.mp3');
+        } else if (gameplayInputEnabled && hitInput.bonusPressed) {
+            G.audio.playSE('se/hit-00.mp3');
         }
         const hitObject = this.data.hitObjects[this.hitIndex] || null;
-        const result = judgeHit(hitObject, time, hitInput);
+        const activeSliderObject = this.activeSliderIndex !== null ? this.data.hitObjects[this.activeSliderIndex] || null : null;
+        const sliderTailResult = activeSliderObject
+            ? judgeSliderTail(activeSliderObject, time, gameplayInputEnabled ? hitInput : {
+                ...hitInput,
+                greenPressed: false,
+                orangePressed: false,
+                greenReleased: false,
+                orangeReleased: false,
+                greenHeld: false,
+                orangeHeld: false,
+                bonusPressed: false,
+                notePressed: false,
+                anyPressed: false
+            })
+            : null;
+        if (sliderTailResult && this.activeSliderIndex !== null) {
+            this.hitObjectWindow.objectHit(this.activeSliderIndex, sliderTailResult.judgement);
+            this.hitScoreWindow.objectHit(sliderTailResult.judgement);
+            this.updateRecords(Math.max(sliderTailResult.judgement, 0), sliderTailResult.type, Math.trunc(time * 1000));
+            if (sliderTailResult.consumeObject !== false) {
+                const sliderSprite = this.hitObjectWindow.hitObjectSpriteList[this.activeSliderIndex];
+                if (sliderSprite) {
+                    sliderSprite.hitDone = true;
+                }
+                this.hitIndex = this.activeSliderIndex + 1;
+                this.activeSliderIndex = null;
+            }
+        }
+        if (this.activeSliderIndex !== null) {
+            this.updateTimingWindow();
+            this.hitScoreWindow.update();
+            return;
+        }
+        const result = judgeHit(hitObject, time, gameplayInputEnabled ? hitInput : {
+            ...hitInput,
+            greenPressed: false,
+            orangePressed: false,
+            greenReleased: false,
+            orangeReleased: false,
+            greenHeld: false,
+            orangeHeld: false,
+            bonusPressed: false,
+            notePressed: false,
+            anyPressed: false
+        });
         if (hitObject && result && this.hitIndex < this.data.hitObjects.length) {
             window.Debug?.log('gameplay-hit', `Judged ${result.type}`, {
                 objectIndex: this.hitIndex,
@@ -179,13 +241,28 @@ export default class SceneGaming extends SceneBase {
                     mod: this.timingCursor.mod
                 } : null
             });
-            this.hitObjectWindow.objectHit(this.hitIndex, result.judgement);
-            this.hitScoreWindow.objectHit(result.judgement);
-            this.updateRecords(Math.max(result.judgement, 0), result.type, Math.trunc(time * 1000));
-            ++this.hitIndex;
+            if (result.showFeedback !== false) {
+                if (hitObject.type === 1 && result.judgement > 0 && result.consumeObject === false) {
+                    this.hitObjectWindow.markSliderHeadHit(this.hitIndex);
+                } else {
+                    this.hitObjectWindow.objectHit(this.hitIndex, result.judgement);
+                }
+                this.hitScoreWindow.objectHit(result.judgement, hitObject.type === 2 && result.judgement > 0 ? 'bonus' : undefined);
+            }
+            this.updateRecords(Math.max(result.judgement, 0), result.type, Math.trunc(time * 1000), Boolean(result.preserveCombo));
+            if (hitObject.type === 2) {
+                this.hitObjectWindow.beginRailSwitch(hitObject, hitObject.pos1000);
+            }
+            if (hitObject.type === 1 && result.judgement > 0 && result.consumeObject === false) {
+                this.activeSliderIndex = this.hitIndex;
+            } else {
+                ++this.hitIndex;
+            }
         } else if (!hitObject) {
             // 2s after the last hit object, jump to the score scene
-            if (time * 1000 > this.data.hitObjects[this.hitIndex - 1].pos1000 + 1000) {
+            const lastHitObject = this.data.hitObjects[this.hitIndex - 1] || null;
+            const endTime1000 = getHitObjectEndTime1000(lastHitObject);
+            if (!lastHitObject || time * 1000 > endTime1000 + 1000) {
                 window.Debug?.log('gameplay', 'Finished song and entering result scene', {
                     score: this.scoreState.currentScore,
                     maxCombo: this.scoreState.maxCombo,
@@ -197,7 +274,7 @@ export default class SceneGaming extends SceneBase {
                         mod: this.timingCursor.mod
                     } : null
                 });
-                G.scene = new SceneScore(this.bgUrl, this.scoreState.scorePoints, this.scoreState.hitResults, this.scoreState.currentScore, this.scoreState.maxCombo);
+                G.scene = new SceneScore(this.bgUrl, this.music, this.scoreState.scorePoints, this.scoreState.hitResults, this.scoreState.currentScore, this.scoreState.maxCombo, this.data.hitObjects.length);
             }
         }
         this.updateTimingWindow();
@@ -207,13 +284,15 @@ export default class SceneGaming extends SceneBase {
      * Update timing window
      */
     updateTimingWindow() {
-        if (this.audio.playing) {
+        if (this.audio?.playing) {
             this.data.currentTime = G.audio.getCurrentPlayTime(this.audio);
             this.timingWindow.update(this.data.currentTime);
+            return;
         }
+        this.timingWindow.update(this.data.currentTime);
     }
-    updateRecords(score: number, type: string, currentTime: number) {
-        applyScore(this.scoreState, score, type, currentTime);
+    updateRecords(score: number, type: string, currentTime: number, preserveCombo = false) {
+        applyScore(this.scoreState, score, type, currentTime, preserveCombo);
     }
 
     updateTimingCursor(currentTime1000: number) {
@@ -225,10 +304,10 @@ export default class SceneGaming extends SceneBase {
             this.timingCursor = G.tick.createCursorByTime(currentTime1000, 0);
             return;
         }
-        while (currentTime1000 >= this.timingCursor.endTime) {
+        while (this.timingCursor && currentTime1000 >= this.timingCursor.endTime) {
             this.timingCursor = G.tick.nextCursor(this.timingCursor);
         }
-        while (currentTime1000 < this.timingCursor.startTime) {
+        while (this.timingCursor && currentTime1000 < this.timingCursor.startTime) {
             this.timingCursor = G.tick.prevCursor(this.timingCursor, true);
         }
     }
@@ -236,10 +315,22 @@ export default class SceneGaming extends SceneBase {
     getHitInputState(): HitInputState {
         const greenPressed = Boolean(G.input.isPressed(G.input.F) || G.input.isPressed(G.input.J));
         const orangePressed = Boolean(G.input.isPressed(G.input.D) || G.input.isPressed(G.input.K));
+        const greenReleased = Boolean(G.input.isReleased(G.input.F) || G.input.isReleased(G.input.J));
+        const orangeReleased = Boolean(G.input.isReleased(G.input.D) || G.input.isReleased(G.input.K));
+        const greenHeld = Boolean(G.input.isRepeated(G.input.F) || G.input.isRepeated(G.input.J));
+        const orangeHeld = Boolean(G.input.isRepeated(G.input.D) || G.input.isRepeated(G.input.K));
+        const bonusPressed = Boolean(G.input.isPressed(G.input.SPACE));
+        const notePressed = greenPressed || orangePressed;
         return {
             greenPressed,
             orangePressed,
-            anyPressed: greenPressed || orangePressed
+            greenReleased,
+            orangeReleased,
+            greenHeld,
+            orangeHeld,
+            bonusPressed,
+            notePressed,
+            anyPressed: notePressed || bonusPressed
         };
     }
     /**
@@ -247,8 +338,10 @@ export default class SceneGaming extends SceneBase {
      * @override
      */
     onTerminate() {
-        this.audio.fadeOut(0.5);
-        setTimeout(() => this.audio.pause(), 500);
+        if (this.audio) {
+            this.audio.fadeOut(0.5);
+            setTimeout(() => this.audio.pause(), 500);
+        }
     }
 
     debugSnapshot(): SceneDebugSnapshot {

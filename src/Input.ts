@@ -16,10 +16,10 @@ export default class Input {
     LEFT!: number; UP!: number; RIGHT!: number; DOWN!: number;
     APOSTROPHE!: number;
     F1!: number; F2!: number; F3!: number; F4!: number; F5!: number; F6!: number; F7!: number; F8!: number; F9!: number; F10!: number; F11!: number; F12!: number;
-    CTRL!: number; SHIFT!: number; ESC!: number; SPACE!: number; ENTER!: number; BACKSPACE!: number; DELETE!: number; HOME!: number; END!: number; PAGEUP!: number; PAGEDN!: number;
+    CTRL!: number; SHIFT!: number; ALT!: number; ESC!: number; SPACE!: number; ENTER!: number; BACKSPACE!: number; DELETE!: number; HOME!: number; END!: number; PAGEUP!: number; PAGEDN!: number;
     keyState!: KeyState[];
-    pressedKey!: number;
-    releasedKey!: number;
+    pressedKeys!: Set<number>;
+    releasedKeys!: Set<number>;
 
     constructor() {
         this.setKeyAlias();
@@ -73,6 +73,7 @@ export default class Input {
         this.F12 = 123;
         this.CTRL = 17;
         this.SHIFT = 16;
+        this.ALT = 18;
         this.ESC = 27;
         this.SPACE = 32;
         this.ENTER = 13;
@@ -86,8 +87,8 @@ export default class Input {
 
     initKeyState() {
         this.keyState = [];
-        this.pressedKey = 0;
-        this.releasedKey = 0;
+        this.pressedKeys = new Set();
+        this.releasedKeys = new Set();
         for (let keyCode = 1; keyCode < 256; keyCode++) {
             this.keyState[keyCode] = {
                 isPressed: false,
@@ -101,45 +102,53 @@ export default class Input {
         window.addEventListener('keydown', e => {
             if (!G.nativeInputFocused) {
                 e.preventDefault();
-                this.pressedKey = e.keyCode;
+                this.pressedKeys.add(e.keyCode);
             }
         });
         window.addEventListener('keyup', e => {
             if (!G.nativeInputFocused) {
                 e.preventDefault();
-                this.releasedKey = e.keyCode;
+                this.releasedKeys.add(e.keyCode);
             }
+        });
+        window.addEventListener('blur', () => {
+            this.clearAll();
         });
     }
 
     update() {
-        if (this.pressedKey) {
-            const key = this.keyState[this.pressedKey];
+        for (let keyCode = 1; keyCode < this.keyState.length; keyCode++) {
+            this.keyState[keyCode].isPressed = false;
+            this.keyState[keyCode].isReleased = false;
+        }
+        for (const keyCode of this.releasedKeys) {
+            const key = this.keyState[keyCode];
             if (key) {
-                if (key.isPressed) {
-                    key.isPressed = false;
-                    this.pressedKey = 0;
-                } else if (key.isRepeated) {
-                    this.pressedKey = 0;
-                } else if (!key.isReleased) {
-                    key.isPressed = true;
-                    key.isReleased = false;
-                    key.isRepeated = true;
-                }
+                key.isReleased = true;
+                key.isPressed = false;
+                key.isRepeated = false;
             }
         }
-        if (this.releasedKey) {
-            const key = this.keyState[this.releasedKey];
+        this.releasedKeys.clear();
+        for (const keyCode of this.pressedKeys) {
+            const key = this.keyState[keyCode];
             if (key) {
-                if (key.isReleased) {
-                    key.isReleased = false;
-                    this.releasedKey = 0;
-                } else {
-                    key.isReleased = true;
-                    key.isPressed = false;
-                    key.isRepeated = false;
+                if (!key.isRepeated) {
+                    key.isPressed = true;
                 }
+                key.isRepeated = true;
             }
+        }
+        this.pressedKeys.clear();
+    }
+
+    clearAll() {
+        this.pressedKeys.clear();
+        this.releasedKeys.clear();
+        for (let keyCode = 1; keyCode < this.keyState.length; keyCode++) {
+            this.keyState[keyCode].isPressed = false;
+            this.keyState[keyCode].isReleased = false;
+            this.keyState[keyCode].isRepeated = false;
         }
     }
 
@@ -165,5 +174,15 @@ export default class Input {
             return null;
         }
         return this.keyState[keyCode].isRepeated;
+    }
+
+    getRepeatedKeys() {
+        const keys: number[] = [];
+        for (let keyCode = 1; keyCode < this.keyState.length; keyCode++) {
+            if (this.keyState[keyCode].isRepeated) {
+                keys.push(keyCode);
+            }
+        }
+        return keys;
     }
 }

@@ -1,4 +1,4 @@
-import type { Container, Sprite, Text } from 'pixi.js';
+import type { Container, Text } from 'pixi.js';
 
 export type MusicMeta = {
     artist: string;
@@ -23,11 +23,19 @@ export type HitObject = {
     pos1000: number;
     color?: number;
     last?: number;
+    delta?: number;
+    duration1000?: number;
 };
 
 export type HitInputState = {
     greenPressed: boolean;
     orangePressed: boolean;
+    greenReleased: boolean;
+    orangeReleased: boolean;
+    greenHeld: boolean;
+    orangeHeld: boolean;
+    bonusPressed: boolean;
+    notePressed: boolean;
     anyPressed: boolean;
 };
 
@@ -45,6 +53,9 @@ export type HitJudgeContext = {
 
 export type HitJudgeDecision = HitJudgementResult & {
     context: HitJudgeContext;
+    preserveCombo?: boolean;
+    showFeedback?: boolean;
+    consumeObject?: boolean;
 };
 
 export type BeatmapData = {
@@ -137,11 +148,13 @@ export type AnimatableSprite = Container & {
     label: string;
 };
 
-export type HitObjectSprite = Sprite & {
+export type HitObjectSprite = Container & {
     label: string;
     bpm1000: number;
     hitDone: boolean;
     transformScale?: number;
+    railIndex: number;
+    railY: number;
 };
 
 export type ScoreTextSprite = Text & {

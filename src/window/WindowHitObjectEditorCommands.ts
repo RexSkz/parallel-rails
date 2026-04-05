@@ -20,13 +20,15 @@ export function buildHitObjectInsertCommand(
     hitObjects: HitObject[],
     currentIndex: number,
     lastUpdated: number,
-    payload: { type: number; color?: number; last?: number }
+    payload: { type: number; color?: number; last?: number; delta?: number; duration1000?: number }
 ) {
     const obj: HitObject = {
         type: payload.type,
         pos1000: lastUpdated,
         color: payload.color,
-        last: payload.last
+        last: payload.last,
+        delta: payload.delta,
+        duration1000: payload.duration1000
     };
     let insertIndex = currentIndex;
     if (

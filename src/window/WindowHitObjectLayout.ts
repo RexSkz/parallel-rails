@@ -17,7 +17,8 @@ export function findBpmAtTime(timingPoints: TimingPoint[], time1000: number): nu
 }
 
 export function calculateHitObjectX(bpm1000: number, objectTime1000: number, currentTime1000: number): number {
-    return bpm1000 * (objectTime1000 - currentTime1000) / 1e6 * HITOBJ_MARGIN_SIZE + JUDGEMENT_LINE_LEFT;
+    const safeBpm1000 = Math.max(1, bpm1000 || 0);
+    return safeBpm1000 * (objectTime1000 - currentTime1000) / 1e6 * HITOBJ_MARGIN_SIZE + JUDGEMENT_LINE_LEFT;
 }
 
 export function shouldShowEditorGhost(positionX: number): boolean {
@@ -25,5 +26,5 @@ export function shouldShowEditorGhost(positionX: number): boolean {
 }
 
 export function calculateEditorGhostProgress(bpm1000: number, positionX: number): number {
-    return (JUDGEMENT_LINE_LEFT - positionX) / bpm1000 * 1e3;
+    return (JUDGEMENT_LINE_LEFT - positionX) / Math.max(1, bpm1000 || 0) * 1e3;
 }

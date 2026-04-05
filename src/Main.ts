@@ -61,10 +61,16 @@ class ParallelRails {
                 return;
             }
             if (event.code === 'KeyD') {
+                if (G.input.isRepeated(G.input.D)) {
+                    return;
+                }
                 event.preventDefault();
                 const visible = window.Debug?.toggleHud();
                 window.Debug?.log('debug', `Debug HUD ${visible ? 'enabled' : 'disabled'}`);
             } else if (event.code === 'KeyJ') {
+                if (G.input.isRepeated(G.input.J)) {
+                    return;
+                }
                 event.preventDefault();
                 const json = window.Debug?.openSnapshotWindow();
                 if (json) {

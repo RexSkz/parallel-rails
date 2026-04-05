@@ -4,9 +4,10 @@ import { buildHitObjectInsertCommand, findHitObjectIndex } from '../window/Windo
 
 export function createInsertHitObjectCommand(
     scene: SceneEditorCommandTarget,
-    payload: { type: number; color?: number; last?: number },
+    payload: { type: number; color?: number; last?: number; delta?: number; duration1000?: number },
     description: string
 ): EditorCommand {
+    const duplicateIndex = findHitObjectIndex(scene.hitObjectWindow.hitObjects, scene.hitObjectWindow.lastUpdated);
     const { obj, insertIndex } = buildHitObjectInsertCommand(
         scene.hitObjectWindow.hitObjects,
         scene.hitObjectWindow.currentIndex,
@@ -20,12 +21,21 @@ export function createInsertHitObjectCommand(
             payload: {
                 type: obj.type,
                 color: obj.color,
+                last: obj.last,
+                delta: obj.delta,
+                duration1000: obj.duration1000,
                 pos1000: obj.pos1000,
                 index: insertIndex
             }
         },
         description,
         execute: () => {
+            if (duplicateIndex >= 0) {
+                return {
+                    changed: false,
+                    description
+                };
+            }
             const inserted = scene.hitObjectWindow.insertHitObjectAt(insertIndex, obj);
             if (!inserted) {
                 return {
@@ -74,6 +84,9 @@ export function createRemoveHitObjectCommand(scene: SceneEditorCommandTarget): E
             payload: removedObject ? {
                 type: removedObject.type,
                 color: removedObject.color,
+                last: removedObject.last,
+                delta: removedObject.delta,
+                duration1000: removedObject.duration1000,
                 pos1000: removedObject.pos1000,
                 index: targetIndex
             } : {
