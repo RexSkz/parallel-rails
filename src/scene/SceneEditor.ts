@@ -12,19 +12,20 @@ import WindowKeyState from '../window/WindowKeyState';
 import WindowTimeRuler from '../window/WindowTimeRuler';
 import WindowTiming from '../window/WindowTiming';
 import SceneBase from './SceneBase';
+import SceneMusicSelect from './SceneMusicSelect';
 import type { BeatmapData, MusicMeta, SceneDebugSnapshot, SoundHandle, TickCursor, TimingEditorWindow, TimingPoint } from '../types';
 import SceneEditorCommandHistory from './SceneEditorCommandHistory';
 import { runSceneEditorCommands } from './SceneEditorCommands';
 
 function formatTimingPointRows(timingPoints: TimingPoint[]) {
+    console.log(timingPoints);
     return timingPoints.map((item) => {
         const kiai = item.kiai ? 'Yes' : '';
-        const inferred = item.inferred ? ' (implicit)' : '';
         return [
             '<tr>',
-            `<td><button id="timing-point-remove" ${item.inferred ? 'disabled' : ''}>${item.inferred ? 'Implicit' : 'Remove'}</button></td>`,
-            `<td>${item.pos1000 / 1000}</td>`,
-            `<td>${item.bpm1000 / 1000}${inferred}</td>`,
+            `<td><button id="timing-point-remove" ${item.inferred ? 'disabled' : ''}>${item.inferred ? 'Inferred' : 'Remove'}</button></td>`,
+            `<td>${item.inferred ? 'Start' : item.pos1000 / 1000}</td>`,
+            `<td>${item.bpm1000 / 1000}</td>`,
             `<td>${item.metronome}/4</td>`,
             `<td>${kiai}</td>`,
             '</tr>'

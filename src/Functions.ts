@@ -75,11 +75,11 @@ export function appendTimingPointEditingWindow(timFunc: (timingPoints: TimingPoi
             <table width="100%" cellpadding="5" cellspacing="0">
                 <thead>
                     <tr>
-                        <th>Action</th>
-                        <th>Pos</th>
-                        <th>BPM</th>
-                        <th>Metronome</th>
-                        <th>Kiai</th>
+                        <th width="20%">Action</th>
+                        <th width="20%">Pos</th>
+                        <th width="20%">BPM</th>
+                        <th width="20%">Metronome</th>
+                        <th width="20%">Kiai</th>
                     </tr>
                 </thead>
                 <tbody></tbody>

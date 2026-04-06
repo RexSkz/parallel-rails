@@ -15,7 +15,8 @@ function sanitizeTimingPoint(input: Partial<TimingPoint> | null | undefined): Ti
         bpm1000,
         pos1000,
         metronome,
-        kiai: Boolean(input?.kiai)
+        kiai: Boolean(input?.kiai),
+        inferred: Boolean(input?.inferred)
     };
 }
 
@@ -28,17 +29,16 @@ function extendTimingPointsBackward(timingPoints: TimingPoint[]) {
     }
     const first = timingPoints[0];
     const measureLength1000 = Math.max(1, Math.round(60000000 / first.bpm1000 * first.metronome));
-    const inferred: TimingPoint[] = [];
     let pos1000 = first.pos1000;
     while (pos1000 > 0) {
         pos1000 -= measureLength1000;
-        inferred.unshift({
-            ...first,
-            pos1000,
-            inferred: true
-        });
     }
-    return [...inferred, ...timingPoints];
+    const inferred = {
+        ...first,
+        pos1000,
+        inferred: true
+    };
+    return [inferred, ...timingPoints];
 }
 
 function sanitizeHitObject(input: Partial<HitObject> | null | undefined): HitObject {

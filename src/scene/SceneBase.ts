@@ -32,7 +32,7 @@ export default class SceneBase {
 
     async work() {
         await this.waitLoading();
-        this.onInitialize();
+        await this.onInitialize();
         await this.fadeIn();
         await this.mainLoop();
         await this.fadeOut();

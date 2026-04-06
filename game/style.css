@@ -2,11 +2,15 @@
     background: orange;
     color: #FFF;
 }
+:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 html,
 body {
     margin: 0;
     padding: 0;
-    font-family: 'Consolas';
+    font-family: Roboto, Helvetica, sans-serif;
     font-size: 16px;
     background: #000;
     color: #FFF;
@@ -35,16 +39,16 @@ body {
 input[type=text],
 input[type=number],
 button {
-    font-family: 'Consolas';
+    font-family: Roboto, Helvetica, sans-serif;
     font-size: 16px;
     box-sizing: border-box;
     outline: none;
     text-align: center;
-    padding: 5px 10px;
+    padding: 5px 12px;
     min-width: 50px;
     height: 30px;
     vertical-align: top;
-    border-radius: 0.2em;
+    border-radius: 0;
 }
 button:active {
     color: #222;
@@ -135,7 +139,6 @@ span {
 #timing-point-add,
 #timing-point-remove {
     min-width: 0;
-    padding: 0 5px;
 }
 #timing-point-add {
     color: #4CAF50;
@@ -148,12 +151,21 @@ span {
 #timing-point-remove {
     height: 20px;
     line-height: 1;
+    padding: 2px 8px;
     border: 1px solid #F44336;
     color: #F44336;
+    font-size: 12px;
 }
-#timing-point-remove:active {
+#timing-point-remove:not(:disabled):active {
     background: #F44336;
     color: #FFF;
+}
+#timing-point-remove:disabled {
+    border-color: #fff;
+    color: #fff;
+}
+#timing-point-remove:disabled:active {
+    background: transparent;
 }
 p {
     margin: 8px 0;

@@ -27,6 +27,9 @@ export default class Tick {
 
     getTimePerTick(tp: number) {
         const o = this.tp[tp];
+        if (!o) {
+            return Infinity;
+        }
         return 60000000 / (o.bpm1000 * this.divisor);
     }
 
@@ -58,24 +61,33 @@ export default class Tick {
     }
 
     createCursor(timingPointIndex: number, tickIndex: number, half = false, startTime?: number, endTime?: number): TickCursor {
+        const safeTimingPointIndex = Math.max(0, Math.min(timingPointIndex, Math.max(this.tp.length - 1, 0)));
         const baseStartTime = startTime ?? this.getTime(timingPointIndex, tickIndex);
         const baseEndTime = endTime ?? this.calculateTickEndTime(timingPointIndex, tickIndex);
-        const metronome = this.tp[timingPointIndex].metronome;
+        const metronome = this.tp[safeTimingPointIndex]?.metronome || 4;
         return {
             time: baseStartTime,
             startTime: baseStartTime,
             endTime: baseEndTime,
-            timingPointIndex,
+            timingPointIndex: safeTimingPointIndex,
             tickIndex,
             metronome,
             divisor: this.divisor,
-            mod: this.getTickMod(timingPointIndex, tickIndex, half)
+            mod: this.tp.length ? this.getTickMod(safeTimingPointIndex, tickIndex, half) : { tick: 0, divisor: 0 }
         };
     }
 
     nextCursor(cursor: TickCursor, half = false): TickCursor {
         const nextTickTime = this.getTime(cursor.timingPointIndex, cursor.tickIndex + 1);
         const nextTpTime = this.getTime(cursor.timingPointIndex + 1, 0);
+        if (!Number.isFinite(nextTickTime) && !Number.isFinite(nextTpTime)) {
+            return {
+                ...cursor,
+                time: Infinity,
+                startTime: Infinity,
+                endTime: Infinity
+            };
+        }
         if (nextTpTime <= nextTickTime) {
             return this.createCursorByTime(nextTpTime, cursor.timingPointIndex + 1, 0, half);
         }
@@ -86,6 +98,14 @@ export default class Tick {
         const totalTick = this.getTotalTickOfPrevTp(cursor.timingPointIndex);
         const lastTickTime = this.getTime(cursor.timingPointIndex, atEdge ? (cursor.tickIndex - 1) : cursor.tickIndex);
         const lastTpTime = this.getTime(cursor.timingPointIndex - 1, totalTick);
+        if (!Number.isFinite(lastTickTime) && !Number.isFinite(lastTpTime)) {
+            return {
+                ...cursor,
+                time: -Infinity,
+                startTime: -Infinity,
+                endTime: -Infinity
+            };
+        }
         if (lastTpTime >= lastTickTime) {
             return this.createCursorByTime(lastTpTime, cursor.timingPointIndex - 1, totalTick, half);
         }
@@ -93,6 +113,14 @@ export default class Tick {
     }
 
     private locateTickWindow(time: number, timingPointIndex: number | null = null, tickIndex: number | null = null) {
+        if (!this.tp.length) {
+            return {
+                timingPointIndex: 0,
+                tickIndex: 0,
+                startTime: 0,
+                endTime: Infinity
+            };
+        }
         let currentTimingPointIndex = timingPointIndex;
         if (currentTimingPointIndex === null) {
             let l = 0;
