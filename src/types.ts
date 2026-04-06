@@ -16,6 +16,7 @@ export type TimingPoint = {
     pos1000: number;
     metronome: number;
     kiai?: boolean;
+    inferred?: boolean;
 };
 
 export type HitObject = {

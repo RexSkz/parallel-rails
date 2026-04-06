@@ -19,11 +19,12 @@ import { runSceneEditorCommands } from './SceneEditorCommands';
 function formatTimingPointRows(timingPoints: TimingPoint[]) {
     return timingPoints.map((item) => {
         const kiai = item.kiai ? 'Yes' : '';
+        const inferred = item.inferred ? ' (implicit)' : '';
         return [
             '<tr>',
-            '<td><button id="timing-point-remove">Remove</button></td>',
+            `<td><button id="timing-point-remove" ${item.inferred ? 'disabled' : ''}>${item.inferred ? 'Implicit' : 'Remove'}</button></td>`,
             `<td>${item.pos1000 / 1000}</td>`,
-            `<td>${item.bpm1000 / 1000}</td>`,
+            `<td>${item.bpm1000 / 1000}${inferred}</td>`,
             `<td>${item.metronome}/4</td>`,
             `<td>${kiai}</td>`,
             '</tr>'
@@ -259,6 +260,12 @@ export default class SceneEditor extends SceneBase {
         (this.tpWindow.querySelector('#pos') as HTMLInputElement).value = String(selectedTimingPoint.pos1000);
         (this.tpWindow.querySelector('#metronome') as HTMLInputElement).value = String(selectedTimingPoint.metronome);
         (this.tpWindow.querySelector('#kiai-time') as HTMLInputElement).checked = Boolean(selectedTimingPoint.kiai);
+        const readOnly = Boolean(selectedTimingPoint.inferred);
+        (this.tpWindow.querySelector('#bpm') as HTMLInputElement).disabled = readOnly;
+        (this.tpWindow.querySelector('#pos') as HTMLInputElement).disabled = readOnly;
+        (this.tpWindow.querySelector('#metronome') as HTMLInputElement).disabled = readOnly;
+        (this.tpWindow.querySelector('#kiai-time') as HTMLInputElement).disabled = readOnly;
+        (this.tpWindow.querySelector('#timing-point-apply') as HTMLButtonElement).disabled = readOnly;
         (this.tpWindow.querySelector('tbody') as HTMLTableSectionElement).innerHTML = formatTimingPointRows(this.data.timingPoints);
     }
 

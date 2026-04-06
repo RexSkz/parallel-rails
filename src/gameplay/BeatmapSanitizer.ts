@@ -9,7 +9,7 @@ const DEFAULT_TIMING_POINT: TimingPoint = {
 
 function sanitizeTimingPoint(input: Partial<TimingPoint> | null | undefined): TimingPoint {
     const bpm1000 = Math.max(1, Math.round(Number(input?.bpm1000) || DEFAULT_TIMING_POINT.bpm1000));
-    const pos1000 = Math.max(0, Math.round(Number(input?.pos1000) || 0));
+    const pos1000 = Math.round(Number(input?.pos1000) || 0);
     const metronome = Math.min(4, Math.max(2, Math.round(Number(input?.metronome) || DEFAULT_TIMING_POINT.metronome)));
     return {
         bpm1000,
@@ -17,6 +17,28 @@ function sanitizeTimingPoint(input: Partial<TimingPoint> | null | undefined): Ti
         metronome,
         kiai: Boolean(input?.kiai)
     };
+}
+
+function extendTimingPointsBackward(timingPoints: TimingPoint[]) {
+    if (!timingPoints.length) {
+        return [DEFAULT_TIMING_POINT];
+    }
+    if (timingPoints[0].pos1000 <= 0) {
+        return timingPoints;
+    }
+    const first = timingPoints[0];
+    const measureLength1000 = Math.max(1, Math.round(60000000 / first.bpm1000 * first.metronome));
+    const inferred: TimingPoint[] = [];
+    let pos1000 = first.pos1000;
+    while (pos1000 > 0) {
+        pos1000 -= measureLength1000;
+        inferred.unshift({
+            ...first,
+            pos1000,
+            inferred: true
+        });
+    }
+    return [...inferred, ...timingPoints];
 }
 
 function sanitizeHitObject(input: Partial<HitObject> | null | undefined): HitObject {
@@ -41,11 +63,9 @@ function sanitizeHitObject(input: Partial<HitObject> | null | undefined): HitObj
 export function sanitizeBeatmapData(data: Partial<BeatmapData> | null | undefined): BeatmapData {
     const timingPoints = Array.isArray(data?.timingPoints) ? data.timingPoints.map(item => sanitizeTimingPoint(item)) : [];
     timingPoints.sort((left, right) => left.pos1000 - right.pos1000);
-    if (!timingPoints.length || timingPoints[0].pos1000 !== 0) {
-        timingPoints.unshift(DEFAULT_TIMING_POINT);
-    }
+    const normalizedTimingPoints = extendTimingPointsBackward(timingPoints);
     const dedupedTimingPoints: TimingPoint[] = [];
-    for (const point of timingPoints) {
+    for (const point of normalizedTimingPoints) {
         if (dedupedTimingPoints.length && dedupedTimingPoints[dedupedTimingPoints.length - 1].pos1000 === point.pos1000) {
             dedupedTimingPoints[dedupedTimingPoints.length - 1] = point;
         } else {

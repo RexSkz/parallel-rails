@@ -78,7 +78,7 @@ export function createRemoveTimingPointCommand(scene: SceneEditorCommandTarget, 
         },
         description: 'Remove timing point',
         execute: () => {
-            if (!removedPoint || scene.data.timingPoints.length <= 1) {
+            if (!removedPoint || removedPoint.inferred || scene.data.timingPoints.length <= 1) {
                 return {
                     changed: false,
                     description: 'Remove timing point'
@@ -143,7 +143,7 @@ export function createUpdateTimingPointCommand(scene: SceneEditorCommandTarget, 
         },
         description: 'Update timing point',
         execute: () => {
-            if (!previousPoint || !nextPoint) {
+            if (!previousPoint || previousPoint.inferred || !nextPoint) {
                 return {
                     changed: false,
                     description: 'Update timing point'

@@ -14,6 +14,12 @@ function syncTimingPointDetailForm(scene: SceneEditorCommandTarget, index: numbe
     (scene.tpWindow.querySelector('#pos') as HTMLInputElement).value = String(point.pos1000);
     (scene.tpWindow.querySelector('#metronome') as HTMLInputElement).value = String(point.metronome);
     (scene.tpWindow.querySelector('#kiai-time') as HTMLInputElement).checked = Boolean(point.kiai);
+    const readOnly = Boolean(point.inferred);
+    (scene.tpWindow.querySelector('#bpm') as HTMLInputElement).disabled = readOnly;
+    (scene.tpWindow.querySelector('#pos') as HTMLInputElement).disabled = readOnly;
+    (scene.tpWindow.querySelector('#metronome') as HTMLInputElement).disabled = readOnly;
+    (scene.tpWindow.querySelector('#kiai-time') as HTMLInputElement).disabled = readOnly;
+    (scene.tpWindow.querySelector('#timing-point-apply') as HTMLButtonElement).disabled = readOnly;
 }
 
 function readTimingPointDraft(scene: SceneEditorCommandTarget): TimingPointDraft | null {
@@ -69,6 +75,9 @@ function ensureTimingPointCommandBindings(scene: SceneEditorCommandTarget) {
             if (index < 0) {
                 return;
             }
+            if (scene.data.timingPoints[index]?.inferred) {
+                return;
+            }
             const command = createRemoveTimingPointCommand(scene, index);
             scene.commandHistory.execute(command);
             syncTimingPointDetailForm(scene, Math.max(index - 1, 0));
@@ -107,6 +116,10 @@ function ensureTimingPointCommandBindings(scene: SceneEditorCommandTarget) {
         }
         const draft = readTimingPointDraft(scene);
         if (!draft) {
+            return;
+        }
+        if (scene.data.timingPoints[draft.index]?.inferred) {
+            syncTimingPointDetailForm(scene, draft.index);
             return;
         }
         const command = createUpdateTimingPointCommand(scene, draft);
