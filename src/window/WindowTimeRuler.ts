@@ -169,4 +169,5 @@ export default class WindowTimeRuler extends WindowBase {
             this.timeLinesInner.addChild(this.getLineByObj(item));
         }
     }
+
 }

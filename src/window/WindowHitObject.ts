@@ -5,7 +5,7 @@
 
 import { Container, Graphics, Text } from 'pixi.js';
 import G from '../Global';
-import type { BeatmapData, HitObject, HitObjectSprite, TimingPoint } from '../types';
+import type { BeatmapData, HitObject, HitObjectSprite, TickCursor, TimingPoint } from '../types';
 import WindowBase from './WindowBase';
 import {
     calculateEditorGhostProgress,
@@ -70,6 +70,7 @@ export default class WindowHitObject extends WindowBase {
     railGuideLines: RailGuideDefinition[];
     bonusDurationGuides: Map<number, BonusDurationGuide>;
     editableHighlight: EditableHighlight;
+    primaryBeatGuides: Graphics[];
     currentMode: string;
 
     constructor(data: BeatmapData) {
@@ -93,6 +94,7 @@ export default class WindowHitObject extends WindowBase {
             frame: new Graphics(),
             targetIndex: null
         };
+        this.primaryBeatGuides = [];
         this.currentMode = 'hitObject';
         const line = new Graphics();
         line.label = 'LINE_JUDGEMENT';
@@ -169,6 +171,7 @@ export default class WindowHitObject extends WindowBase {
         }
         this.repaintRailGuides();
         this.repaintEditableHighlight();
+        this.repaintPrimaryBeatGuides();
     }
 
     refreshAllObjectPositions(time1000: number) {
@@ -184,6 +187,7 @@ export default class WindowHitObject extends WindowBase {
         }
         this.repaintRailGuides();
         this.repaintEditableHighlight();
+        this.repaintPrimaryBeatGuides();
     }
 
     syncRailStateToTime(time1000: number) {
@@ -330,6 +334,93 @@ export default class WindowHitObject extends WindowBase {
         this.editableHighlight.frame.rect(sprite.x - width * 0.5 - 4, sprite.y - height * 0.5 - 4, width + 8, height + 8);
         this.editableHighlight.frame.stroke({ width: 1.5, color: 0xe4c15c, alpha: 0.95 });
         this.editableHighlight.frame.visible = true;
+    }
+
+    repaintPrimaryBeatGuides() {
+        for (const guide of this.primaryBeatGuides) {
+            this.stage.removeChild(guide);
+            guide.destroy();
+        }
+        this.primaryBeatGuides = [];
+        const ticks = this.collectVisiblePrimaryBeatTicks();
+        for (const tickTime1000 of ticks) {
+            this.primaryBeatGuides.push(this.createPrimaryBeatGuide(tickTime1000));
+        }
+    }
+
+    collectVisiblePrimaryBeatTicks() {
+        if (!this.timingPoints.length) {
+            return [] as number[];
+        }
+        let cursor = G.tick.createCursorByTime(this.lastUpdated, 0);
+        while (cursor.time > 0 && cursor.mod.divisor !== 0) {
+            cursor = G.tick.prevCursor(cursor, true);
+        }
+        const visibleTicks: number[] = [];
+        const backwardTicks: number[] = [];
+        let backwardCursor: TickCursor = cursor;
+        while (true) {
+            const x = calculateHitObjectX(findBpmAtTime(this.timingPoints, backwardCursor.time), backwardCursor.time, this.lastUpdated);
+            if (x < 0) {
+                break;
+            }
+            backwardTicks.push(backwardCursor.time);
+            if (backwardCursor.time <= 0) {
+                break;
+            }
+            backwardCursor = this.getPreviousPrimaryTick(backwardCursor);
+            if (backwardCursor.time === -Infinity) {
+                break;
+            }
+        }
+        backwardTicks.reverse();
+        visibleTicks.push(...backwardTicks);
+
+        let forwardCursor: TickCursor = cursor;
+        while (true) {
+            forwardCursor = this.getNextPrimaryTick(forwardCursor);
+            if (!Number.isFinite(forwardCursor.time)) {
+                break;
+            }
+            const x = calculateHitObjectX(findBpmAtTime(this.timingPoints, forwardCursor.time), forwardCursor.time, this.lastUpdated);
+            if (x > window.innerWidth) {
+                break;
+            }
+            visibleTicks.push(forwardCursor.time);
+        }
+        return visibleTicks;
+    }
+
+    getPreviousPrimaryTick(cursor: TickCursor) {
+        let nextCursor = G.tick.prevCursor(cursor, true);
+        while (Number.isFinite(nextCursor.time) && nextCursor.time >= 0 && nextCursor.mod.divisor !== 0) {
+            nextCursor = G.tick.prevCursor(nextCursor, true);
+        }
+        return nextCursor;
+    }
+
+    getNextPrimaryTick(cursor: TickCursor) {
+        let nextCursor = G.tick.nextCursor(cursor);
+        while (Number.isFinite(nextCursor.time) && nextCursor.mod.divisor !== 0) {
+            nextCursor = G.tick.nextCursor(nextCursor);
+        }
+        return nextCursor;
+    }
+
+    createPrimaryBeatGuide(tickTime1000: number) {
+        const x = calculateHitObjectX(findBpmAtTime(this.timingPoints, tickTime1000), tickTime1000, this.lastUpdated);
+        if (!Number.isFinite(x)) {
+            return new Graphics();
+        }
+        const guide = new Graphics();
+        guide.label = `PRIMARY_BEAT_GUIDE_${tickTime1000}`;
+        const top = TIME_RULER_WINDOW_HEIGHT + HITOBJ_WINDOW_PADDING;
+        const bottom = window.innerHeight - TIMING_WINDOW_HEIGHT - HITOBJ_WINDOW_PADDING;
+        guide.moveTo(x, top);
+        guide.lineTo(x, bottom);
+        guide.stroke({ width: 1, color: 0xffffff, alpha: 0.22 });
+        this.stage.addChildAt(guide, 2);
+        return guide;
     }
 
     objectHit(index: number, hitJudgement: number) {
