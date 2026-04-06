@@ -94,6 +94,24 @@ function ensureTimingPointCommandBindings(scene: SceneEditorCommandTarget) {
             syncTimingPointDetailForm(scene, index);
         }
     });
+    scene.tpWindow.addEventListener('change', (event) => {
+        const target = event.target as HTMLElement | null;
+        if (!target) {
+            return;
+        }
+        if (!(target instanceof HTMLInputElement)) {
+            return;
+        }
+        if (!['bpm', 'pos', 'metronome', 'kiai-time'].includes(target.id)) {
+            return;
+        }
+        const draft = readTimingPointDraft(scene);
+        if (!draft) {
+            return;
+        }
+        const command = createUpdateTimingPointCommand(scene, draft);
+        scene.commandHistory.execute(command);
+    });
     scene.tpWindow.dataset.commandBindings = 'true';
 }
 

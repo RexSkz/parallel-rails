@@ -118,11 +118,11 @@ function createBonusHitObject(obj: HitObject, bpm1000: number, context: RenderCo
     const ring = new Graphics();
     ring.label = `BONUS_RING_${obj.pos1000}`;
     ring.circle(0, 0, outerRadius - BONUS_RING_WIDTH * 0.5);
-    ring.stroke({ width: BONUS_RING_WIDTH, color: 0x27c469, alpha: 1 });
+    ring.stroke({ width: BONUS_RING_WIDTH, color: 0xe2c84f, alpha: 1 });
     const fill = new Graphics();
     fill.label = `BONUS_FILL_${obj.pos1000}`;
     fill.circle(0, 0, fillRadius);
-    fill.fill(0x27c469);
+    fill.fill(0xe2c84f);
     bonus.addChild(ring);
     bonus.addChild(fill);
     bonus.pivot.set(0, 0);

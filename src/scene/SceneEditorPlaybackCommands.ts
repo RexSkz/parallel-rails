@@ -17,10 +17,21 @@ function stepPlayback(scene: SceneEditorCommandTarget, direction: -1 | 1) {
         }
         if (scene.data.timingPoints.length !== 0) {
             let count = G.input.isRepeated(G.input.SHIFT) ? 10 : 1;
-            let currentTime = 0;
+            let currentTime = scene.data.currentTime * 1000;
             while (count--) {
-                scene.pos = G.tick.prevCursor(scene.pos, scene.atEdge);
+                const nextCursor = G.tick.prevCursor(scene.pos, scene.atEdge);
+                if (nextCursor.time < 0 || !Number.isFinite(nextCursor.time)) {
+                    scene.pos = G.tick.createCursorByTime(0, 0);
+                    currentTime = 0;
+                    break;
+                }
+                scene.pos = nextCursor;
                 currentTime = scene.pos.time;
+                if (currentTime <= 0) {
+                    currentTime = 0;
+                    scene.pos = G.tick.createCursorByTime(0, 0);
+                    break;
+                }
             }
             scene.atEdge = true;
             scene.setPlayFrom(currentTime / 1000);

@@ -49,6 +49,11 @@ type BonusDurationGuide = {
     endAnchor: Graphics;
 };
 
+type EditableHighlight = {
+    frame: Graphics;
+    targetIndex: number | null;
+};
+
 export default class WindowHitObject extends WindowBase {
     isEditMode: boolean;
     hitObjects: HitObject[];
@@ -64,6 +69,7 @@ export default class WindowHitObject extends WindowBase {
     railDeltaText: Map<number, Text>;
     railGuideLines: RailGuideDefinition[];
     bonusDurationGuides: Map<number, BonusDurationGuide>;
+    editableHighlight: EditableHighlight;
     currentMode: string;
 
     constructor(data: BeatmapData) {
@@ -83,6 +89,10 @@ export default class WindowHitObject extends WindowBase {
         this.railDeltaText = new Map();
         this.railGuideLines = [];
         this.bonusDurationGuides = new Map();
+        this.editableHighlight = {
+            frame: new Graphics(),
+            targetIndex: null
+        };
         this.currentMode = 'hitObject';
         const line = new Graphics();
         line.label = 'LINE_JUDGEMENT';
@@ -95,14 +105,16 @@ export default class WindowHitObject extends WindowBase {
             height: h - TIME_RULER_WINDOW_HEIGHT - (TIMING_WINDOW_HEIGHT + HITOBJ_WINDOW_PADDING) * 2
         }));
         this.stage.addChild(line);
+        this.editableHighlight.frame.label = 'EDITABLE_HITOBJECT_FRAME';
+        this.stage.addChild(this.editableHighlight.frame);
         this.initObjects();
     }
 
     initObjects() {
         this.hitObjectStage = G.graphics.createSprite({ x: 0, y: 0 });
         this.hitObjectStage.label = 'SPRITE_HITOBJECTS';
-        this.stage.addChild(this.hitObjectStage);
         this.drawRailGuides();
+        this.stage.addChild(this.hitObjectStage);
         let timingIndex = 0;
         for (const objIndex in this.hitObjects) {
             const obj = this.hitObjects[objIndex];
@@ -135,7 +147,7 @@ export default class WindowHitObject extends WindowBase {
                 y: this.getRailY(railIndex - this.getRenderedRailIndex(this.lastUpdated), h)
             }));
             this.railGuideLines.push({ sprite: guide, railIndex });
-            this.stage.addChild(guide);
+            this.stage.addChildAt(guide, 1);
         }
     }
 
@@ -156,6 +168,7 @@ export default class WindowHitObject extends WindowBase {
             this.currentIndex = rewindHitObjectCursor(this.hitObjects, this.currentIndex, time1000);
         }
         this.repaintRailGuides();
+        this.repaintEditableHighlight();
     }
 
     refreshAllObjectPositions(time1000: number) {
@@ -170,6 +183,7 @@ export default class WindowHitObject extends WindowBase {
             }
         }
         this.repaintRailGuides();
+        this.repaintEditableHighlight();
     }
 
     syncRailStateToTime(time1000: number) {
@@ -300,6 +314,22 @@ export default class WindowHitObject extends WindowBase {
         if (durationGuide) {
             this.updateBonusDurationGuide(index, obj, sprite, durationGuide, time1000);
         }
+    }
+
+    repaintEditableHighlight() {
+        const targetIndex = this.isEditMode ? this.findObj(this.lastUpdated) : -1;
+        this.editableHighlight.targetIndex = targetIndex >= 0 ? targetIndex : null;
+        const sprite = targetIndex >= 0 ? this.hitObjectSpriteList[targetIndex] : null;
+        if (!sprite || !sprite.visible) {
+            this.editableHighlight.frame.visible = false;
+            return;
+        }
+        const width = Math.max(sprite.width || HITOBJ_CIRCLE_RADIUS * 2, HITOBJ_CIRCLE_RADIUS * 2);
+        const height = HITOBJ_CIRCLE_RADIUS * 2;
+        this.editableHighlight.frame.clear();
+        this.editableHighlight.frame.rect(sprite.x - width * 0.5 - 4, sprite.y - height * 0.5 - 4, width + 8, height + 8);
+        this.editableHighlight.frame.stroke({ width: 1.5, color: 0xe4c15c, alpha: 0.95 });
+        this.editableHighlight.frame.visible = true;
     }
 
     objectHit(index: number, hitJudgement: number) {
@@ -466,13 +496,13 @@ export default class WindowHitObject extends WindowBase {
             guide.line.moveTo(sprite.x + dx * startT, sprite.y + dy * startT);
             guide.line.lineTo(sprite.x + dx * endT, sprite.y + dy * endT);
         }
-        guide.line.stroke({ width: 2, color: 0x27c469, alpha: 0.8 * sprite.alpha });
+        guide.line.stroke({ width: 2, color: 0xe2c84f, alpha: 0.8 * sprite.alpha });
         guide.line.visible = true;
         guide.startAnchor.clear();
-        guide.startAnchor.circle(sprite.x, sprite.y, 4).fill({ color: 0x27c469, alpha: 0.95 * sprite.alpha });
+        guide.startAnchor.circle(sprite.x, sprite.y, 4).fill({ color: 0xe2c84f, alpha: 0.95 * sprite.alpha });
         guide.startAnchor.visible = true;
         guide.endAnchor.clear();
-        guide.endAnchor.circle(targetX, targetRailY, 4).fill({ color: 0x27c469, alpha: 0.95 * sprite.alpha });
+        guide.endAnchor.circle(targetX, targetRailY, 4).fill({ color: 0xe2c84f, alpha: 0.95 * sprite.alpha });
         guide.endAnchor.visible = true;
     }
 
